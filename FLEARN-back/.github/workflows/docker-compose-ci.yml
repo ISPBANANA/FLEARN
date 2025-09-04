@@ -1,0 +1,63 @@
+name: FLEARN Backend Docker CI
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout Repository
+      uses: actions/checkout@v4
+    
+    - name: Create .env file
+      run: |
+        echo "# Environment Configuration for FLEARN Backend" > .env
+        echo "PORT=8099" >> .env
+        echo "NODE_ENV=production" >> .env
+        echo "POSTGRES_DB=flearn_db" >> .env
+        echo "POSTGRES_USER=flearn_user" >> .env
+        echo "POSTGRES_PASSWORD=${{ secrets.POSTGRES_PASSWORD }}" >> .env
+        echo "POSTGRES_HOST=localhost" >> .env
+        echo "POSTGRES_PORT=5432" >> .env
+        echo "MONGO_INITDB_ROOT_USERNAME=admin" >> .env
+        echo "MONGO_INITDB_ROOT_PASSWORD=${{ secrets.MONGO_PASSWORD }}" >> .env
+        echo "MONGO_INITDB_DATABASE=flearn_db" >> .env
+        echo "PGADMIN_DEFAULT_EMAIL=admin@flearn.com" >> .env
+        echo "PGADMIN_DEFAULT_PASSWORD=${{ secrets.PGADMIN_PASSWORD }}" >> .env
+        echo "PGADMIN_PORT=8088" >> .env
+        echo "MONGO_EXPRESS_USERNAME=admin" >> .env
+        echo "MONGO_EXPRESS_PASSWORD=${{ secrets.MONGO_EXPRESS_PASSWORD }}" >> .env
+        echo "MONGO_EXPRESS_PORT=8087" >> .env
+        echo "MONGO_EXPRESS_INTERNAL_PORT=8099" >> .env
+        echo "MONGO_PORT=27017" >> .env
+        echo "JWT_SECRET=${{ secrets.JWT_SECRET }}" >> .env
+    
+    - name: Login to Docker Hub
+      uses: docker/login-action@v3
+      with:
+        username: yotshiba
+        password: ${{ secrets.DOCKER_HUB_TOKEN }}
+
+    - name: Build and test Docker services
+      run: |
+        docker compose -f docker-compose.yml up -d --build
+        sleep 30
+        docker compose ps
+        docker compose logs
+
+    - name: Tag and push FLEARN backend image
+      run: |
+        docker tag flearn-back-flearn-backend:latest yotshiba/flearn-backend:latest
+        docker tag flearn-back-flearn-backend:latest yotshiba/flearn-backend:${{ github.sha }}
+        docker push yotshiba/flearn-backend:latest
+        docker push yotshiba/flearn-backend:${{ github.sha }}
+
+    - name: Cleanup
+      if: always()
+      run: |
+        docker compose down -v
