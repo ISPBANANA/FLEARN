@@ -43,24 +43,28 @@ jobs:
         username: yotshiba
         password: ${{ secrets.DOCKER_HUB_TOKEN }}
 
-    - name: Build and test Docker services
+    - name: Build Docker images
       run: |
-        docker compose -f docker-compose.yml up -d --build
+        docker compose -f docker-compose.yml build
+
+    - name: Test Docker services
+      run: |
+        docker compose -f docker-compose.yml up -d
         sleep 30
         docker compose ps
         docker compose logs
 
     - name: Tag and push FLEARN backend image
       run: |
-        docker tag flearn_backend yotshiba/flearn-backend:latest
-        docker tag flearn_backend yotshiba/flearn-backend:${{ github.sha }}
+        docker tag flearn-flearn-backend yotshiba/flearn-backend:latest
+        docker tag flearn-flearn-backend yotshiba/flearn-backend:${{ github.sha }}
         docker push yotshiba/flearn-backend:latest
         docker push yotshiba/flearn-backend:${{ github.sha }}
 
     - name: Tag and push FLEARN frontend image
       run: |
-        docker tag flearn_frontend yotshiba/flearn-frontend:latest
-        docker tag flearn_frontend yotshiba/flearn-frontend:${{ github.sha }}
+        docker tag flearn-flearn-frontend yotshiba/flearn-frontend:latest
+        docker tag flearn-flearn-frontend yotshiba/flearn-frontend:${{ github.sha }}
         docker push yotshiba/flearn-frontend:latest
         docker push yotshiba/flearn-frontend:${{ github.sha }}
 
