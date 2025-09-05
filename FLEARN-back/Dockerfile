@@ -1,6 +1,9 @@
 # Use Node.js 18 LTS as base image
 FROM node:18-alpine
 
+# Update Alpine packages to latest security patches
+RUN apk update && apk upgrade --no-cache
+
 # Set working directory
 WORKDIR /app
 

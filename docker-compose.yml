@@ -2,7 +2,7 @@ services:
   # FLEARN Backend API
   flearn-backend:
     build:
-      context: .
+      context: ./FLEARN-back
       dockerfile: Dockerfile
     container_name: flearn_backend
     restart: unless-stopped
@@ -21,6 +21,22 @@ services:
     networks:
       - flearn_network
 
+  # FLEARN Frontend (Next.js)
+  flearn-frontend:
+    build:
+      context: ./FLEARN-front
+      dockerfile: Dockerfile
+    container_name: flearn_frontend
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      NODE_ENV: ${NODE_ENV}
+    ports:
+      - "3000:3000"
+    networks:
+      - flearn_network
+
   # PostgreSQL Database
   postgres:
     image: postgres:15
@@ -36,7 +52,7 @@ services:
       - "${POSTGRES_PORT}:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
-      - ./init-scripts:/docker-entrypoint-initdb.d
+      - ./FLEARN-back/init-scripts:/docker-entrypoint-initdb.d
     networks:
       - flearn_network
 
@@ -75,7 +91,7 @@ services:
       - "${MONGO_PORT}:27017"
     volumes:
       - mongodb_data:/data/db
-      - ./mongo-init:/docker-entrypoint-initdb.d
+      - ./FLEARN-back/mongo-init:/docker-entrypoint-initdb.d
     networks:
       - flearn_network
 

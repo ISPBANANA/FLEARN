@@ -1,4 +1,4 @@
-name: FLEARN Backend Docker CI
+name: FLEARN Docker CI
 
 on:
   push:
@@ -16,7 +16,7 @@ jobs:
     
     - name: Create .env file
       run: |
-        echo "# Environment Configuration for FLEARN Backend" > .env
+        echo "# Environment Configuration for FLEARN" > .env
         echo "PORT=8099" >> .env
         echo "NODE_ENV=production" >> .env
         echo "POSTGRES_DB=flearn_db" >> .env
@@ -33,7 +33,7 @@ jobs:
         echo "MONGO_EXPRESS_USERNAME=admin" >> .env
         echo "MONGO_EXPRESS_PASSWORD=${{ secrets.MONGO_EXPRESS_PASSWORD }}" >> .env
         echo "MONGO_EXPRESS_PORT=8087" >> .env
-        echo "MONGO_EXPRESS_INTERNAL_PORT=8099" >> .env
+        echo "MONGO_EXPRESS_INTERNAL_PORT=8081" >> .env
         echo "MONGO_PORT=27017" >> .env
         echo "JWT_SECRET=${{ secrets.JWT_SECRET }}" >> .env
     
@@ -52,10 +52,17 @@ jobs:
 
     - name: Tag and push FLEARN backend image
       run: |
-        docker tag flearn-back-flearn-backend:latest yotshiba/flearn-backend:latest
-        docker tag flearn-back-flearn-backend:latest yotshiba/flearn-backend:${{ github.sha }}
+        docker tag flearn_backend yotshiba/flearn-backend:latest
+        docker tag flearn_backend yotshiba/flearn-backend:${{ github.sha }}
         docker push yotshiba/flearn-backend:latest
         docker push yotshiba/flearn-backend:${{ github.sha }}
+
+    - name: Tag and push FLEARN frontend image
+      run: |
+        docker tag flearn_frontend yotshiba/flearn-frontend:latest
+        docker tag flearn_frontend yotshiba/flearn-frontend:${{ github.sha }}
+        docker push yotshiba/flearn-frontend:latest
+        docker push yotshiba/flearn-frontend:${{ github.sha }}
 
     - name: Cleanup
       if: always()
