@@ -1,7 +1,5 @@
-# Use an official Node.js runtime as a parent image
+# Use the latest Node.js 20 LTS Alpine image as the base image
 FROM node:20-alpine
-# Use Node.js 18 LTS as the base image
-FROM node:18-alpine
 
 # Set working directory
 WORKDIR /app

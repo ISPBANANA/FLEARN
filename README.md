@@ -132,34 +132,6 @@ npm install
 npm run dev
 ```
 
-## 📁 Project Structure
-
-```
-FLEARN/
-├── docker-compose.yml          # Multi-service Docker setup
-├── README.md                   # Project documentation
-├── FLEARN-back/                # Backend API
-│   ├── index.js               # Express server entry point
-│   ├── package.json           # Backend dependencies
-│   ├── Dockerfile            # Backend container setup
-│   ├── config/
-│   │   └── database.js       # Database configurations
-│   ├── init-scripts/         # PostgreSQL initialization
-│   │   └── 01-init.sql
-│   └── mongo-init/           # MongoDB initialization
-│       └── 01-init.js
-└── FLEARN-front/               # Frontend application
-    ├── package.json           # Frontend dependencies
-    ├── Dockerfile            # Frontend container setup
-    ├── next.config.ts        # Next.js configuration
-    ├── tsconfig.json         # TypeScript configuration
-    ├── src/
-    │   └── app/              # Next.js app directory
-    │       ├── layout.tsx    # Root layout
-    │       ├── page.tsx      # Home page
-    │       └── globals.css   # Global styles
-    └── public/               # Static assets
-```
 
 ## 🔧 Development Workflow
 
