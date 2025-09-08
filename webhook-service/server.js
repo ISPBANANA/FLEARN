@@ -87,6 +87,15 @@ function deployApplication() {
     // Change to project directory
     process.chdir(PROJECT_PATH);
 
+    // Fix git ownership issue first
+    console.log('🔧 Configuring git safe directory...');
+    logToFile(logFile, `[${timestamp}] 🔧 Configuring git safe directory...`);
+    try {
+      execSync(`git config --global --add safe.directory ${PROJECT_PATH}`, { stdio: 'pipe' });
+    } catch (gitConfigError) {
+      console.log('⚠️  Git config warning:', gitConfigError.message);
+    }
+
     // Pull latest code
     console.log('📥 Pulling latest code...');
     logToFile(logFile, `[${timestamp}] 📥 Pulling latest code...`);
