@@ -26,6 +26,7 @@ jobs:
         cache-dependency-path: |
           FLEARN-front/package-lock.json
           FLEARN-back/package-lock.json
+          webhook-service/package-lock.json
     
     - name: Install Backend Dependencies
       working-directory: ./FLEARN-back
@@ -33,6 +34,10 @@ jobs:
     
     - name: Install Frontend Dependencies
       working-directory: ./FLEARN-front
+      run: npm ci
+    
+    - name: Install Webhook Service Dependencies
+      working-directory: ./webhook-service
       run: npm ci
     
     - name: Lint Frontend Code
@@ -75,6 +80,8 @@ jobs:
         echo "MONGO_EXPRESS_INTERNAL_PORT=8081" >> .env
         echo "MONGO_PORT=27017" >> .env
         echo "JWT_SECRET=test_jwt_secret_key" >> .env
+        echo "WEBHOOK_PORT=3001" >> .env
+        echo "WEBHOOK_SECRET=test_webhook_secret_for_ci" >> .env
         echo "CACHEBUST=$(date +%s)" >> .env
     
     - name: Login to Docker Hub
@@ -105,6 +112,8 @@ jobs:
         docker compose logs flearn-backend
         echo "=== Frontend Logs ==="
         docker compose logs flearn-frontend
+        echo "=== Webhook Service Logs ==="
+        docker compose logs webhook-service
 
     - name: Test Backend API Health
       run: |
@@ -143,6 +152,34 @@ jobs:
           docker compose logs flearn-frontend
           exit 1
         }
+
+    - name: Test Webhook Service
+      run: |
+        # Wait for webhook service to be ready
+        for i in {1..30}; do
+          if curl -f http://localhost:3001/health 2>/dev/null; then
+            echo "Webhook service is healthy!"
+            break
+          fi
+          echo "Waiting for webhook service... ($i/30)"
+          sleep 2
+        done
+        
+        # Test webhook health endpoint
+        curl -f http://localhost:3001/health || {
+          echo "Webhook service health check failed"
+          docker compose logs webhook-service
+          exit 1
+        }
+        
+        # Test webhook security (should return 403 without proper signature)
+        response=$(curl -s -w "%{http_code}" -o /dev/null -X POST http://localhost:3001/webhook -H "Content-Type: application/json" -d '{"test": "data"}')
+        if [ "$response" -eq 403 ]; then
+          echo "Webhook security test passed!"
+        else
+          echo "Webhook security test failed - expected 403, got $response"
+          exit 1
+        fi
 
     - name: Test Database Connections
       run: |
@@ -185,6 +222,11 @@ jobs:
         docker tag flearn-flearn-frontend yotshiba/flearn-frontend:${{ github.sha }}
         docker push yotshiba/flearn-frontend:latest
         docker push yotshiba/flearn-frontend:${{ github.sha }}
+        
+        docker tag flearn-webhook-service yotshiba/flearn-webhook:latest
+        docker tag flearn-webhook-service yotshiba/flearn-webhook:${{ github.sha }}
+        docker push yotshiba/flearn-webhook:latest
+        docker push yotshiba/flearn-webhook:${{ github.sha }}
 
     - name: Cleanup
       if: always()

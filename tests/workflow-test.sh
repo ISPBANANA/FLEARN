@@ -1,7 +1,13 @@
 #!/bin/bash
 
 # FLEARN Workflow Test Script
-# This script validates the GitHub Actions workflow configuration
+# This script v# Test 8: Has dependency installation st# Test 18: Check package.json files
+run_test "Backend package.json exists" "test -f FLEARN-back/package.json"
+run_test "Frontend package.json exists" "test -f FLEARN-front/package.json"
+run_test "Webhook service package.json exists" "test -f webhook-service/package.json"
+run_test "Installs backend dependencies" "grep -q 'Install Backend Dependencies' $WORKFLOW_FILE"
+run_test "Installs frontend dependencies" "grep -q 'Install Frontend Dependencies' $WORKFLOW_FILE"
+run_test "Installs webhook service dependencies" "grep -q 'Install Webhook Service Dependencies' $WORKFLOW_FILE"dates the GitHub Actions workflow configuration
 
 set -e
 
@@ -72,6 +78,7 @@ run_test "Has Docker build step" "grep -q 'Build Docker images' $WORKFLOW_FILE"
 # Test 11: Has health check tests
 run_test "Has backend health check" "grep -q 'Test Backend API Health' $WORKFLOW_FILE"
 run_test "Has frontend test" "grep -q 'Test Frontend Application' $WORKFLOW_FILE"
+run_test "Has webhook service test" "grep -q 'Test Webhook Service' $WORKFLOW_FILE"
 
 # Test 12: Has database tests
 run_test "Has database tests" "grep -q 'Test Database Connections' $WORKFLOW_FILE"
@@ -86,6 +93,7 @@ run_test "Docker Compose syntax valid" "command -v docker >/dev/null 2>&1 && doc
 # Test 15: Validate Dockerfiles
 run_test "Backend Dockerfile exists" "test -f FLEARN-back/Dockerfile"
 run_test "Frontend Dockerfile exists" "test -f FLEARN-front/Dockerfile"
+run_test "Webhook service Dockerfile exists" "test -f webhook-service/Dockerfile"
 
 # Test 16: Check for required build args
 run_test "Backend Dockerfile has CACHEBUST arg" "grep -q 'ARG CACHEBUST' FLEARN-back/Dockerfile"
@@ -111,8 +119,9 @@ if [ $TESTS_FAILED -eq 0 ]; then
     echo "  ✅ Automated testing on push and PR"
     echo "  ✅ Frontend linting and building"
     echo "  ✅ Docker image building with git integration"
-    echo "  ✅ Health checks for all services"
+    echo "  ✅ Health checks for all services (backend, frontend, webhook)"
     echo "  ✅ Database connectivity testing"
+    echo "  ✅ Webhook service security testing"
     echo "  ✅ Integration testing"
     echo "  ✅ Automatic image pushing to Docker Hub"
     exit 0

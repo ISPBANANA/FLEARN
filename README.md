@@ -57,6 +57,29 @@ FLEARN is an interactive learning platform designed to make education engaging a
 - **Version Control**: Git with GitHub
 - **Communication**: Discord with GitHub webhooks
 
+## 🏛️ System Architecture
+
+FLEARN follows a microservices architecture with containerized services:
+
+### Core Services
+- **🖥️ Frontend Service** (`flearn-frontend`): Next.js application on port 3000
+- **🔧 Backend API** (`flearn-backend`): Express.js API server on port 8099  
+- **🎣 Webhook Service** (`flearn-webhook`): GitHub webhook handler on port 3001
+
+### Database Services
+- **🐘 PostgreSQL** (`flearn-postgres`): Primary relational database on port 5432
+- **🍃 MongoDB** (`flearn-mongodb`): Document storage for user data on port 27017
+
+### Management Services  
+- **📊 pgAdmin** (`flearn-pgadmin`): PostgreSQL web interface on port 8088
+- **🌿 Mongo Express** (`flearn-mongo-express`): MongoDB web interface on port 8087
+
+### Deployment Flow
+1. **Developer pushes** code to `main` branch
+2. **GitHub webhook** triggers deployment via webhook service
+3. **Webhook service** pulls latest code and rebuilds containers
+4. **Zero-downtime deployment** with automatic rollback on failure
+
 ## 🚀 Quick Start
 
 ### Prerequisites
