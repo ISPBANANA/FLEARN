@@ -1,0 +1,16 @@
+{
+  "testEnvironment": "node",
+  "testMatch": [
+    "**/tests/**/*.test.js",
+    "**/__tests__/**/*.js"
+  ],
+  "collectCoverage": false,
+  "coverageDirectory": "coverage",
+  "coverageReporters": [
+    "text",
+    "lcov",
+    "html"
+  ],
+  "setupFilesAfterEnv": [],
+  "testTimeout": 10000
+}

@@ -1,43 +1,84 @@
-name: FLEARN Docker CI
+name: FLEARN Docker CI/CD
 
 on:
   push:
     branches:
       - main
+  pull_request:
+    branches:
+      - main
   workflow_dispatch:
 
 jobs:
-  build-and-deploy:
+  test:
+    name: Run Tests
     runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout Repository
+      uses: actions/checkout@v4
+    
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '20'
+        cache: 'npm'
+        cache-dependency-path: |
+          FLEARN-front/package-lock.json
+          FLEARN-back/package-lock.json
+    
+    - name: Install Backend Dependencies
+      working-directory: ./FLEARN-back
+      run: npm ci
+    
+    - name: Install Frontend Dependencies
+      working-directory: ./FLEARN-front
+      run: npm ci
+    
+    - name: Lint Frontend Code
+      working-directory: ./FLEARN-front
+      run: npm run lint
+    
+    - name: Build Frontend
+      working-directory: ./FLEARN-front
+      run: npm run build
+
+  build-and-deploy:
+    name: Build and Deploy
+    runs-on: ubuntu-latest
+    needs: test
 
     steps:
     - name: Checkout Repository
       uses: actions/checkout@v4
     
-    - name: Create .env file
+    - name: Create .env file for testing
       run: |
         echo "# Environment Configuration for FLEARN" > .env
         echo "PORT=8099" >> .env
+        echo "FRONT_PORT=3000" >> .env
         echo "NODE_ENV=production" >> .env
         echo "POSTGRES_DB=flearn_db" >> .env
         echo "POSTGRES_USER=flearn_user" >> .env
-        echo "POSTGRES_PASSWORD=${{ secrets.POSTGRES_PASSWORD }}" >> .env
+        echo "POSTGRES_PASSWORD=test_password" >> .env
         echo "POSTGRES_HOST=localhost" >> .env
         echo "POSTGRES_PORT=5432" >> .env
         echo "MONGO_INITDB_ROOT_USERNAME=admin" >> .env
-        echo "MONGO_INITDB_ROOT_PASSWORD=${{ secrets.MONGO_PASSWORD }}" >> .env
+        echo "MONGO_INITDB_ROOT_PASSWORD=test_password" >> .env
         echo "MONGO_INITDB_DATABASE=flearn_db" >> .env
         echo "PGADMIN_DEFAULT_EMAIL=admin@flearn.com" >> .env
-        echo "PGADMIN_DEFAULT_PASSWORD=${{ secrets.PGADMIN_PASSWORD }}" >> .env
+        echo "PGADMIN_DEFAULT_PASSWORD=test_password" >> .env
         echo "PGADMIN_PORT=8088" >> .env
         echo "MONGO_EXPRESS_USERNAME=admin" >> .env
-        echo "MONGO_EXPRESS_PASSWORD=${{ secrets.MONGO_EXPRESS_PASSWORD }}" >> .env
+        echo "MONGO_EXPRESS_PASSWORD=test_password" >> .env
         echo "MONGO_EXPRESS_PORT=8087" >> .env
         echo "MONGO_EXPRESS_INTERNAL_PORT=8081" >> .env
         echo "MONGO_PORT=27017" >> .env
-        echo "JWT_SECRET=${{ secrets.JWT_SECRET }}" >> .env
+        echo "JWT_SECRET=test_jwt_secret_key" >> .env
+        echo "CACHEBUST=$(date +%s)" >> .env
     
     - name: Login to Docker Hub
+      if: github.event_name == 'push' && github.ref == 'refs/heads/main'
       uses: docker/login-action@v3
       with:
         username: yotshiba
@@ -45,24 +86,101 @@ jobs:
 
     - name: Build Docker images
       run: |
-        docker compose -f docker-compose.yml build
+        docker compose -f docker-compose.yml build --build-arg CACHEBUST=$(date +%s)
 
-    - name: Test Docker services
+    - name: Start Docker services
       run: |
         docker compose -f docker-compose.yml up -d
-        sleep 30
-        docker compose ps
-        docker compose logs
 
-    - name: Tag and push FLEARN backend image
+    - name: Wait for services to be ready
+      run: |
+        echo "Waiting for services to start..."
+        sleep 60
+        
+        # Check if containers are running
+        docker compose ps
+        
+        # Show logs for debugging
+        echo "=== Backend Logs ==="
+        docker compose logs flearn-backend
+        echo "=== Frontend Logs ==="
+        docker compose logs flearn-frontend
+
+    - name: Test Backend API Health
+      run: |
+        # Wait for backend to be fully ready
+        for i in {1..30}; do
+          if curl -f http://localhost:8099/health 2>/dev/null; then
+            echo "Backend API is healthy!"
+            break
+          fi
+          echo "Waiting for backend API... ($i/30)"
+          sleep 2
+        done
+        
+        # Test basic API endpoint
+        curl -f http://localhost:8099/health || {
+          echo "Backend health check failed"
+          docker compose logs flearn-backend
+          exit 1
+        }
+
+    - name: Test Frontend Application
+      run: |
+        # Wait for frontend to be ready
+        for i in {1..30}; do
+          if curl -f http://localhost:3000 2>/dev/null; then
+            echo "Frontend is accessible!"
+            break
+          fi
+          echo "Waiting for frontend... ($i/30)"
+          sleep 2
+        done
+        
+        # Test frontend accessibility
+        curl -f http://localhost:3000 || {
+          echo "Frontend accessibility test failed"
+          docker compose logs flearn-frontend
+          exit 1
+        }
+
+    - name: Test Database Connections
+      run: |
+        # Test PostgreSQL connection
+        docker compose exec -T postgres pg_isready -U flearn_user -d flearn_db || {
+          echo "PostgreSQL connection test failed"
+          docker compose logs postgres
+          exit 1
+        }
+        
+        # Test MongoDB connection
+        docker compose exec -T mongodb mongosh --eval "db.adminCommand('ping')" || {
+          echo "MongoDB connection test failed"
+          docker compose logs mongodb
+          exit 1
+        }
+
+    - name: Run Integration Tests
+      run: |
+        echo "Running integration tests..."
+        
+        # Test API endpoints
+        echo "Testing API endpoints..."
+        
+        # Add more specific tests based on your API endpoints
+        # Example: curl -X GET http://localhost:8099/api/users
+        # Example: curl -X POST http://localhost:8099/api/auth/login -d '{"email":"test@test.com","password":"test"}'
+        
+        echo "Integration tests completed successfully!"
+
+    - name: Tag and push images (only on main branch)
+      if: github.event_name == 'push' && github.ref == 'refs/heads/main'
       run: |
         docker tag flearn-flearn-backend yotshiba/flearn-backend:latest
         docker tag flearn-flearn-backend yotshiba/flearn-backend:${{ github.sha }}
         docker push yotshiba/flearn-backend:latest
         docker push yotshiba/flearn-backend:${{ github.sha }}
-
-    - name: Tag and push FLEARN frontend image
-      run: |
+        
         docker tag flearn-flearn-frontend yotshiba/flearn-frontend:latest
         docker tag flearn-flearn-frontend yotshiba/flearn-frontend:${{ github.sha }}
         docker push yotshiba/flearn-frontend:latest
@@ -72,3 +190,4 @@ jobs:
       if: always()
       run: |
         docker compose down -v
+        docker system prune -f

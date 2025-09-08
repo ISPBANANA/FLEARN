@@ -1,20 +1,22 @@
 # Use Node.js 18 LTS as base image
 FROM node:18-alpine
 
-# Update Alpine packages to latest security patches
-RUN apk update && apk upgrade --no-cache
+# Cache bust argument to force fresh git clone
+ARG CACHEBUST=1
+
+# Update Alpine packages to latest security patches and install git
+RUN apk update && apk upgrade --no-cache && apk add --no-cache git
 
 # Set working directory
 WORKDIR /app
 
-# Copy package files
-COPY package*.json ./
+# Clone the latest version from main branch
+RUN git clone --depth 1 --branch main https://github.com/ISPBANANA/FLEARN.git temp && \
+    mv temp/FLEARN-back/* . && \
+    rm -rf temp
 
 # Install dependencies
 RUN npm ci --omit=dev
-
-# Copy application code
-COPY . .
 
 # Create non-root user
 RUN addgroup -g 1001 -S nodejs
