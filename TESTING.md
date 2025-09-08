@@ -23,7 +23,7 @@ The FLEARN project includes multiple layers of testing to ensure reliability and
 - **Integration Tests**: `tests/integration-test.sh` - Full stack testing
 - **Workflow Tests**: `tests/workflow-test.sh` - CI/CD validation
 - **Unit Tests**: `tests/unit-test.sh` - Component testing
-- **Test Runner**: `run-tests.sh` - Main test orchestrator
+- **Test Runner**: `scripts/run-tests.sh` - Main test orchestrator
 
 ### 3. **Backend Unit Testing**
 - **Framework**: Jest + Supertest
@@ -34,11 +34,11 @@ The FLEARN project includes multiple layers of testing to ensure reliability and
 
 ### Main Test Runner (Recommended)
 ```bash
-./run-tests.sh              # Run all tests
-./run-tests.sh --quick      # Quick validation only
-./run-tests.sh --integration # Integration tests only
-./run-tests.sh --workflow   # Workflow validation only
-./run-tests.sh --unit       # Unit tests only
+./scripts/run-tests.sh              # Run all tests
+./scripts/run-tests.sh --quick      # Quick validation only
+./scripts/run-tests.sh --integration # Integration tests only
+./scripts/run-tests.sh --workflow   # Workflow validation only
+./scripts/run-tests.sh --unit       # Unit tests only
 ```
 
 ### Individual Test Scripts
@@ -153,7 +153,7 @@ graph TD
 2. **Build Failures**
    ```bash
    docker system prune -f  # Clean Docker cache
-   ./update.sh             # Fresh build with latest code
+   ./scripts/update.sh             # Fresh build with latest code
    ```
 
 3. **Database Connection Issues**
