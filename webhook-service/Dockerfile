@@ -14,8 +14,6 @@ RUN npm ci --only=production
 # Copy application code
 COPY . .
 
-USER webhook
-
 EXPOSE 3001
 
 CMD ["node", "server.js"]
