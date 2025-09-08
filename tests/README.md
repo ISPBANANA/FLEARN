@@ -1,6 +1,15 @@
 # FLEARN Tests Directory
 
-This directory contains all test scripts and configurations for the FLEARN project.
+This directory contains all test ```bash
+./scripts/run-tests.sh
+```
+
+#### Run Specific Test Types
+```bash
+./scripts/run-tests.sh --quick        # Workflow validation only
+./scripts/run-tests.sh --integration  # Integration tests only
+./scripts/run-tests.sh --workflow     # Workflow tests only
+./scripts/run-tests.sh --unit         # Unit tests onlyd configurations for the FLEARN project.
 
 ## 📁 Directory Structure
 
