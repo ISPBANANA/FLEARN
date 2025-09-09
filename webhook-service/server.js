@@ -87,11 +87,13 @@ function deployApplication() {
     // Change to project directory
     process.chdir(PROJECT_PATH);
 
-    // Fix git ownership issue first
+    // Fix git ownership and permissions
     console.log('🔧 Configuring git safe directory...');
     logToFile(logFile, `[${timestamp}] 🔧 Configuring git safe directory...`);
     try {
       execSync(`git config --global --add safe.directory ${PROJECT_PATH}`, { stdio: 'pipe' });
+      execSync(`chown -R $(whoami):$(whoami) .git/`, { stdio: 'pipe' });
+      execSync(`chmod -R 755 .git/`, { stdio: 'pipe' });
     } catch (gitConfigError) {
       console.log('⚠️  Git config warning:', gitConfigError.message);
     }
@@ -104,13 +106,27 @@ function deployApplication() {
     // Stop containers
     console.log('⏹️  Stopping containers...');
     logToFile(logFile, `[${timestamp}] ⏹️  Stopping containers...`);
-    execSync('docker compose down', { stdio: 'pipe' });
+    try {
+      // Try Docker Compose v2 first
+      execSync('docker compose down', { stdio: 'pipe' });
+    } catch (composeError) {
+      // Fallback to Docker Compose v1
+      console.log('Trying legacy docker-compose...');
+      execSync('docker-compose down', { stdio: 'pipe' });
+    }
 
     // Build and start with cache bust
     console.log('🔨 Building and starting containers...');
     logToFile(logFile, `[${timestamp}] 🔨 Building and starting containers...`);
     const cacheBust = Date.now();
-    execSync(`CACHEBUST=${cacheBust} docker compose up -d --build`, { stdio: 'pipe' });
+    try {
+      // Try Docker Compose v2 first
+      execSync(`CACHEBUST=${cacheBust} docker compose up -d --build`, { stdio: 'pipe' });
+    } catch (composeError) {
+      // Fallback to Docker Compose v1
+      console.log('Trying legacy docker-compose...');
+      execSync(`CACHEBUST=${cacheBust} docker-compose up -d --build`, { stdio: 'pipe' });
+    }
 
     // Clean up old images
     console.log('🧹 Cleaning up old images...');
@@ -125,8 +141,17 @@ function deployApplication() {
     logToFile(logFile, `[${timestamp}] ✅ Deployment completed successfully!`);
 
     // Log container status
-    const status = execSync('docker compose ps --format "table {{.Name}}\\t{{.Status}}"', { encoding: 'utf8' });
-    logToFile(logFile, `[${timestamp}] 📊 Container Status:\n${status}`);
+    try {
+      const status = execSync('docker compose ps --format "table {{.Name}}\\t{{.Status}}"', { encoding: 'utf8' });
+      logToFile(logFile, `[${timestamp}] 📊 Container Status:\n${status}`);
+    } catch (statusError) {
+      try {
+        const status = execSync('docker-compose ps', { encoding: 'utf8' });
+        logToFile(logFile, `[${timestamp}] 📊 Container Status:\n${status}`);
+      } catch (legacyStatusError) {
+        logToFile(logFile, `[${timestamp}] ⚠️  Could not get container status`);
+      }
+    }
 
   } catch (error) {
     console.error('❌ Deployment failed:', error.message);
@@ -135,7 +160,11 @@ function deployApplication() {
     // Try to restart containers if they're down
     try {
       console.log('🔧 Attempting to restart containers...');
-      execSync('docker compose up -d', { stdio: 'pipe' });
+      try {
+        execSync('docker compose up -d', { stdio: 'pipe' });
+      } catch (composeError) {
+        execSync('docker-compose up -d', { stdio: 'pipe' });
+      }
       logToFile(logFile, `[${timestamp}] 🔧 Containers restarted after failure`);
     } catch (restartError) {
       logToFile(logFile, `[${timestamp}] ❌ Failed to restart containers: ${restartError.message}`);
