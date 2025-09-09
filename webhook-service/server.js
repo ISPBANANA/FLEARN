@@ -103,29 +103,49 @@ function deployApplication() {
     logToFile(logFile, `[${timestamp}] 📥 Pulling latest code...`);
     execSync('git pull origin main', { stdio: 'pipe' });
 
-    // Stop containers
+    // Stop containers (except webhook service to avoid stopping ourselves)
     console.log('⏹️  Stopping containers...');
     logToFile(logFile, `[${timestamp}] ⏹️  Stopping containers...`);
     try {
-      // Try Docker Compose v2 first
-      execSync('docker compose down', { stdio: 'pipe' });
+      // Stop individual services except webhook
+      const services = ['flearn-frontend', 'flearn-backend', 'postgres', 'mongodb', 'pgadmin', 'mongo-express'];
+      for (const service of services) {
+        try {
+          execSync(`docker compose stop ${service}`, { stdio: 'pipe' });
+        } catch (error) {
+          // Try legacy docker-compose
+          execSync(`docker-compose stop ${service}`, { stdio: 'pipe' });
+        }
+      }
     } catch (composeError) {
-      // Fallback to Docker Compose v1
-      console.log('Trying legacy docker-compose...');
-      execSync('docker-compose down', { stdio: 'pipe' });
+      console.log('⚠️  Some containers could not be stopped gracefully');
+      logToFile(logFile, `[${timestamp}] ⚠️  Some containers could not be stopped gracefully: ${composeError.message}`);
     }
 
-    // Build and start with cache bust
+    // Build and start with cache bust (except webhook service)
     console.log('🔨 Building and starting containers...');
     logToFile(logFile, `[${timestamp}] 🔨 Building and starting containers...`);
     const cacheBust = Date.now();
     try {
-      // Try Docker Compose v2 first
-      execSync(`CACHEBUST=${cacheBust} docker compose up -d --build`, { stdio: 'pipe' });
+      // Build and start services except webhook
+      const services = ['flearn-frontend', 'flearn-backend', 'postgres', 'mongodb', 'pgadmin', 'mongo-express'];
+      for (const service of services) {
+        try {
+          execSync(`CACHEBUST=${cacheBust} docker compose up -d --build ${service}`, { stdio: 'pipe' });
+        } catch (error) {
+          // Try legacy docker-compose
+          execSync(`CACHEBUST=${cacheBust} docker-compose up -d --build ${service}`, { stdio: 'pipe' });
+        }
+      }
     } catch (composeError) {
-      // Fallback to Docker Compose v1
-      console.log('Trying legacy docker-compose...');
-      execSync(`CACHEBUST=${cacheBust} docker-compose up -d --build`, { stdio: 'pipe' });
+      console.log('⚠️  Some containers could not be started, trying full restart...');
+      logToFile(logFile, `[${timestamp}] ⚠️  Some containers could not be started: ${composeError.message}`);
+      try {
+        // Fallback: restart all services
+        execSync(`CACHEBUST=${cacheBust} docker compose up -d --build`, { stdio: 'pipe' });
+      } catch (fallbackError) {
+        execSync(`CACHEBUST=${cacheBust} docker-compose up -d --build`, { stdio: 'pipe' });
+      }
     }
 
     // Clean up old images
