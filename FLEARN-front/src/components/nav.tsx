@@ -15,7 +15,7 @@ export function Nav() {
     ];
 
     return (
-        <nav className="flex justify-between items-center p-4 w-full">
+        <nav style={{ boxShadow: '0px 4px 4px rgba(0, 0, 0, 0.25)' }} className="flex justify-between items-center p-4 w-full">
             <p className="text-[#9A41FF] text-2xl font-bold"><Link href="/">FLearn</Link></p>
             <ul className="flex gap-8 items-center">
                 {navItems.map((item) => (
