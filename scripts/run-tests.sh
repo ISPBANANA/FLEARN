@@ -90,7 +90,7 @@ while [[ $# -gt 0 ]]; do
             ;;
         --help|-h)
             echo "FLEARN Test Runner Usage:"
-            echo "  ./run-tests.sh [OPTIONS]"
+            echo "  ./scripts/run-tests.sh [OPTIONS]"
             echo
             echo "Options:"
             echo "  --quick, -q         Run quick tests only (workflow validation)"
@@ -100,11 +100,11 @@ while [[ $# -gt 0 ]]; do
             echo "  --help, -h          Show this help message"
             echo
             echo "Examples:"
-            echo "  ./run-tests.sh                  # Run all tests"
-            echo "  ./run-tests.sh --quick          # Quick validation"
-            echo "  ./run-tests.sh --integration    # Full integration tests"
-            echo "  ./run-tests.sh --workflow       # Workflow validation only"
-            echo "  ./run-tests.sh --unit           # Unit tests only"
+            echo "  ./scripts/run-tests.sh                  # Run all tests"
+            echo "  ./scripts/run-tests.sh --quick          # Quick validation"
+            echo "  ./scripts/run-tests.sh --integration    # Full integration tests"
+            echo "  ./scripts/run-tests.sh --workflow       # Workflow validation only"
+            echo "  ./scripts/run-tests.sh --unit           # Unit tests only"
             exit 0
             ;;
         *)

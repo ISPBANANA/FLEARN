@@ -81,32 +81,38 @@ run_test "Backend Health Check" "wait_for_service 'Backend API' 'http://localhos
 # Test 3: Wait for and test frontend
 run_test "Frontend Accessibility" "wait_for_service 'Frontend' 'http://localhost:3000'"
 
-# Test 4: Test PostgreSQL connectivity
+# Test 4: Wait for and test webhook service
+run_test "Webhook Service Health" "wait_for_service 'Webhook Service' 'http://localhost:3001/health'"
+
+# Test 5: Test webhook service security
+run_test "Webhook Security Test" "curl -s -w '%{http_code}' -o /dev/null -X POST http://localhost:3001/webhook -H 'Content-Type: application/json' -d '{\"test\": \"data\"}' | grep -q '403'"
+
+# Test 6: Test PostgreSQL connectivity
 run_test "PostgreSQL Connection" "docker compose exec -T postgres pg_isready -U flearn_user -d flearn_db"
 
-# Test 5: Test MongoDB connectivity
+# Test 7: Test MongoDB connectivity
 run_test "MongoDB Connection" "docker compose exec -T mongodb mongosh --quiet --eval 'db.adminCommand(\"ping\").ok == 1'"
 
-# Test 6: Test backend API endpoints
+# Test 8: Test backend API endpoints
 run_test "Backend Root Endpoint" "curl -f http://localhost:8099/ | grep -q 'FLEARN Backend API'"
 
-# Test 7: Test backend API response format
+# Test 9: Test backend API response format
 run_test "Backend API JSON Response" "curl -f http://localhost:8099/health | jq -e '.status == \"OK\"'"
 
-# Test 8: Test CORS headers
+# Test 10: Test CORS headers
 run_test "CORS Headers Check" "curl -H 'Origin: http://localhost:3000' -H 'Access-Control-Request-Method: GET' -H 'Access-Control-Request-Headers: X-Requested-With' -X OPTIONS http://localhost:8099/health"
 
-# Test 9: Test 404 handling
+# Test 11: Test 404 handling
 run_test "404 Error Handling" "curl -f http://localhost:8099/nonexistent 2>/dev/null | jq -e '.message' | grep -q 'not found' || test $? -eq 22"
 
-# Test 10: Check database volumes
+# Test 12: Check database volumes
 run_test "Database Volumes" "docker volume ls | grep -E '(postgres_data|mongodb_data)'"
 
-# Test 11: Check network connectivity
+# Test 13: Check network connectivity
 run_test "Network Connectivity" "docker network ls | grep flearn_network"
 
-# Test 12: Memory usage check
-run_test "Memory Usage Check" "docker stats --no-stream --format 'table {{.Container}}\t{{.MemUsage}}' | grep -E '(flearn_backend|flearn_frontend)'"
+# Test 14: Memory usage check
+run_test "Memory Usage Check" "docker stats --no-stream --format 'table {{.Container}}\t{{.MemUsage}}' | grep -E '(flearn_backend|flearn_frontend|flearn_webhook)'"
 
 echo "🧹 Cleaning up..."
 docker compose down -v

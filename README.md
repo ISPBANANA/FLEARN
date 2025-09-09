@@ -44,16 +44,41 @@ FLEARN is an interactive learning platform designed to make education engaging a
 
 ### DevOps & Deployment
 - **Containerization**: Docker & Docker Compose
+- **Auto-Deployment**: GitHub Webhooks with instant deployment
 - **Database Management**: 
   - pgAdmin for PostgreSQL
   - Mongo Express for MongoDB
 - **Environment**: Multi-environment support (.env configuration)
+- **Monitoring**: Deployment logging and health checks
 
 ### Design & Collaboration
 - **UI/UX**: Figma
 - **Project Management**: Jira
 - **Version Control**: Git with GitHub
 - **Communication**: Discord with GitHub webhooks
+
+## 🏛️ System Architecture
+
+FLEARN follows a microservices architecture with containerized services:
+
+### Core Services
+- **🖥️ Frontend Service** (`flearn-frontend`): Next.js application on port 3000
+- **🔧 Backend API** (`flearn-backend`): Express.js API server on port 8099  
+- **🎣 Webhook Service** (`flearn-webhook`): GitHub webhook handler on port 3001
+
+### Database Services
+- **🐘 PostgreSQL** (`flearn-postgres`): Primary relational database on port 5432
+- **🍃 MongoDB** (`flearn-mongodb`): Document storage for user data on port 27017
+
+### Management Services  
+- **📊 pgAdmin** (`flearn-pgadmin`): PostgreSQL web interface on port 8088
+- **🌿 Mongo Express** (`flearn-mongo-express`): MongoDB web interface on port 8087
+
+### Deployment Flow
+1. **Developer pushes** code to `main` branch
+2. **GitHub webhook** triggers deployment via webhook service
+3. **Webhook service** pulls latest code and rebuilds containers
+4. **Zero-downtime deployment** with automatic rollback on failure
 
 ## 🚀 Quick Start
 
@@ -97,26 +122,78 @@ MONGO_INITDB_ROOT_PASSWORD=your_secure_mongo_password
 MONGO_INITDB_DATABASE=your_mongo_database
 MONGO_PORT=your_mongo_port
 
-# Mongo Express
+# MongoDB Express
 MONGO_EXPRESS_USERNAME=your_express_admin
 MONGO_EXPRESS_PASSWORD=your_secure_express_password
 MONGO_EXPRESS_PORT=your_express_port
 MONGO_EXPRESS_INTERNAL_PORT=your_express_internal_port
+
+# Webhook Service (for auto-deployment)
+WEBHOOK_PORT=3001
+WEBHOOK_SECRET=your_github_webhook_secret_here
 ```
 
 ### 3. Docker Deployment (Recommended)
 ```bash
 # Start all services
-docker-compose up -d
+docker compose up -d
 
 # View logs
-docker-compose logs -f
+docker compose logs -f
 
 # Stop all services
-docker-compose down
+docker compose down
 ```
 
-### 4. Manual Development Setup
+### 4. Webhook-Based Auto-Deployment
+
+FLEARN includes an automated deployment system using GitHub webhooks for instant updates when code is pushed to the main branch.
+
+#### Setup Webhook Deployment
+```bash
+# Run the setup script to configure webhooks
+./scripts/setup-webhook.sh
+
+# Or provide your own webhook secret
+./scripts/setup-webhook.sh your_custom_webhook_secret
+```
+
+#### Configure GitHub Webhook
+1. Go to your repository Settings > Webhooks
+2. Click "Add webhook"
+3. Set Payload URL: `http://your-server-ip:3001/webhook`
+4. Set Content type: `application/json`
+5. Set Secret: Use the secret from the setup script
+6. Select "Just the push event"
+7. Ensure "Active" is checked
+8. Click "Add webhook"
+
+#### Manual Update (Alternative)
+```bash
+# Manual update script (if webhook is not available)
+./scripts/update.sh
+```
+
+#### Webhook Service Features
+- **Instant Deployment**: Automatically deploys when code is pushed to main
+- **Security**: Verifies GitHub webhook signatures
+- **Logging**: All deployment activities are logged
+- **Error Recovery**: Attempts to restart containers on failure
+- **Health Monitoring**: Health check endpoint at `/health`
+
+#### Monitor Deployments
+```bash
+# Check webhook service logs
+docker compose logs -f webhook-service
+
+# View deployment history
+tail -f logs/deployment.log
+
+# Check service health
+curl http://localhost:3001/health
+```
+
+### 5. Manual Development Setup
 
 #### Backend Setup
 ```bash
@@ -151,7 +228,21 @@ npm run dev
 - **Communication**: Discord with GitHub webhook integration
 - **Code Review**: Required before merging to main branch
 
-## 🗄️ Database Access
+## �️ Utility Scripts
+
+FLEARN includes organized utility scripts in the `scripts/` directory:
+
+### Deployment Scripts
+- `scripts/setup-webhook.sh` - Configure GitHub webhooks
+- `scripts/update.sh` - Manual deployment/update
+- `scripts/test-webhook.sh` - Test webhook functionality
+
+### Testing Scripts  
+- `scripts/run-tests.sh` - Main test runner with various options
+
+For detailed script documentation, see [`scripts/README.md`](scripts/README.md).
+
+## �🗄️ Database Access
 
 ### PostgreSQL (Development)
 - **URL**: `localhost:[POSTGRES_PORT]`

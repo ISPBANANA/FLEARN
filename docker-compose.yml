@@ -1,4 +1,24 @@
 services:
+  # Webhook Service for Auto-Deployment
+  webhook-service:
+    build:
+      context: ./webhook-service
+      dockerfile: Dockerfile
+    container_name: flearn_webhook
+    restart: unless-stopped
+    environment:
+      WEBHOOK_SECRET: ${WEBHOOK_SECRET}
+      WEBHOOK_PORT: 3001
+      PROJECT_PATH: /app/flearn
+    ports:
+      - "${WEBHOOK_PORT:-3001}:3001"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - .:/app/flearn
+      - ./logs:/app/flearn/logs
+    networks:
+      - flearn_network
+
   # FLEARN Backend API
   flearn-backend:
     build:
