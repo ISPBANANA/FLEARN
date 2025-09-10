@@ -38,8 +38,8 @@ export function Nav() {
               ))}
               <li>
                 <UserRound
-                  width={32}
-                  height={32}
+                  width={30}
+                  height={30}
                   className={`text-[#9A41FF] duration-200 ${
                     pathname === '/profile'
                       ? 'opacity-100'
