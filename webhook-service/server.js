@@ -32,11 +32,11 @@ app.post('/webhook', (req, res) => {
     const event = req.headers['x-github-event'];
     const { action, ref, repository } = req.body;
 
-    console.log(`🔔 Received ${event} event for ${repository?.name}`);
+    console.log(`🔔 [${getUTC7Timestamp()}] Received ${event} event for ${repository?.name}`);
 
     // Only process push events to main branch
     if (event === 'push' && ref === 'refs/heads/main') {
-      console.log('🚀 Processing deployment for main branch...');
+      console.log(`🚀 [${getUTC7Timestamp()}] Processing deployment for main branch...`);
       
       // Execute deployment in background
       setTimeout(() => {
@@ -49,11 +49,11 @@ app.post('/webhook', (req, res) => {
         repository: repository?.name 
       });
     } else {
-      console.log(`⏭️  Skipping deployment - Event: ${event}, Ref: ${ref}`);
+      console.log(`⏭️  [${getUTC7Timestamp()}] Skipping deployment - Event: ${event}, Ref: ${ref}`);
       res.status(200).json({ message: 'Event ignored' });
     }
   } catch (error) {
-    console.error('❌ Webhook error:', error);
+    console.error(`❌ [${getUTC7Timestamp()}] Webhook error:`, error);
     res.status(500).json({ error: 'Internal server error' });
   }
 });
@@ -76,35 +76,42 @@ function verifySignature(signature, payload) {
   );
 }
 
+function getUTC7Timestamp() {
+  const now = new Date();
+  // Add 7 hours (7 * 60 * 60 * 1000 milliseconds) to UTC time
+  const utc7Time = new Date(now.getTime() + (7 * 60 * 60 * 1000));
+  return utc7Time.toISOString().replace('T', ' ').replace(/\.\d{3}Z$/, ' UTC+7');
+}
+
 function deployApplication() {
-  const timestamp = new Date().toISOString();
+  const timestamp = getUTC7Timestamp();
   const logFile = path.join(PROJECT_PATH, 'logs', 'deployment.log');
   
   try {
-    console.log('🔄 Starting deployment...');
+    console.log(`🔄 [${timestamp}] Starting deployment...`);
     logToFile(logFile, `[${timestamp}] 🔄 Starting deployment...`);
 
     // Change to project directory
     process.chdir(PROJECT_PATH);
 
     // Fix git ownership and permissions
-    console.log('🔧 Configuring git safe directory...');
+    console.log(`🔧 [${timestamp}] Configuring git safe directory...`);
     logToFile(logFile, `[${timestamp}] 🔧 Configuring git safe directory...`);
     try {
       execSync(`git config --global --add safe.directory ${PROJECT_PATH}`, { stdio: 'pipe' });
       execSync(`chown -R $(whoami):$(whoami) .git/`, { stdio: 'pipe' });
       execSync(`chmod -R 755 .git/`, { stdio: 'pipe' });
     } catch (gitConfigError) {
-      console.log('⚠️  Git config warning:', gitConfigError.message);
+      console.log(`⚠️  [${timestamp}] Git config warning:`, gitConfigError.message);
     }
 
     // Pull latest code
-    console.log('📥 Pulling latest code...');
+    console.log(`📥 [${timestamp}] Pulling latest code...`);
     logToFile(logFile, `[${timestamp}] 📥 Pulling latest code...`);
     execSync('git pull origin main', { stdio: 'pipe' });
 
     // Stop containers (except webhook service to avoid stopping ourselves)
-    console.log('⏹️  Stopping containers...');
+    console.log(`⏹️  [${timestamp}] Stopping containers...`);
     logToFile(logFile, `[${timestamp}] ⏹️  Stopping containers...`);
     try {
       // Stop individual services except webhook
@@ -118,12 +125,12 @@ function deployApplication() {
         }
       }
     } catch (composeError) {
-      console.log('⚠️  Some containers could not be stopped gracefully');
+      console.log(`⚠️  [${timestamp}] Some containers could not be stopped gracefully`);
       logToFile(logFile, `[${timestamp}] ⚠️  Some containers could not be stopped gracefully: ${composeError.message}`);
     }
 
     // Build and start with cache bust (except webhook service)
-    console.log('🔨 Building and starting containers...');
+    console.log(`🔨 [${timestamp}] Building and starting containers...`);
     logToFile(logFile, `[${timestamp}] 🔨 Building and starting containers...`);
     const cacheBust = Date.now();
     try {
@@ -138,7 +145,7 @@ function deployApplication() {
         }
       }
     } catch (composeError) {
-      console.log('⚠️  Some containers could not be started, trying full restart...');
+      console.log(`⚠️  [${timestamp}] Some containers could not be started, trying full restart...`);
       logToFile(logFile, `[${timestamp}] ⚠️  Some containers could not be started: ${composeError.message}`);
       try {
         // Fallback: restart all services
@@ -149,15 +156,15 @@ function deployApplication() {
     }
 
     // Clean up old images
-    console.log('🧹 Cleaning up old images...');
+    console.log(`🧹 [${timestamp}] Cleaning up old images...`);
     logToFile(logFile, `[${timestamp}] 🧹 Cleaning up old images...`);
     try {
       execSync('docker image prune -f', { stdio: 'pipe' });
     } catch (cleanupError) {
-      console.log('⚠️  Cleanup warning:', cleanupError.message);
+      console.log(`⚠️  [${timestamp}] Cleanup warning:`, cleanupError.message);
     }
 
-    console.log('✅ Deployment completed successfully!');
+    console.log(`✅ [${timestamp}] Deployment completed successfully!`);
     logToFile(logFile, `[${timestamp}] ✅ Deployment completed successfully!`);
 
     // Log container status
@@ -174,12 +181,12 @@ function deployApplication() {
     }
 
   } catch (error) {
-    console.error('❌ Deployment failed:', error.message);
+    console.error(`❌ [${timestamp}] Deployment failed:`, error.message);
     logToFile(logFile, `[${timestamp}] ❌ Deployment failed: ${error.message}`);
     
     // Try to restart containers if they're down
     try {
-      console.log('🔧 Attempting to restart containers...');
+      console.log(`🔧 [${timestamp}] Attempting to restart containers...`);
       try {
         execSync('docker compose up -d', { stdio: 'pipe' });
       } catch (composeError) {
@@ -206,12 +213,12 @@ function logToFile(filename, message) {
 
 // Graceful shutdown
 process.on('SIGTERM', () => {
-  console.log('🛑 Webhook service shutting down...');
+  console.log(`🛑 [${getUTC7Timestamp()}] Webhook service shutting down...`);
   process.exit(0);
 });
 
 app.listen(PORT, () => {
-  console.log(`🎣 FLEARN Webhook service listening on port ${PORT}`);
+  console.log(`🎣 [${getUTC7Timestamp()}] FLEARN Webhook service listening on port ${PORT}`);
   console.log(`📁 Project path: ${PROJECT_PATH}`);
   console.log(`🔐 Webhook secret configured: ${WEBHOOK_SECRET ? 'Yes' : 'No'}`);
 });
