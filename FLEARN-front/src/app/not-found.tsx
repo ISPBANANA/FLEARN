@@ -20,7 +20,7 @@ export default function NotFound() {
                 </div>
 
                 <h1 className="text-2xl text-[#454545] mb-5">
-                    Sorry 😢, we couldn't find that page.
+                    Sorry, we couldn't find that page.
                 </h1>
 
                 <Link
