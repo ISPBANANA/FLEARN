@@ -78,9 +78,20 @@ function verifySignature(signature, payload) {
 
 function getUTC7Timestamp() {
   const now = new Date();
-  // Add 7 hours (7 * 60 * 60 * 1000 milliseconds) to UTC time
-  const utc7Time = new Date(now.getTime() + (7 * 60 * 60 * 1000));
-  return utc7Time.toISOString().replace('T', ' ').replace(/\.\d{3}Z$/, ' UTC+7');
+  // Use toLocaleString with Asia/Bangkok timezone
+  const bangkokTime = now.toLocaleString('en-CA', {
+    timeZone: 'Asia/Bangkok',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit',
+    hour12: false
+  });
+  
+  // Format: YYYY-MM-DD HH:mm:ss GMT+7
+  return bangkokTime.replace(',', '') + ' GMT+7';
 }
 
 function deployApplication() {
