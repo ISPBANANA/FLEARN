@@ -10,6 +10,11 @@ const isAuth0Configured = AUTH0_DOMAIN && AUTH0_AUDIENCE &&
     AUTH0_DOMAIN !== 'your-tenant.auth0.com' && 
     AUTH0_AUDIENCE !== 'your-auth0-api-identifier';
 
+console.log('🔍 Auth0 Configuration Debug:');
+console.log('  AUTH0_DOMAIN:', AUTH0_DOMAIN);
+console.log('  AUTH0_AUDIENCE:', AUTH0_AUDIENCE);
+console.log('  isAuth0Configured:', isAuth0Configured);
+
 // Mock middleware for development when Auth0 is not configured
 const mockJwt = (req, res, next) => {
     console.log('⚠️  Using mock JWT middleware - Auth0 not configured');
@@ -22,8 +27,14 @@ const mockJwt = (req, res, next) => {
     next();
 };
 
+// Debug middleware to check incoming tokens (simplified for production)
+const debugJwt = (req, res, next) => {
+    console.log('✅ JWT validated for user:', req.user?.sub);
+    next();
+};
+
 // Auth0 JWT verification middleware
-const checkJwt = isAuth0Configured ? jwt({
+const jwtMiddleware = jwt({
     secret: jwksRsa.expressJwtSecret({
         cache: true,
         rateLimit: true,
@@ -32,8 +43,20 @@ const checkJwt = isAuth0Configured ? jwt({
     }),
     audience: AUTH0_AUDIENCE,
     issuer: `https://${AUTH0_DOMAIN}/`,
-    algorithms: ['RS256']
-}) : mockJwt;
+    algorithms: ['RS256'],
+    requestProperty: 'user' // This forces express-jwt v7 to use req.user instead of req.auth
+});
+
+const checkJwt = isAuth0Configured ? (req, res, next) => {
+    jwtMiddleware(req, res, (err) => {
+        if (err) {
+            console.log('❌ JWT Error:', err.message);
+            next(err);
+        } else {
+            debugJwt(req, res, next);
+        }
+    });
+} : mockJwt;
 
 // Optional JWT middleware (doesn't fail if no token)
 const optionalJwt = isAuth0Configured ? jwt({
@@ -46,7 +69,8 @@ const optionalJwt = isAuth0Configured ? jwt({
     audience: AUTH0_AUDIENCE,
     issuer: `https://${AUTH0_DOMAIN}/`,
     algorithms: ['RS256'],
-    credentialsRequired: false
+    credentialsRequired: false,
+    requestProperty: 'user' // This forces express-jwt v7 to use req.user instead of req.auth
 }) : mockJwt;
 
 // Error handler for JWT middleware
