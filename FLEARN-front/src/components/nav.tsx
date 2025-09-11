@@ -17,7 +17,7 @@ export function Nav() {
 
     return (
         <div className="w-full bg-white z-50" style={{ boxShadow: '0px 4px 4px rgba(0, 0, 0, 0.25)' }}>
-          <nav className="flex justify-between items-center p-4 w-full max-w-[1920px] mx-auto">
+          <nav className="flex justify-between items-center p-4 px-10 w-full max-w-[1920px] mx-auto">
             <p className="text-[#9A41FF] text-2xl font-bold">
               <Link href="/">FLearn</Link>
             </p>
