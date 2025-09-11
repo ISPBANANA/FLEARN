@@ -9,7 +9,7 @@ export default function Home() {
 
       {/* Hero Section */}
       <div className="h-[calc(100vh-64px)] w-full flex items-center justify-center z-0">
-        <p className="text-7xl font-bold text-[#000000] text-right">What do you<br></br>wanna <span className="font-bold text-[#9A41FF]">FLearn</span><br></br>Today</p>
+        <p className="text-7xl font-semibold text-[#454545] text-right">What do you<br></br>wanna <span className="font-bold text-[#9A41FF]">FLearn</span><br></br>Today</p>
       </div>
 
       {/* Infomation here */}
@@ -29,7 +29,7 @@ export default function Home() {
           />
           <SplitText
             text="Our platform turns school subjects into fun, game-like lessons with streaks, rewards, and challenges that keep you motivated."
-            className="text-lg text-center text-black opacity-70 mb-4 py-1 w-2/5"
+            className="text-lg text-center text-[#454545] mb-4 py-1 w-2/5"
             delay={5}
             duration={0.1}
             ease="power3.out"
@@ -55,7 +55,7 @@ export default function Home() {
           />
           <SplitText
             text="Transform studying into a fun, game-like experience that helps students build confidence and understanding step by step. With interactive quizzes, progress tracking, and daily streaks, we make learning simple, motivating, and accessible anytime, anywhere!"
-            className="text-lg text-left text-black opacity-70 mb-4 py-1 w-2/5"
+            className="text-lg text-left text-[#454545] mb-4 py-1 w-2/5"
             delay={5}
             duration={0.1}
             ease="power3.out"
@@ -81,7 +81,7 @@ export default function Home() {
           />
           <SplitText
             text="Out of practice problems? No worries! Access a wide variety of problems from teachers across schools and universities—never run out of challenges again!"
-            className="text-lg text-left text-black opacity-70 mb-4 py-1 w-2/5"
+            className="text-lg text-left text-[#454545] mb-4 py-1 w-2/5"
             delay={5}
             duration={0.1}
             ease="power3.out"
