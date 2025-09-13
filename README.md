@@ -20,7 +20,8 @@ FLEARN is an interactive learning platform designed to make education engaging a
 
 ## 🎯 Project Links
 
-- **🎬 Pitching Video**: [Watch on YouTube](https://youtu.be/YiV91YK47vU)
+- **� Website Link (On Dev)**: [http://hongrocker49.thddns.net:2725/](http://hongrocker49.thddns.net:2725/)
+- **�🎬 Pitching Video**: [Watch on YouTube](https://youtu.be/YiV91YK47vU)
 - **📋 Project Proposal**: [Google Docs](https://docs.google.com/document/d/1RPuF_MChizx3Fs8yoE2WUcgqADlSC1DL95WdcP_SXaw/edit?usp=sharing)
 - **📊 Project Management**: [Jira Board](https://isp-banana.atlassian.net/jira/software/projects/FLEARN/boards/1/backlog)
 - **🎨 UI/UX Design**: [Figma](https://www.figma.com/design/aNtaPV5XsyTG1ETtTOuYwJ/FLEARN?t=uRrKrAPrcLgo4Q3D-1)
