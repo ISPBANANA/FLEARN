@@ -63,17 +63,17 @@ docker compose logs -f flearn-backend
 docker compose ps
 
 # Test health endpoints
-curl http://localhost:8099/health
-curl http://localhost:3001/health
+curl http://localhost:[API_PORT]/health
+curl http://localhost:[WEBHOOK_PORT]/health
 ```
 
 Expected output:
 ```
 NAME                    IMAGE                STATUS              PORTS
-flearn-backend         flearn_backend       Up 30 seconds       0.0.0.0:8099->8099/tcp
-flearn-frontend        flearn_frontend      Up 30 seconds       0.0.0.0:3000->3000/tcp
-flearn-postgres        postgres:15          Up 45 seconds       0.0.0.0:5432->5432/tcp
-flearn-mongodb         mongo:7.0            Up 45 seconds       0.0.0.0:27017->27017/tcp
+flearn-backend         flearn_backend       Up 30 seconds       0.0.0.0:[API_PORT]->[API_PORT]/tcp
+flearn-frontend        flearn_frontend      Up 30 seconds       0.0.0.0:[FRONTEND_PORT]->[FRONTEND_PORT]/tcp
+flearn-postgres        postgres:15          Up 45 seconds       0.0.0.0:[POSTGRES_PORT]->[POSTGRES_PORT]/tcp
+flearn-mongodb         mongo:7.0            Up 45 seconds       0.0.0.0:[MONGO_PORT]->[MONGO_PORT]/tcp
 flearn-pgadmin         dpage/pgladmin4      Up 30 seconds       0.0.0.0:8088->80/tcp
 flearn-mongo-express   mongo-express        Up 30 seconds       0.0.0.0:8087->8081/tcp
 flearn-webhook         flearn_webhook       Up 30 seconds       0.0.0.0:3001->3001/tcp
@@ -140,7 +140,7 @@ WEBHOOK_SECRET=your_github_webhook_secret_here
 # ===========================================
 # CORS and Security
 # ===========================================
-ALLOWED_ORIGINS=http://localhost:3000,https://your-domain.com
+ALLOWED_ORIGINS=http://localhost:[FRONTEND_PORT],https://your-domain.com
 ```
 
 ### 🔒 Critical Security Requirements
@@ -186,7 +186,7 @@ FLEARN includes a sophisticated webhook system for instant deployment when code 
 ./scripts/test-webhook.sh
 
 # Check webhook service health
-curl http://localhost:3001/health
+curl http://localhost:[WEBHOOK_PORT]/health
 
 # Monitor webhook logs
 docker compose logs -f flearn-webhook
@@ -237,7 +237,7 @@ docker compose up -d
 ### PostgreSQL Management
 
 #### Access via pgAdmin
-1. Open http://localhost:8088
+1. Open http://localhost:[PGADMIN_PORT]
 2. Login with credentials from `.env` file
 3. **Add Server Connection**:
    ```
@@ -267,7 +267,7 @@ docker compose exec postgres psql -U flearn_user -d flearn_db -c "SELECT * FROM 
 ### MongoDB Management  
 
 #### Access via Mongo Express
-1. Open http://localhost:8087
+1. Open http://localhost:[MONGO_EXPRESS_PORT]
 2. Login with credentials from `.env` file
 3. Browse databases and collections through web interface
 
@@ -277,7 +277,7 @@ docker compose exec postgres psql -U flearn_user -d flearn_db -c "SELECT * FROM 
 docker compose exec mongodb mongosh -u flearn_admin -p your_password --authenticationDatabase admin
 
 # Connect from host machine  
-mongosh "mongodb://flearn_admin:your_password@localhost:27017/flearn_mongo_db?authSource=admin"
+mongosh "mongodb://flearn_admin:your_password@localhost:[MONGO_PORT]/flearn_mongo_db?authSource=admin"
 
 # Run MongoDB commands
 docker compose exec mongodb mongosh --eval "db.adminCommand('ping')"
@@ -297,10 +297,10 @@ cat backup_20250913.sql | docker compose exec -T postgres psql -U flearn_user -d
 #### MongoDB Backup
 ```bash
 # Create backup
-docker compose exec mongodb mongodump --uri="mongodb://flearn_admin:password@localhost:27017/flearn_mongo_db?authSource=admin" --out=/tmp/backup
+docker compose exec mongodb mongodump --uri="mongodb://flearn_admin:password@localhost:[MONGO_PORT]/flearn_mongo_db?authSource=admin" --out=/tmp/backup
 
 # Restore backup
-docker compose exec mongodb mongorestore --uri="mongodb://flearn_admin:password@localhost:27017/flearn_mongo_db?authSource=admin" /tmp/backup/flearn_mongo_db
+docker compose exec mongodb mongorestore --uri="mongodb://flearn_admin:password@localhost:[MONGO_PORT]/flearn_mongo_db?authSource=admin" /tmp/backup/flearn_mongo_db
 ```
 
 ## 📊 Monitoring & Logging
@@ -310,13 +310,13 @@ docker compose exec mongodb mongorestore --uri="mongodb://flearn_admin:password@
 #### Built-in Health Checks
 ```bash
 # Backend API health
-curl http://localhost:8099/health
+curl http://localhost:[API_PORT]/health
 
 # Webhook service health  
-curl http://localhost:3001/health
+curl http://localhost:[WEBHOOK_PORT]/health
 
 # Frontend accessibility
-curl http://localhost:3000
+curl http://localhost:[FRONTEND_PORT]
 ```
 
 #### Docker Health Status
@@ -391,7 +391,7 @@ docker compose restart postgres mongodb
 docker compose logs flearn-webhook
 
 # Test webhook manually
-curl -X POST http://localhost:3001/webhook \
+curl -X POST http://localhost:[WEBHOOK_PORT]/webhook \
   -H "Content-Type: application/json" \
   -H "X-Hub-Signature-256: sha256=test" \
   -d '{"ref":"refs/heads/main"}'
@@ -560,3 +560,4 @@ services:
 ---
 
 This Docker & Deployment guide provides everything needed to deploy FLEARN in both development and production environments with automated deployment capabilities.
+

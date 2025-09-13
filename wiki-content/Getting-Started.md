@@ -2,6 +2,8 @@
 
 This comprehensive guide will walk you through setting up FLEARN on your local machine, from prerequisites to running your first instance.
 
+> **🔒 Security Note**: This documentation uses port placeholders (e.g., `[FRONTEND_PORT]`) for security purposes. See [Port Configuration](Port-Configuration) for actual port mappings and security guidelines.
+
 ## 📋 Prerequisites
 
 Before starting, ensure you have the following installed:
@@ -38,31 +40,31 @@ cp .env.example .env
 Edit `.env` with your preferred settings:
 ```env
 # Application Ports
-FRONTEND_PORT=3000
-API_PORT=8099
-WEBHOOK_PORT=3001
+FRONTEND_PORT="YOUR CHOSEN PORT"
+API_PORT="YOUR CHOSEN PORT"
+WEBHOOK_PORT="YOUR CHOSEN PORT"
 
 # PostgreSQL Configuration
-POSTGRES_DB=flearn_db
-POSTGRES_USER=flearn_user
+POSTGRES_DB="YOUR DB NAME"
+POSTGRES_USER="YOUR USER NAME"
 POSTGRES_PASSWORD=your_secure_password_here
-POSTGRES_PORT=5432
+POSTGRES_PORT="YOUR CHOSEN PORT"
 
 # MongoDB Configuration  
-MONGO_INITDB_DATABASE=flearn_mongo_db
-MONGO_INITDB_ROOT_USERNAME=flearn_admin
+MONGO_INITDB_DATABASE="YOUR DB NAME"
+MONGO_INITDB_ROOT_USERNAME="YOUR USER NAME"
 MONGO_INITDB_ROOT_PASSWORD=your_mongo_password_here
-MONGO_PORT=27017
+MONGO_PORT="YOUR CHOSEN PORT"
 
 # pgAdmin Configuration
-PGADMIN_DEFAULT_EMAIL=admin@flearn.com
+PGADMIN_DEFAULT_EMAIL="YOUR EMAIL"
 PGADMIN_DEFAULT_PASSWORD=your_pgadmin_password_here
-PGADMIN_PORT=8088
+PGADMIN_PORT="YOUR CHOSEN PORT"
 
 # Mongo Express Configuration
-MONGO_EXPRESS_USERNAME=admin
+MONGO_EXPRESS_USERNAME="YOUR USER NAME"
 MONGO_EXPRESS_PASSWORD=your_express_password_here
-MONGO_EXPRESS_PORT=8087
+MONGO_EXPRESS_PORT="YOUR CHOSEN PORT"
 
 # Webhook Configuration (for auto-deployment)
 WEBHOOK_SECRET=your_github_webhook_secret_here
@@ -98,11 +100,11 @@ flearn-webhook         flearn_webhook       "npm start"              webhook-ser
 ### 5. Access the Application
 | Service | URL | Credentials |
 |---------|-----|-------------|
-| **Frontend** | http://localhost:3000 | - |
-| **Backend API** | http://localhost:8099 | - |
-| **pgAdmin** | http://localhost:8088 | admin@flearn.com / [your_password] |
-| **Mongo Express** | http://localhost:8087 | admin / [your_password] |
-| **Webhook Health** | http://localhost:3001/health | - |
+| **Frontend** | http://localhost:[FRONTEND_PORT] | - |
+| **Backend API** | http://localhost:[API_PORT] | - |
+| **pgAdmin** | http://localhost:[PGADMIN_PORT] | admin@flearn.com / [your_password] |
+| **Mongo Express** | http://localhost:[MONGO_EXPRESS_PORT] | admin / [your_password] |
+| **Webhook Health** | http://localhost:[WEBHOOK_PORT]/health | - |
 
 ## 🛠️ Manual Development Setup
 
@@ -175,13 +177,13 @@ For detailed Auth0 setup, see [Authentication & Auth0](Authentication-Auth0).
 ### 1. Health Checks
 ```bash
 # Test backend health
-curl http://localhost:8099/health
+curl http://localhost:[API_PORT]/health
 
 # Test webhook service
-curl http://localhost:3001/health
+curl http://localhost:[WEBHOOK_PORT]/health
 
 # Test frontend (should return HTML)
-curl http://localhost:3000
+curl http://localhost:[FRONTEND_PORT]
 ```
 
 ### 2. Database Connections
@@ -218,8 +220,8 @@ Once your environment is running:
 #### Port Conflicts
 ```bash
 # Check what's using your ports
-netstat -tulpn | grep :3000
-netstat -tulpn | grep :8099
+netstat -tulpn | grep :[FRONTEND_PORT]
+netstat -tulpn | grep :[API_PORT]
 
 # Kill processes if needed
 sudo kill -9 <pid>
