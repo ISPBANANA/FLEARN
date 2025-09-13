@@ -65,16 +65,16 @@ sequenceDiagram
 ```bash
 # Application URIs
 Allowed Callback URLs: 
-http://localhost:3000/api/auth/callback,http://localhost:3000/callback
+http://localhost:[FRONTEND_PORT]/api/auth/callback,http://localhost:[FRONTEND_PORT]/callback
 
 Allowed Logout URLs:
-http://localhost:3000
+http://localhost:[FRONTEND_PORT]
 
 Allowed Web Origins:
-http://localhost:3000
+http://localhost:[FRONTEND_PORT]
 
 Allowed Origins (CORS):
-http://localhost:3000
+http://localhost:[FRONTEND_PORT]
 
 # For production, add your production URLs
 ```
@@ -246,14 +246,14 @@ Create `.env.local` in your Next.js project:
 ```env
 # Auth0 Configuration for Next.js
 AUTH0_SECRET='use-long-random-secret-key-minimum-32-chars'
-AUTH0_BASE_URL='http://localhost:3000'
+AUTH0_BASE_URL='http://localhost:[FRONTEND_PORT]'
 AUTH0_ISSUER_BASE_URL='https://YOUR-TENANT.auth0.com'
 AUTH0_CLIENT_ID='your-frontend-client-id'
 AUTH0_CLIENT_SECRET='your-frontend-client-secret'
 AUTH0_AUDIENCE='https://flearn-api.com'
 
 # API Configuration
-NEXT_PUBLIC_API_BASE_URL='http://localhost:8099'
+NEXT_PUBLIC_API_BASE_URL='http://localhost:[API_PORT]'
 ```
 
 > 🔒 **CRITICAL SECURITY WARNINGS**:
@@ -597,7 +597,7 @@ node ./scripts/test-auth0-token.js
 ```bash
 # Serve the interactive test page
 python3 -m http.server 8080 --directory scripts/
-# Then visit: http://localhost:8080/auth0-test.html
+# Then visit: http://localhost:[TEST_PORT]/auth0-test.html
 ```
 
 ### Manual Testing Checklist

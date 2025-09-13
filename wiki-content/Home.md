@@ -24,7 +24,8 @@ Welcome to the comprehensive documentation for **FLEARN**, an interactive learni
 
 ### 🧪 **Development & Testing**
 - **[Testing Guide](Testing-Guide)** - Comprehensive testing documentation
-- **[Scripts & Utilities](Scripts-Utilities)** - Development tools
+- **[Scripts & Utilities](Scripts-Utilities)** - Development tools  
+- **[Port Configuration](Port-Configuration)** - Port reference and security
 - **[Contributing Guidelines](Contributing-Guidelines)** - How to contribute
 - **[Troubleshooting](Troubleshooting)** - Common issues and solutions
 
@@ -71,7 +72,7 @@ FLEARN is built with a modern tech stack and follows microservices architecture:
                     │                         │
                ┌────▼─────┐              ┌────▼─────┐
                │PostgreSQL│              │ MongoDB  │
-               │Port: 5432│              │Port:27017│
+               │Port: [DB]│              │Port: [DB]│
                └──────────┘              └──────────┘
 ```
 
@@ -112,10 +113,10 @@ cd FLEARN
 docker compose up -d
 
 # Access services
-# Frontend:     http://localhost:3000
-# Backend API:  http://localhost:8099
-# pgAdmin:      http://localhost:8088
-# Mongo Express: http://localhost:8087
+# Frontend:     http://localhost:[FRONTEND_PORT]
+# Backend API:  http://localhost:[API_PORT]
+# pgAdmin:      http://localhost:[PGADMIN_PORT]
+# Mongo Express: http://localhost:[MONGO_EXPRESS_PORT]
 ```
 
 ## 👥 Team & Collaboration
