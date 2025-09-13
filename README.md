@@ -1,6 +1,16 @@
 # FLEARN - Interactive Learning Platform
 
-![FLEARN Logo](https://img.shields.io/badge/FLEARN-Learning%20Platform-blue)
+![FLEARN Logo](https- **[🏠 Home](../../wiki/Home)** - Main documentation hub
+- **[🚀 - Testing requirements
+
+## 🛠️ Development
+
+### Quick Commandsng Started](../../wiki/Getting-Started)** - Setup and installation guide
+- **[🏗️ Architecture](../../wiki/Architecture)** - System design and components
+- **[🔧 API Setup](../../wiki/API-Setup-Guide)** - Backend configuration
+- **[🔐 Authentication](../../wiki/Authentication-Auth0)** - Auth0 integration guide
+- **[🐳 Docker Deployment](../../wiki/Docker-Deployment)** - Container setup and deployment
+- **[🔒 Port Configuration](../../wiki/Port-Configuration)** - Port reference and securityshields.io/badge/FLEARN-Learning%20Platform-blue)
 ![Next.js](https://img.shields.io/badge/Next.js-15.5.2-black)
 ![Node.js](https://img.shields.io/badge/Node.js-Express-green)
 ![MongoDB](https://img.shields.io/badge/MongoDB-7.0-green)
@@ -58,213 +68,40 @@ FLEARN is an interactive learning platform designed to make education engaging a
 - **Version Control**: Git with GitHub
 - **Communication**: Discord with GitHub webhooks
 
-## 🏛️ System Architecture
+## 📚 Documentation
 
-FLEARN follows a microservices architecture with containerized services:
+Comprehensive documentation is available in our [GitHub Wiki](../../wiki):
 
-### Core Services
-- **🖥️ Frontend Service** (`flearn-frontend`): Next.js application on port 3000
-- **🔧 Backend API** (`flearn-backend`): Express.js API server on port 8099  
-- **🎣 Webhook Service** (`flearn-webhook`): GitHub webhook handler on port 3001
-
-### Database Services
-- **🐘 PostgreSQL** (`flearn-postgres`): Primary relational database on port 5432
-- **🍃 MongoDB** (`flearn-mongodb`): Document storage for user data on port 27017
-
-### Management Services  
-- **📊 pgAdmin** (`flearn-pgadmin`): PostgreSQL web interface on port 8088
-- **🌿 Mongo Express** (`flearn-mongo-express`): MongoDB web interface on port 8087
-
-### Deployment Flow
-1. **Developer pushes** code to `main` branch
-2. **GitHub webhook** triggers deployment via webhook service
-3. **Webhook service** pulls latest code and rebuilds containers
-4. **Zero-downtime deployment** with automatic rollback on failure
+- **[🏠 Home](../../wiki/Home)** - Main documentation hub
+- **[� Getting Started](../../wiki/Getting-Started)** - Setup and installation guide
+- **[🏗️ Architecture](../../wiki/Architecture)** - System design and components
+- **[🔧 API Setup](../../wiki/API-Setup-Guide)** - Backend configuration
+- **[� Authentication](../../wiki/Authentication-Auth0)** - Auth0 integration guide
+- **[🐳 Docker Deployment](../../wiki/Docker-Deployment)** - Container setup and deployment
+- **[🔒 Port Configuration](../../wiki/Port-Configuration)** - Port reference and security
 
 ## 🚀 Quick Start
 
 ### Prerequisites
 - Docker and Docker Compose
-- Node.js (v18 or higher)
+- Node.js (v18 or higher)  
 - Git
 
-### 1. Clone the Repository
+### Get Started in 3 Steps
 ```bash
+# 1. Clone the repository
 git clone https://github.com/ISPBANANA/FLEARN.git
 cd FLEARN
-```
 
-### 2. Environment Setup
-Create a `.env` file in the root directory:
-```bash
-cp .env.example .env
-```
-
-Configure your environment variables:
-```env
-# Application
-NODE_ENV=development
-PORT=your_api_port
-
-# PostgreSQL Database
-POSTGRES_DB=your_database_name
-POSTGRES_USER=your_postgres_user
-POSTGRES_PASSWORD=your_secure_postgres_password
-POSTGRES_PORT=your_postgres_port
-
-# pgAdmin
-PGADMIN_DEFAULT_EMAIL=your_admin_email
-PGADMIN_DEFAULT_PASSWORD=your_secure_pgadmin_password
-PGADMIN_PORT=your_pgadmin_port
-
-# MongoDB
-MONGO_INITDB_ROOT_USERNAME=your_mongo_user
-MONGO_INITDB_ROOT_PASSWORD=your_secure_mongo_password
-MONGO_INITDB_DATABASE=your_mongo_database
-MONGO_PORT=your_mongo_port
-
-# MongoDB Express
-MONGO_EXPRESS_USERNAME=your_express_admin
-MONGO_EXPRESS_PASSWORD=your_secure_express_password
-MONGO_EXPRESS_PORT=your_express_port
-MONGO_EXPRESS_INTERNAL_PORT=your_express_internal_port
-
-# Webhook Service (for auto-deployment)
-WEBHOOK_PORT=3001
-WEBHOOK_SECRET=your_github_webhook_secret_here
-```
-
-### 3. Docker Deployment (Recommended)
-```bash
-# Start all services
+# 2. Start all services with Docker
 docker compose up -d
 
-# View logs
-docker compose logs -f
-
-# Stop all services
-docker compose down
+# 3. Access the application
+# Frontend: http://localhost:[FRONTEND_PORT]
+# Backend: http://localhost:[API_PORT]
 ```
 
-### 4. Webhook-Based Auto-Deployment
-
-FLEARN includes an automated deployment system using GitHub webhooks for instant updates when code is pushed to the main branch.
-
-#### Setup Webhook Deployment
-```bash
-# Run the setup script to configure webhooks
-./scripts/setup-webhook.sh
-
-# Or provide your own webhook secret
-./scripts/setup-webhook.sh your_custom_webhook_secret
-```
-
-#### Configure GitHub Webhook
-1. Go to your repository Settings > Webhooks
-2. Click "Add webhook"
-3. Set Payload URL: `http://your-server-ip:3001/webhook`
-4. Set Content type: `application/json`
-5. Set Secret: Use the secret from the setup script
-6. Select "Just the push event"
-7. Ensure "Active" is checked
-8. Click "Add webhook"
-
-#### Manual Update (Alternative)
-```bash
-# Manual update script (if webhook is not available)
-./scripts/update.sh
-```
-
-#### Webhook Service Features
-- **Instant Deployment**: Automatically deploys when code is pushed to main
-- **Security**: Verifies GitHub webhook signatures
-- **Logging**: All deployment activities are logged
-- **Error Recovery**: Attempts to restart containers on failure
-- **Health Monitoring**: Health check endpoint at `/health`
-
-#### Monitor Deployments
-```bash
-# Check webhook service logs
-docker compose logs -f webhook-service
-
-# View deployment history
-tail -f logs/deployment.log
-
-# Check service health
-curl http://localhost:3001/health
-```
-
-### 5. Manual Development Setup
-
-#### Backend Setup
-```bash
-cd FLEARN-back
-npm install
-npm run dev
-```
-
-#### Frontend Setup
-```bash
-cd FLEARN-front
-npm install
-npm run dev
-```
-
-
-## 🔧 Development Workflow
-
-### Branch Naming Convention
-- **Features**: `feat/front/feature-name` or `feat/back/feature-name`
-- **Hotfixes**: `hotfix/front/fix-name` or `hotfix/back/fix-name`
-- **Main Branch**: `main`
-
-### Commit Guidelines
-- Every commit must have a meaningful message
-- Follow conventional commit format when possible
-- Link commits to Jira tickets when applicable
-
-### Team Collaboration
-- **Meetings**: Every Wednesday evening
-- **Project Tracking**: Jira for task management and workload distribution
-- **Communication**: Discord with GitHub webhook integration
-- **Code Review**: Required before merging to main branch
-
-## �️ Utility Scripts
-
-FLEARN includes organized utility scripts in the `scripts/` directory:
-
-### Deployment Scripts
-- `scripts/setup-webhook.sh` - Configure GitHub webhooks
-- `scripts/update.sh` - Manual deployment/update
-- `scripts/test-webhook.sh` - Test webhook functionality
-
-### Testing Scripts  
-- `scripts/run-tests.sh` - Main test runner with various options
-
-For detailed script documentation, see [`scripts/README.md`](scripts/README.md).
-
-## �🗄️ Database Access
-
-### PostgreSQL (Development)
-- **URL**: `localhost:[POSTGRES_PORT]`
-- **Database**: `[POSTGRES_DB]`
-- **pgAdmin**: `http://localhost:[PGADMIN_PORT]`
-
-### MongoDB (Development)
-- **URL**: `localhost:[MONGO_PORT]`
-- **Database**: `[MONGO_DB]`
-- **Mongo Express**: `http://localhost:[MONGO_EXPRESS_PORT]`
-
-## 🌐 Application URLs
-
-| Service | URL | Description |
-|---------|-----|-------------|
-| Frontend | http://localhost:[FRONTEND_PORT] | Next.js application |
-| Backend API | http://localhost:[API_PORT] | Express.js API |
-| pgAdmin | http://localhost:[PGADMIN_PORT] | PostgreSQL management |
-| Mongo Express | http://localhost:[MONGO_EXPRESS_PORT] | MongoDB management |
-
-> **Note**: Replace the bracketed placeholders with your actual port numbers from your `.env` configuration.
+> **📖 For detailed setup instructions**, including environment configuration, webhook deployment, and manual development setup, see our **[Getting Started Guide](../../wiki/Getting-Started)**.
 
 ## 📱 Planned Features
 
@@ -292,59 +129,40 @@ For detailed script documentation, see [`scripts/README.md`](scripts/README.md).
 
 ## 🤝 Contributing
 
-1. **Fork the repository**
-2. **Create a feature branch** following our naming convention
-3. **Make your changes** with meaningful commits
-4. **Test your changes** thoroughly
-5. **Create a pull request** with detailed description
-6. **Link to relevant Jira tickets**
+We welcome contributions! Please see our **[Contributing Guidelines](../../wiki/Contributing-Guidelines)** for:
+- Development workflow and standards
+- Branch naming conventions  
+- Code review process
+- Testing requirements
 
-## 📋 Available Scripts
+## �️ Development
 
-### Root Directory
+### Quick Commands
 ```bash
-# Start all services with Docker
-docker-compose up -d
+# Docker commands
+docker compose up -d     # Start all services
+docker compose down      # Stop all services  
+docker compose logs -f   # View logs
 
-# Stop all services
-docker-compose down
-
-# View service logs
-docker-compose logs -f [service-name]
-
-# Reset databases
-docker-compose down -v && docker-compose up -d
+# Development
+cd FLEARN-front && npm run dev  # Frontend development
+cd FLEARN-back && npm run dev   # Backend development
 ```
 
-### Frontend (FLEARN-front/)
-```bash
-npm run dev      # Start development server
-npm run build    # Build for production
-npm run start    # Start production server
-npm run lint     # Run ESLint
-```
+### Utility Scripts
+- **Deployment**: `scripts/setup-webhook.sh`, `scripts/update.sh`
+- **Testing**: `scripts/run-tests.sh` 
+- **Full documentation**: [`scripts/README.md`](scripts/README.md)
 
-### Backend (FLEARN-back/)
-```bash
-npm start        # Start production server
-npm run dev      # Start development server with nodemon
-npm test         # Run tests (when implemented)
-```
+> **📖 For complete development guides**, including database access, API testing, and deployment procedures, see our **[Docker Deployment Guide](../../wiki/Docker-Deployment)**.
 
 ## 🐛 Troubleshooting
 
-### Common Issues
-
-1. **Port conflicts**: Ensure your configured ports in `.env` are available and not in use
-2. **Docker issues**: Run `docker-compose down -v` to reset volumes if needed
-3. **Environment variables**: Double-check your `.env` file configuration
-4. **Database connections**: Verify database services are running before starting the API
-
-### Getting Help
-
-- Check our [Jira board](https://isp-banana.atlassian.net/jira/software/projects/FLEARN/boards/1/backlog) for known issues
-- Join our Discord server for real-time support
-- Create an issue on GitHub for bug reports
+### Need Help?
+- **📚 Documentation**: Check our [GitHub Wiki](../../wiki) first
+- **🎯 Issues**: [Jira Board](https://isp-banana.atlassian.net/jira/software/projects/FLEARN/boards/1/backlog) for known issues
+- **🐞 Bugs**: Create an issue on GitHub for bug reports
+- **💬 Support**: Join our Discord server for real-time help
 
 ## 📄 License
 
