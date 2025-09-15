@@ -138,16 +138,16 @@ In your Auth0 application **Settings** tab:
 ```bash
 # Application URIs (adjust ports as needed)
 Allowed Callback URLs: 
-http://localhost:3000/callback,http://localhost:3001/callback
+http://localhost:[FRONTEND_PORT]/callback,http://localhost:[WEBHOOK_PORT]/callback
 
 Allowed Logout URLs:
-http://localhost:3000,http://localhost:3001
+http://localhost:[FRONTEND_PORT],http://localhost:[WEBHOOK_PORT]
 
 Allowed Web Origins:
-http://localhost:3000,http://localhost:3001
+http://localhost:[FRONTEND_PORT],http://localhost:[WEBHOOK_PORT]
 
 Allowed Origins (CORS):
-http://localhost:3000,http://localhost:3001
+http://localhost:[FRONTEND_PORT],http://localhost:[WEBHOOK_PORT]
 ```
 
 **Save Changes** at the bottom of the page.
@@ -211,13 +211,13 @@ AUTH0_CLIENT_SECRET=your_client_secret_from_auth0_dashboard
 # ===========================================
 # CORS Configuration
 # ===========================================
-ALLOWED_ORIGINS=http://localhost:3000,http://localhost:3001,http://localhost:5173
+ALLOWED_ORIGINS=http://localhost:[FRONTEND_PORT],http://localhost:[WEBHOOK_PORT],http://localhost:[DEV_PORT]
 
 # ===========================================
 # MongoDB Configuration (Optional)
 # ===========================================
-MONGO_URL=mongodb://localhost:27017/flearn-db
-# Or for Docker: mongodb://flearn_admin:password@localhost:27017/flearn_mongo_db?authSource=admin
+MONGO_URL=mongodb://localhost:[MONGO_PORT]/flearn-db
+# Or for Docker: mongodb://flearn_admin:password@localhost:[MONGO_PORT]/flearn_mongo_db?authSource=admin
 
 # ===========================================
 # Development Settings
@@ -250,7 +250,7 @@ npm run dev
 **Expected startup output**:
 ```
 🚀 FLEARN Backend Server Started!
-📍 Server URL: http://localhost:8099
+📍 Server URL: http://localhost:[API_PORT]
 🌍 Environment: development
 🔐 Auth0 Domain: your-tenant.auth0.com
 🎯 Auth0 Audience: https://flearn-api.com
@@ -262,7 +262,7 @@ npm run dev
 
 Test the server is running:
 ```bash
-curl http://localhost:8099/health
+curl http://localhost:[API_PORT]/health
 ```
 
 Expected response:
@@ -284,10 +284,10 @@ When Auth0 is not fully configured, the API uses mock authentication for develop
 #### Test User Profile Endpoints
 ```bash
 # Get user profile (mock auth)
-curl -X GET http://localhost:8099/api/users/profile
+curl -X GET http://localhost:[API_PORT]/api/users/profile
 
 # Create user profile  
-curl -X POST http://localhost:8099/api/users/profile \
+curl -X POST http://localhost:[API_PORT]/api/users/profile \
   -H "Content-Type: application/json" \
   -d '{
     "name": "Test User",
@@ -297,7 +297,7 @@ curl -X POST http://localhost:8099/api/users/profile \
   }'
 
 # Update experience points
-curl -X PATCH http://localhost:8099/api/users/experience \
+curl -X PATCH http://localhost:[API_PORT]/api/users/experience \
   -H "Content-Type: application/json" \
   -d '{
     "math_exp": 150,
@@ -308,10 +308,10 @@ curl -X PATCH http://localhost:8099/api/users/experience \
 #### Test Friends System
 ```bash
 # Get friends list
-curl -X GET http://localhost:8099/api/friends
+curl -X GET http://localhost:[API_PORT]/api/friends
 
 # Send friend request
-curl -X POST http://localhost:8099/api/friends/request \
+curl -X POST http://localhost:[API_PORT]/api/friends/request \
   -H "Content-Type: application/json" \
   -d '{
     "friend_email": "friend@example.com"
@@ -321,10 +321,10 @@ curl -X POST http://localhost:8099/api/friends/request \
 #### Test Gardens System  
 ```bash
 # Get user gardens
-curl -X GET http://localhost:8099/api/gardens
+curl -X GET http://localhost:[API_PORT]/api/gardens
 
 # Create new garden
-curl -X POST http://localhost:8099/api/gardens \
+curl -X POST http://localhost:[API_PORT]/api/gardens \
   -H "Content-Type: application/json" \
   -d '{
     "name": "Math Mastery Garden",
@@ -356,7 +356,7 @@ curl -X POST https://YOUR_DOMAIN.auth0.com/oauth/token \
 4. Use token in API requests:
 
 ```bash
-curl -X GET http://localhost:8099/api/users/profile \
+curl -X GET http://localhost:[API_PORT]/api/users/profile \
   -H "Authorization: Bearer YOUR_JWT_TOKEN_HERE"
 ```
 
@@ -439,8 +439,8 @@ curl -X GET http://localhost:8099/api/users/profile \
 
 #### 4. CORS Issues
 ```
-❌ Access to fetch at 'http://localhost:8099/api/users/profile' 
-   from origin 'http://localhost:3000' has been blocked by CORS policy
+❌ Access to fetch at 'http://localhost:[API_PORT]/api/users/profile' 
+   from origin 'http://localhost:[FRONTEND_PORT]' has been blocked by CORS policy
 ```
 
 **Solutions**:
@@ -554,3 +554,4 @@ app.use((req, res, next) => {
 🎉 **Congratulations!** Your FLEARN API should now be running successfully. 
 
 For frontend integration, proceed to the [Authentication & Auth0](Authentication-Auth0) guide.
+
