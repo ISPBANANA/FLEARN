@@ -1,21 +1,19 @@
 # FLEARN - Interactive Learning Platform
 
-![FLEARN Logo](https- **[🏠 Home](../../wiki/Home)** - Main documentation hub
-- **[🚀 - Testing requirements
-
-## 🛠️ Development
-
-### Quick Commandsng Started](../../wiki/Getting-Started)** - Setup and installation guide
-- **[🏗️ Architecture](../../wiki/Architecture)** - System design and components
-- **[🔧 API Setup](../../wiki/API-Setup-Guide)** - Backend configuration
-- **[🔐 Authentication](../../wiki/Authentication-Auth0)** - Auth0 integration guide
-- **[🐳 Docker Deployment](../../wiki/Docker-Deployment)** - Container setup and deployment
-- **[🔒 Port Configuration](../../wiki/Port-Configuration)** - Port reference and securityshields.io/badge/FLEARN-Learning%20Platform-blue)
+![FLEARN Logo](https://img.shields.io/badge/FLEARN-Learning%20Platform-blue)
 ![Next.js](https://img.shields.io/badge/Next.js-15.5.2-black)
 ![Node.js](https://img.shields.io/badge/Node.js-Express-green)
 ![MongoDB](https://img.shields.io/badge/MongoDB-7.0-green)
 ![PostgreSQL](https://img.shields.io/badge/PostgreSQL-15-blue)
 ![Docker](https://img.shields.io/badge/Docker-Containerized-blue)
+
+**[🏠 Home](../../wiki/Home)** - Main documentation hub  
+**[🚀 Getting Started](../../wiki/Getting-Started)** - Setup and installation guide  
+**[🏗️ Architecture](../../wiki/Architecture)** - System design and components  
+**[🔧 API Setup](../../wiki/API-Setup-Guide)** - Backend configuration  
+**[🔐 Authentication](../../wiki/Authentication-Auth0)** - Auth0 integration guide  
+**[🐳 Docker Deployment](../../wiki/Docker-Deployment)** - Container setup and deployment  
+**[🔒 Port Configuration](../../wiki/Port-Configuration)** - Port reference and security  
 
 FLEARN is an interactive learning platform designed to make education engaging and fun. Built with modern web technologies, it features gamification elements, progress tracking, and social learning components.
 
