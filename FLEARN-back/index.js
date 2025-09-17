@@ -6,7 +6,7 @@ const { initializeDatabases, closeDatabases } = require('./config/database');
 const { handleJwtError } = require('./middleware/auth');
 
 const app = express();
-const PORT = process.env.PORT || 3000;
+const PORT = process.env.PORT || 8099;
 const NODE_ENV = process.env.NODE_ENV || 'development';
 const mongoURL = process.env.MONGO_URL || 'mongodb://localhost:27017/flearn-db';
 
