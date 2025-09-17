@@ -55,7 +55,7 @@ export default function Home() {
         </div>
         <div className="text-lg text-start text-[#454545] mb-4 py-3 w-full">
           Your Rights: <br></br>
-          Depending on your location, you may have certain rights under Thailand’s Personal Data Protection Act (PDPA):<br></br>
+          Depending on your location, you may have certain rights under Thailand&rsquo;s Personal Data Protection Act (PDPA):<br></br>
           <p className="px-5">
             ■ Access, correct, or delete your personal information.<br></br>
             ■ Request a copy of your data in portable format.<br></br>
@@ -66,7 +66,7 @@ export default function Home() {
           You can exercise these rights by contacting us at the email provided below.
         </div>
         <div className="text-lg text-start text-[#454545] mb-4 py-3 w-full">
-          Children’s Privacy: <br></br>
+          Children&rsquo;s Privacy: <br></br>
           <p className="px-5">
            Flearn is intended for educational use by students. 
            We do not knowingly collect personal data from children under 13 (or under the minimum legal age in your region) without parental consent. 
