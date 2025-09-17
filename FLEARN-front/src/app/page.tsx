@@ -31,7 +31,7 @@ export default function Home() {
           <div className="flex flex-col justify-center items-end space-y-10">
             <p className="text-7xl font-semibold text-[#454545] text-right">What do you<br></br>wanna <span className="font-bold text-[#9A41FF]">FLearn</span><br></br>Today</p>
             <Link
-                href="/api/auth/login/google"
+                href="/api/auth/login"
             >
               <FadeContent blur={true} duration={1000} easing="ease-out" initialOpacity={0}>
                   <button
