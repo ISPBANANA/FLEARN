@@ -22,7 +22,7 @@ export default function Home() {
           </p>
         </div>
         <div className="text-lg text-start text-[#454545] mb-4 w-full">
-            2&#41; Registration: <br></br>
+            2&#41; Registration:<br></br>
           <p className="px-5">
             In connection with registering for and using the Service, you agree<br></br>
             (a.) to provide FLearn with accurate, current, and complete information about yourself and/or your organization as requested during the registration process.<br></br>
