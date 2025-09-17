@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 
 export async function GET(request: NextRequest) {
-  // Handle Auth0 login directly
+  // Handle Auth0 login directly with Google connection
   const state = Math.random().toString(36).substring(7);
   const authUrl = new URL(`${process.env.AUTH0_ISSUER_BASE_URL}/authorize`);
   
@@ -10,6 +10,7 @@ export async function GET(request: NextRequest) {
   authUrl.searchParams.set('redirect_uri', `${process.env.AUTH0_BASE_URL}/api/auth/callback`);
   authUrl.searchParams.set('scope', 'openid profile email');
   authUrl.searchParams.set('state', state);
+  authUrl.searchParams.set('connection', 'google-oauth2'); // Force Google login
   
   const response = NextResponse.redirect(authUrl);
   response.cookies.set('auth0_state', state, {

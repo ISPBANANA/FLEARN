@@ -29,6 +29,7 @@ function handleLogin() {
   authUrl.searchParams.set('redirect_uri', `${process.env.AUTH0_BASE_URL}/api/auth/callback`);
   authUrl.searchParams.set('scope', 'openid profile email');
   authUrl.searchParams.set('state', state);
+  authUrl.searchParams.set('connection', 'google-oauth2'); // Force Google login
   
   const response = NextResponse.redirect(authUrl);
   response.cookies.set('auth0_state', state, {
