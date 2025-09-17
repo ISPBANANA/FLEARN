@@ -71,3 +71,6 @@ node_modules/
 .Trashes
 ehthumbs.db
 Thumbs.db
+
+# Security: Even .env.example should be reviewed carefully
+.env.example

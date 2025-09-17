@@ -2,6 +2,8 @@ require('dotenv').config();
 const express = require('express');
 const mongoose = require('mongoose');
 const cors = require('cors');
+const { initializeDatabases, closeDatabases } = require('./config/database');
+const { handleJwtError } = require('./middleware/auth');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -30,6 +32,16 @@ app.use(cors(corsOptions));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
+// Import routes
+const userRoutes = require('./routes/users');
+const friendRoutes = require('./routes/friends');
+const gardenRoutes = require('./routes/gardens');
+
+// Use routes
+app.use('/api/users', userRoutes);
+app.use('/api/friends', friendRoutes);
+app.use('/api/gardens', gardenRoutes);
+
 // Basic route for testing
 app.get('/', (req, res) => {
     res.json({ 
@@ -48,19 +60,14 @@ app.get('/health', (req, res) => {
     });
 });
 
-// Connect to MongoDB
-mongoose.connect(mongoURL, {
-    useNewUrlParser: true,
-    useUnifiedTopology: true,
-})
-.then(() => {
-    console.log('✅ Connected to MongoDB successfully');
-    console.log(`🗄️  Database: ${mongoURL}`);
-})
-.catch((error) => {
-    console.error('❌ MongoDB connection error:', error.message);
+// Initialize databases (MongoDB and PostgreSQL)
+initializeDatabases().catch((error) => {
+    console.error('❌ Database initialization failed:', error.message);
     process.exit(1);
 });
+
+// JWT error handler (must be before global error handler)
+app.use(handleJwtError);
 
 // Global error handler
 app.use((err, req, res, next) => {
@@ -79,12 +86,26 @@ app.use('*', (req, res) => {
     });
 });
 
+// Graceful shutdown
+process.on('SIGINT', async () => {
+    console.log('\n🛑 Shutting down gracefully...');
+    await closeDatabases();
+    process.exit(0);
+});
+
+process.on('SIGTERM', async () => {
+    console.log('\n🛑 Shutting down gracefully...');
+    await closeDatabases();
+    process.exit(0);
+});
+
 // Start the server
 app.listen(PORT, () => {
     console.log('\n🚀 FLEARN Backend Server Started!');
     console.log(`📍 Server URL: http://localhost:${PORT}`);
     console.log(`🌍 Environment: ${NODE_ENV}`);
-    console.log(`🗄️  MongoDB URL: ${mongoURL}`);
+    console.log(`� Auth0 Domain: ${process.env.AUTH0_DOMAIN || 'Not configured'}`);
+    console.log(`🎯 Auth0 Audience: ${process.env.AUTH0_AUDIENCE || 'Not configured'}`);
     console.log(`📅 Started at: ${new Date().toISOString()}`);
     console.log('====================================\n');
 });
