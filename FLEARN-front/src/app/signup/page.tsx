@@ -4,16 +4,82 @@ import Image from "next/image";
 import { Nav } from "@/components/nav";
 import { Footer } from "@/components/footer";
 import SplitText from "@/components/SplitText";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { FileUp, Asterisk } from 'lucide-react';
+import { useRouter, useSearchParams } from 'next/navigation';
 
+
+interface UserData {
+  sub: string;
+  name: string;
+  email: string;
+  picture: string;
+}
+
+interface AuthTokens {
+  access_token: string;
+  id_token?: string;
+}
 
 export default function Home() {
+  const router = useRouter();
+  const searchParams = useSearchParams();
   const [step, setStep] = useState(1);
+  const [userData, setUserData] = useState<UserData | null>(null);
+  const [authTokens, setAuthTokens] = useState<AuthTokens | null>(null);
+
+  useEffect(() => {
+    const loadSignupData = () => {
+      // Try to get data from URL first
+      const encodedData = searchParams.get('data');
+      
+      if (!encodedData) {
+        // If not in URL, try localStorage
+        const storedData = localStorage.getItem('signup_data');
+        if (!storedData) {
+          router.replace('/');
+          return;
+        }
+        return storedData;
+      }
+      
+      return encodedData;
+    };
+
+    try {
+      const encodedData = loadSignupData();
+      if (!encodedData) return;
+
+      // Decode the data from base64
+      const decodedData = JSON.parse(Buffer.from(encodedData, 'base64').toString());
+      
+      // Store tokens and user data
+      setUserData(decodedData.user);
+      setAuthTokens({
+        access_token: decodedData.access_token,
+        id_token: decodedData.id_token
+      });
+
+      // Store in localStorage for persistence
+      localStorage.setItem('signup_data', encodedData);
+      
+      // If data was from URL, remove it
+      if (searchParams.get('data')) {
+        router.replace('/signup');
+      }
+    } catch (e) {
+      console.error('Failed to parse signup data:', e);
+      localStorage.removeItem('signup_data');
+      router.replace('/');
+    }
+  }, [searchParams]);
+
   function goBack() {
     if (step === 1) {
-      // Cancel appear smth
+      // Clear signup data and redirect to home
+      localStorage.removeItem('signup_data');
+      router.replace('/');
     } else if (step === 2) {
       setStep(1);
     }
@@ -91,7 +157,14 @@ export default function Home() {
                   <label className="text-left w-full text-xl mb-2 font-semibold flex items-center gap-1"><Asterisk className="text-[#9333EA]" width={12} height={12}/>Display name :</label>
                   <input type="input" placeholder="Ex: FunLearn" className="w-full py-2 px-4 mb-4 border border-gray-300 rounded-xl" style={{ boxShadow: '0px 0px 5px rgba(0, 0, 0, 0.25)' }}/>
                   <label className="text-left w-full text-xl mb-2 font-semibold flex items-center gap-1"><Asterisk className="text-[#9333EA]" width={12} height={12}/>Email :</label>
-                  <input type="email" placeholder="sample@gmail.com" className="w-full py-2 px-4 mb-4 border border-gray-300 rounded-xl cursor-not-allowed" style={{ boxShadow: '0px 0px 5px rgba(0, 0, 0, 0.25)' }} disabled/>
+                  <input 
+                    type="email" 
+                    value={userData?.email || ''} 
+                    placeholder="sample@gmail.com" 
+                    className="w-full py-2 px-4 mb-4 border border-gray-300 rounded-xl cursor-not-allowed" 
+                    style={{ boxShadow: '0px 0px 5px rgba(0, 0, 0, 0.25)' }} 
+                    disabled
+                  />
                   <label className="text-left w-full text-xl mb-2 font-semibold flex items-center gap-1"><Asterisk className="text-[#9333EA]" width={12} height={12}/>Date of Birth :</label>
                   <input type="date" className="w-full py-2 px-4 mb-4 border border-gray-300 rounded-xl" style={{ boxShadow: '0px 0px 5px rgba(0, 0, 0, 0.25)' }}/>
                 </>

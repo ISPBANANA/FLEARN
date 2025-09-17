@@ -47,6 +47,32 @@ export async function GET(request: NextRequest) {
 
     // Send user data to FLEARN backend to create/update profile
     try {
+      // First check if user exists
+      const checkUserResponse = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/users/profile`, {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${tokens.access_token}`,
+        },
+      });
+
+      if (checkUserResponse.status === 404) {
+        // User doesn't exist, redirect to signup page with encoded data
+        const signupData = {
+          access_token: tokens.access_token,
+          id_token: tokens.id_token,
+          user: {
+            sub: user.sub,
+            name: user.name || user.nickname,
+            email: user.email,
+            picture: user.picture,
+          }
+        };
+        
+        const encodedData = encodeURIComponent(Buffer.from(JSON.stringify(signupData)).toString('base64'));
+        return NextResponse.redirect(`${process.env.AUTH0_BASE_URL}/signup?data=${encodedData}`);
+      }
+
+      // If user exists, create/update profile
       const backendResponse = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/users/profile`, {
         method: 'POST',
         headers: {
@@ -70,7 +96,7 @@ export async function GET(request: NextRequest) {
       // Continue even if backend sync fails
     }
     
-    // Redirect to home page with auth tokens stored in cookies
+    // Only redirect to home if we didn't already redirect to signup
     const response = NextResponse.redirect(`${process.env.AUTH0_BASE_URL}/`);
     
     // Store tokens securely in httpOnly cookies
