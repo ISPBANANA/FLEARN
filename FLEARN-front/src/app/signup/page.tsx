@@ -97,10 +97,54 @@ export default function Home() {
                 </>
               ) : (
                 <>
-                  <label className="text-left w-full text-xl mb-2">Username</label>
-                  <input type="text" placeholder="Choose a username" className="w-full p-3 mb-4 border border-gray-300 rounded" />
-                  <label className="text-left w-full text-xl mb-2">Password</label>
-                  <input type="password" placeholder="Create a password" className="w-full p-3 mb-4 border border-gray-300 rounded" />
+                  <label className="text-left w-full text-xl mb-4 font-semibold flex items-center gap-1">
+                    <Asterisk className="text-[#9333EA]" width={12} height={12}/>Education Level :
+                  </label>
+                  <div className="flex flex-col gap-3 mb-6 w-full px-4">
+                    <label className="flex items-center gap-3">
+                      <input type="radio" name="education" className="w-4 h-4 text-purple-500" />
+                      <span>Primary School</span>
+                    </label>
+                    <label className="flex items-center gap-3">
+                      <input type="radio" name="education" className="w-4 h-4 text-purple-500" />
+                      <span>High School / Secondary</span>
+                    </label>
+                    <label className="flex items-center gap-3">
+                      <input type="radio" name="education" className="w-4 h-4 text-purple-500" />
+                      <span>University / College</span>
+                    </label>
+                    <label className="flex items-center gap-3">
+                      <input type="radio" name="education" className="w-4 h-4 text-purple-500" />
+                      <span>Not Currently Studying</span>
+                    </label>
+                  </div>
+
+                  <label className="text-left w-full text-xl mb-4 font-semibold flex items-center gap-1">
+                    <Asterisk className="text-[#9333EA]" width={12} height={12}/>Preferred Subject :
+                  </label>
+                  <div className="flex flex-col gap-3 mb-6 w-full px-4">
+                    <label className="flex items-center gap-3">
+                      <input type="checkbox" className="w-4 h-4 text-purple-500" />
+                      <span>Mathematics</span>
+                    </label>
+                    <label className="flex items-center gap-3">
+                      <input type="checkbox" className="w-4 h-4 text-purple-500" />
+                      <span>Physics</span>
+                    </label>
+                    <label className="flex items-center gap-3">
+                      <input type="checkbox" className="w-4 h-4 text-purple-500" />
+                      <span>Biology</span>
+                    </label>
+                    <label className="flex items-center gap-3">
+                      <input type="checkbox" className="w-4 h-4 text-purple-500" />
+                      <span>Chemistry</span>
+                    </label>
+                  </div>
+
+                  <label className="text-left w-full text-sm mb-4 font-normal flex items-start gap-2">
+                    <input type="checkbox" className="w-4 h-4 text-purple-500 mt-1" />
+                    <span>I hereby give my consent for the FLearn platform to collect, process, and use my personal data in accordance with the purposes outlined in the <Link href="/policy" target="_blank" className="text-[#9333EA] hover:underline">Privacy Policy</Link> and <Link href="/tos" target="_blank" className="text-[#9333EA] hover:underline">Terms of Service</Link>.</span>
+                  </label>
                 </>
               )}
             </div>
