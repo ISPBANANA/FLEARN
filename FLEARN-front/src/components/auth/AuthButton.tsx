@@ -1,10 +1,12 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import LoginButton from './LoginButton';
 import LogoutButton from './LogoutButton';
+import { getCurrentUser, isAuthenticated } from '../../lib/api';
 
 interface User {
+  sub: string;
   name?: string;
   email?: string;
   picture?: string;
@@ -15,16 +17,28 @@ export function AuthButton() {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    // Check for user authentication state
-    // This is a simplified check - in production you'd verify JWT tokens
     const checkAuthState = () => {
-      // For now, we'll simulate checking auth state
-      // In a real app, you'd check for valid tokens in cookies or localStorage
-      setIsLoading(false);
-      // setUser(null); // No user by default
+      try {
+        if (isAuthenticated()) {
+          const currentUser = getCurrentUser();
+          setUser(currentUser);
+        } else {
+          setUser(null);
+        }
+      } catch (error) {
+        console.error('Error checking auth state:', error);
+        setUser(null);
+      } finally {
+        setIsLoading(false);
+      }
     };
 
     checkAuthState();
+    
+    // Check auth state periodically or on focus
+    const interval = setInterval(checkAuthState, 30000); // Check every 30 seconds
+    
+    return () => clearInterval(interval);
   }, []);
 
   if (isLoading) {
