@@ -31,6 +31,7 @@ export default function Home() {
           <div className="flex flex-col justify-center items-end space-y-10">
             <p className="text-7xl font-semibold text-[#454545] text-right">What do you<br></br>wanna <span className="font-bold text-[#9A41FF]">FLearn</span><br></br>Today</p>
             <Link
+<<<<<<< HEAD
                 href="/api/auth/login"
             >
               <FadeContent blur={true} duration={1000} easing="ease-out" initialOpacity={0}>
@@ -83,6 +84,60 @@ export default function Home() {
                       }
                     `}</style>
                   </button>
+=======
+                href="/"
+            >
+              <FadeContent blur={true} duration={1000} easing="ease-out" initialOpacity={0}>
+                <button
+                  className="bg-purple-400 text-white py-4 px-4 w-70 rounded hover:bg-purple-500 transition font-semibold flex flex-row items-center justify-center group"
+                  style={{ position: 'relative', overflow: 'hidden', minWidth: '220px' }}
+                >
+                  <span
+                    className="flex items-center h-full"
+                    style={{ transition: 'transform 0.4s cubic-bezier(0.77,0,0.175,1), opacity 0.3s', pointerEvents: 'none', marginRight: '8px' }}
+                  >
+                    <Image
+                      src="/landing/google.webp"
+                      alt="Google"
+                      height={32}
+                      width={32}
+                      className="drop-shadow-sm drop-shadow-purple-600"
+                      style={{
+                        opacity: 0,
+                        transform: 'translateX(-20px)',
+                        transition: 'transform 0.4s cubic-bezier(0.77,0,0.175,1), opacity 0.3s',
+                      }}
+                    />
+                  </span>
+                  <p className="text-2xl">Let&rsquo;s get started</p>
+                  <style jsx>{`
+                    button.group {
+                      position: relative;
+                    }
+                    button.group .text-2xl {
+                      transition: transform 0.4s cubic-bezier(0.77,0,0.175,1), text-align 0.1s;
+                      text-align: left;
+                      width: 100%;
+                      display: block;
+                      position: relative;
+                      left: 0;
+                    }
+                    button.group:hover .text-2xl {
+                      transform: translateX(16px);
+                      text-align: left;
+                    }
+                    button.group span > :global(img) {
+                      opacity: 0;
+                      transform: translateX(-20px);
+                      transition: transform 0.4s cubic-bezier(0.77,0,0.175,1), opacity 0.3s;
+                    }
+                    button.group:hover span > :global(img) {
+                      opacity: 1 !important;
+                      transform: translateX(0) !important;
+                    }
+                  `}</style>
+                </button>
+>>>>>>> 32041f01aa71e884a8e4979c31b990c979e091aa
               </FadeContent>
             </Link>
           </div>

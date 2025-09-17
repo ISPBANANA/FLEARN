@@ -4,7 +4,11 @@ const https = require('https');
 const http = require('http');
 
 // Configuration from environment
+<<<<<<< HEAD
 const AUTH0_DOMAIN = 'genai-5051199463733487.jp.auth0.com';
+=======
+const AUTH0_DOMAIN = 'YOUR-AUTH0-DOMAIN.auth0.com';
+>>>>>>> 32041f01aa71e884a8e4979c31b990c979e091aa
 const AUTH0_AUDIENCE = 'https://FLEARN-api.com';
 const API_BASE_URL = 'http://localhost:8099';
 

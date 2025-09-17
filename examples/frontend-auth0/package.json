@@ -1,0 +1,56 @@
+{
+  "name": "flearn-frontend-auth0-example",
+  "version": "1.0.0",
+  "description": "FLEARN Frontend Auth0 Integration Example - Complete Next.js application demonstrating Auth0 authentication with FLEARN backend API",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint",
+    "test": "jest",
+    "test:watch": "jest --watch",
+    "type-check": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@auth0/nextjs-auth0": "^3.8.0",
+    "next": "^14.2.25",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.10.5",
+    "@types/react": "^18.2.45",
+    "@types/react-dom": "^18.2.18",
+    "eslint": "^8.56.0",
+    "eslint-config-next": "^14.2.25",
+    "jest": "^29.7.0",
+    "jest-environment-jsdom": "^29.7.0",
+    "typescript": "^5.3.3"
+  },
+  "engines": {
+    "node": ">=18.0.0",
+    "npm": ">=8.0.0"
+  },
+  "keywords": [
+    "auth0",
+    "nextjs",
+    "react",
+    "flearn",
+    "authentication",
+    "jwt",
+    "learning-platform",
+    "frontend-example"
+  ],
+  "author": "FLEARN Team",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/ISPBANANA/FLEARN.git",
+    "directory": "examples/frontend-auth0"
+  },
+  "bugs": {
+    "url": "https://github.com/ISPBANANA/FLEARN/issues"
+  },
+  "homepage": "https://github.com/ISPBANANA/FLEARN#readme"
+}

@@ -17,6 +17,14 @@
 ![PostgreSQL](https://img.shields.io/badge/PostgreSQL-15-blue)
 ![Docker](https://img.shields.io/badge/Docker-Containerized-blue)
 
+**[🏠 Home](../../wiki/Home)** - Main documentation hub  
+**[🚀 Getting Started](../../wiki/Getting-Started)** - Setup and installation guide  
+**[🏗️ Architecture](../../wiki/Architecture)** - System design and components  
+**[🔧 API Setup](../../wiki/API-Setup-Guide)** - Backend configuration  
+**[🔐 Authentication](../../wiki/Authentication-Auth0)** - Auth0 integration guide  
+**[🐳 Docker Deployment](../../wiki/Docker-Deployment)** - Container setup and deployment  
+**[🔒 Port Configuration](../../wiki/Port-Configuration)** - Port reference and security  
+
 FLEARN is an interactive learning platform designed to make education engaging and fun. Built with modern web technologies, it features gamification elements, progress tracking, and social learning components.
 
 ## 🌟 Features
@@ -31,9 +39,12 @@ FLEARN is an interactive learning platform designed to make education engaging a
 ## 🎯 Project Links
 
 <<<<<<< HEAD
+<<<<<<< HEAD
 - **� Website Link (On Dev)**: [http://hongrocker49.thddns.net:2725/](http://hongrocker49.thddns.net:2725/)
 - **�🎬 Pitching Video**: [Watch on YouTube](https://youtu.be/YiV91YK47vU)
 =======
+=======
+>>>>>>> 32041f01aa71e884a8e4979c31b990c979e091aa
 - **🌐 Website Link (On Dev)**: [http://hongrocker49.thddns.net:2725/](http://hongrocker49.thddns.net:2725/)
 - **🎬 Pitching Video**: [Watch on YouTube](https://youtu.be/YiV91YK47vU)
 >>>>>>> 332ca2e69c084c80546bf7dbd6d05ce7974e5e81
