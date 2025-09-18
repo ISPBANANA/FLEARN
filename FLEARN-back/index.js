@@ -3,7 +3,7 @@ const express = require('express');
 const mongoose = require('mongoose');
 const cors = require('cors');
 const { initializeDatabases, closeDatabases } = require('./config/database');
-const { handleJwtError } = require('./middleware/auth');
+const { handleAuthError } = require('./middleware/auth');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -67,7 +67,7 @@ initializeDatabases().catch((error) => {
 });
 
 // JWT error handler (must be before global error handler)
-app.use(handleJwtError);
+app.use(handleAuthError);
 
 // Global error handler
 app.use((err, req, res, next) => {
@@ -104,8 +104,7 @@ app.listen(PORT, () => {
     console.log('\n🚀 FLEARN Backend Server Started!');
     console.log(`📍 Server URL: http://localhost:${PORT}`);
     console.log(`🌍 Environment: ${NODE_ENV}`);
-    console.log(`� Auth0 Domain: ${process.env.AUTH0_DOMAIN || 'Not configured'}`);
-    console.log(`🎯 Auth0 Audience: ${process.env.AUTH0_AUDIENCE || 'Not configured'}`);
+    console.log(`🔑 Google Client ID: ${process.env.GOOGLE_CLIENT_ID ? 'Configured' : 'Not configured'}`);
     console.log(`📅 Started at: ${new Date().toISOString()}`);
     console.log('====================================\n');
 });

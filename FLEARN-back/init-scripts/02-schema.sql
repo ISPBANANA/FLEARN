@@ -5,7 +5,7 @@ CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 
 CREATE TABLE "user" (
     user_id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-    auth0_id VARCHAR(255) UNIQUE NOT NULL,
+    google_id VARCHAR(255) UNIQUE NOT NULL,
     profile_pic TEXT,
     name TEXT,
     email TEXT UNIQUE,

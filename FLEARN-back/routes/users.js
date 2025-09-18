@@ -8,17 +8,17 @@ const router = express.Router();
 // Get user profile (protected route)
 // Usage Example:
 // GET /api/users/profile
-// Headers: Authorization: Bearer <JWT_TOKEN>
+// Headers: Authorization: Bearer <GOOGLE_ID_TOKEN>
 router.get('/profile', checkJwt, async (req, res) => {
     try {
-        const auth0Id = req.user.sub;
+        const googleId = req.user.sub || req.user.id;
         
         const query = `
             SELECT * FROM "user" 
-            WHERE auth0_id = $1
+            WHERE google_id = $1
         `;
         
-        const result = await pgPool.query(query, [auth0Id]);
+        const result = await pgPool.query(query, [googleId]);
         
         if (result.rows.length === 0) {
             return res.status(404).json({
@@ -54,12 +54,12 @@ router.get('/profile', checkJwt, async (req, res) => {
 // }
 router.post('/profile', checkJwt, async (req, res) => {
     try {
-        const auth0Id = req.user.sub;
+        const googleId = req.user.sub || req.user.id;
         const email = req.user.email || req.body.email;
+        const name = req.user.name || req.body.name;
+        const profile_pic = req.user.picture || req.body.profile_pic;
         
         const {
-            profile_pic,
-            name,
             birthdate,
             edu_level
         } = req.body;
@@ -67,9 +67,9 @@ router.post('/profile', checkJwt, async (req, res) => {
         // Check if user already exists
         const existingUserQuery = `
             SELECT user_id FROM "user" 
-            WHERE auth0_id = $1
+            WHERE google_id = $1
         `;
-        const existingUser = await pgPool.query(existingUserQuery, [auth0Id]);
+        const existingUser = await pgPool.query(existingUserQuery, [googleId]);
         
         if (existingUser.rows.length > 0) {
             // Update existing user
@@ -77,12 +77,12 @@ router.post('/profile', checkJwt, async (req, res) => {
                 UPDATE "user" 
                 SET profile_pic = $1, name = $2, email = $3, birthdate = $4, edu_level = $5,
                     updated_at = NOW()
-                WHERE auth0_id = $6
+                WHERE google_id = $6
                 RETURNING *
             `;
             
             const result = await pgPool.query(updateQuery, [
-                profile_pic, name, email, birthdate, edu_level, auth0Id
+                profile_pic, name, email, birthdate, edu_level, googleId
             ]);
             
             res.json({
@@ -94,14 +94,14 @@ router.post('/profile', checkJwt, async (req, res) => {
             const userId = uuidv4();
             const insertQuery = `
                 INSERT INTO "user" (
-                    user_id, auth0_id, profile_pic, name, email, birthdate, edu_level,
+                    user_id, google_id, profile_pic, name, email, birthdate, edu_level,
                     rank, streak, completed_task, daily_exp, math_exp, phy_exp, bio_exp, chem_exp
                 ) VALUES ($1, $2, $3, $4, $5, $6, $7, 'Beginner', 0, 0, 0, 0, 0, 0, 0)
                 RETURNING *
             `;
             
             const result = await pgPool.query(insertQuery, [
-                userId, auth0Id, profile_pic, name, email, birthdate, edu_level
+                userId, googleId, profile_pic, name, email, birthdate, edu_level
             ]);
             
             res.status(201).json({
@@ -125,11 +125,11 @@ router.post('/profile', checkJwt, async (req, res) => {
 // Headers: Authorization: Bearer <JWT_TOKEN>
 router.get('/preferences', checkJwt, async (req, res) => {
     try {
-        const auth0Id = req.user.sub;
+        const googleId = req.user.sub || req.user.id;
         
-        // First get user_id from auth0_id
-        const userQuery = `SELECT user_id FROM "user" WHERE auth0_id = $1`;
-        const userResult = await pgPool.query(userQuery, [auth0Id]);
+        // First get user_id from google_id
+        const userQuery = `SELECT user_id FROM "user" WHERE google_id = $1`;
+        const userResult = await pgPool.query(userQuery, [googleId]);
         
         if (userResult.rows.length === 0) {
             return res.status(404).json({
@@ -170,7 +170,7 @@ router.get('/preferences', checkJwt, async (req, res) => {
 // }
 router.post('/preferences', checkJwt, async (req, res) => {
     try {
-        const auth0Id = req.user.sub;
+        const googleId = req.user.sub || req.user.id;
         const { subject } = req.body;
         
         if (!subject) {
@@ -180,9 +180,9 @@ router.post('/preferences', checkJwt, async (req, res) => {
             });
         }
         
-        // First get user_id from auth0_id
-        const userQuery = `SELECT user_id FROM "user" WHERE auth0_id = $1`;
-        const userResult = await pgPool.query(userQuery, [auth0Id]);
+        // First get user_id from google_id
+        const userQuery = `SELECT user_id FROM "user" WHERE google_id = $1`;
+        const userResult = await pgPool.query(userQuery, [googleId]);
         
         if (userResult.rows.length === 0) {
             return res.status(404).json({
@@ -228,7 +228,7 @@ router.post('/preferences', checkJwt, async (req, res) => {
 // }
 router.patch('/experience', checkJwt, async (req, res) => {
     try {
-        const auth0Id = req.user.sub;
+        const googleId = req.user.sub || req.user.id;
         const { daily_exp, math_exp, phy_exp, bio_exp, chem_exp } = req.body;
         
         const updateQuery = `
@@ -239,12 +239,12 @@ router.patch('/experience', checkJwt, async (req, res) => {
                 bio_exp = COALESCE($4, bio_exp),
                 chem_exp = COALESCE($5, chem_exp),
                 updated_at = NOW()
-            WHERE auth0_id = $6
+            WHERE google_id = $6
             RETURNING *
         `;
         
         const result = await pgPool.query(updateQuery, [
-            daily_exp, math_exp, phy_exp, bio_exp, chem_exp, auth0Id
+            daily_exp, math_exp, phy_exp, bio_exp, chem_exp, googleId
         ]);
         
         if (result.rows.length === 0) {

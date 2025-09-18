@@ -10,11 +10,11 @@ const router = express.Router();
 // Headers: Authorization: Bearer <JWT_TOKEN>
 router.get('/', checkJwt, async (req, res) => {
     try {
-        const auth0Id = req.user.sub;
+        const googleId = req.user.sub || req.user.id;
         
-        // First get user_id from auth0_id
-        const userQuery = `SELECT user_id FROM "user" WHERE auth0_id = $1`;
-        const userResult = await pgPool.query(userQuery, [auth0Id]);
+        // First get user_id from google_id
+        const userQuery = `SELECT user_id FROM "user" WHERE google_id = $1`;
+        const userResult = await pgPool.query(userQuery, [googleId]);
         
         if (userResult.rows.length === 0) {
             return res.status(404).json({
@@ -81,7 +81,7 @@ router.get('/', checkJwt, async (req, res) => {
 // }
 router.post('/', checkJwt, async (req, res) => {
     try {
-        const auth0Id = req.user.sub;
+        const googleId = req.user.sub || req.user.id;
         const { partner_email } = req.body;
         
         if (!partner_email) {
@@ -92,8 +92,8 @@ router.post('/', checkJwt, async (req, res) => {
         }
         
         // Get current user_id
-        const userQuery = `SELECT user_id FROM "user" WHERE auth0_id = $1`;
-        const userResult = await pgPool.query(userQuery, [auth0Id]);
+        const userQuery = `SELECT user_id FROM "user" WHERE google_id = $1`;
+        const userResult = await pgPool.query(userQuery, [googleId]);
         
         if (userResult.rows.length === 0) {
             return res.status(404).json({
@@ -186,13 +186,13 @@ router.post('/', checkJwt, async (req, res) => {
 // }
 router.patch('/:gardenId/streak', checkJwt, async (req, res) => {
     try {
-        const auth0Id = req.user.sub;
+        const googleId = req.user.sub || req.user.id;
         const { gardenId } = req.params;
         const { increment } = req.body; // true to increment, false to reset
         
         // Get current user_id
-        const userQuery = `SELECT user_id FROM "user" WHERE auth0_id = $1`;
-        const userResult = await pgPool.query(userQuery, [auth0Id]);
+        const userQuery = `SELECT user_id FROM "user" WHERE google_id = $1`;
+        const userResult = await pgPool.query(userQuery, [googleId]);
         
         if (userResult.rows.length === 0) {
             return res.status(404).json({
@@ -261,7 +261,7 @@ router.patch('/:gardenId/streak', checkJwt, async (req, res) => {
 // }
 router.patch('/:gardenId/status', checkJwt, async (req, res) => {
     try {
-        const auth0Id = req.user.sub;
+        const googleId = req.user.sub || req.user.id;
         const { gardenId } = req.params;
         const { status } = req.body;
         
@@ -273,8 +273,8 @@ router.patch('/:gardenId/status', checkJwt, async (req, res) => {
         }
         
         // Get current user_id
-        const userQuery = `SELECT user_id FROM "user" WHERE auth0_id = $1`;
-        const userResult = await pgPool.query(userQuery, [auth0Id]);
+        const userQuery = `SELECT user_id FROM "user" WHERE google_id = $1`;
+        const userResult = await pgPool.query(userQuery, [googleId]);
         
         if (userResult.rows.length === 0) {
             return res.status(404).json({
@@ -322,12 +322,12 @@ router.patch('/:gardenId/status', checkJwt, async (req, res) => {
 // Headers: Authorization: Bearer <JWT_TOKEN>
 router.delete('/:gardenId', checkJwt, async (req, res) => {
     try {
-        const auth0Id = req.user.sub;
+        const googleId = req.user.sub || req.user.id;
         const { gardenId } = req.params;
         
         // Get current user_id
-        const userQuery = `SELECT user_id FROM "user" WHERE auth0_id = $1`;
-        const userResult = await pgPool.query(userQuery, [auth0Id]);
+        const userQuery = `SELECT user_id FROM "user" WHERE google_id = $1`;
+        const userResult = await pgPool.query(userQuery, [googleId]);
         
         if (userResult.rows.length === 0) {
             return res.status(404).json({

@@ -1,11 +1,12 @@
 # FLEARN Backend API
 
-A Node.js Express backend API for the FLEARN learning platform.
+A Node.js Express backend API for the FLEARN learning platform with Google Cloud authentication.
 
 ## Prerequisites
 
 - Node.js (v18 or higher)
-- MongoDB (local or Atlas)
+- PostgreSQL database
+- Google Cloud Console account
 - npm or yarn
 
 ## Setup
@@ -16,13 +17,16 @@ A Node.js Express backend API for the FLEARN learning platform.
    ```
 
 2. **Environment Configuration:**
-   Copy the `.env` file and update the values according to your setup:
+   Copy the example environment file and update the values:
    ```bash
-   cp .env .env.local
+   cp .env.example .env
    ```
 
-3. **Start MongoDB:**
-   Make sure MongoDB is running on your system or update the `MONGO_URL` in your `.env` file to point to your MongoDB Atlas cluster.
+3. **Google Cloud Setup:**
+   Follow the detailed setup guide in `GOOGLE_CLOUD_SETUP.md`
+
+4. **Start PostgreSQL:**
+   Make sure PostgreSQL is running and create the FLEARN database.
 
 ## Available Scripts
 
@@ -34,9 +38,8 @@ A Node.js Express backend API for the FLEARN learning platform.
 
 - `PORT` - Server port (default: 3000)
 - `NODE_ENV` - Environment mode (development/production)
-- `MONGO_URL` - MongoDB connection string
-- `JWT_SECRET` - Secret key for JWT tokens
-- `ALLOWED_ORIGINS` - Comma-separated list of allowed CORS origins
+- `DATABASE_URL` - PostgreSQL connection string
+- `GOOGLE_CLIENT_ID` - Google OAuth 2.0 client ID for authentication
 
 ## API Endpoints
 

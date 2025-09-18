@@ -1,81 +1,112 @@
-const { expressjwt: jwt } = require('express-jwt');
-const jwksRsa = require('jwks-rsa');
+const { OAuth2Client } = require('google-auth-library');
 require('dotenv').config();
 
-const AUTH0_DOMAIN = process.env.AUTH0_DOMAIN;
-const AUTH0_AUDIENCE = process.env.AUTH0_AUDIENCE;
+const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID;
 
-// In development, we'll create mock middleware if Auth0 is not configured
-const isAuth0Configured = AUTH0_DOMAIN && AUTH0_AUDIENCE && 
-    AUTH0_DOMAIN !== 'your-tenant.auth0.com' && 
-    AUTH0_AUDIENCE !== 'your-auth0-api-identifier';
+// In development, we'll create mock middleware if Google Cloud is not configured
+const isGoogleConfigured = GOOGLE_CLIENT_ID && 
+    GOOGLE_CLIENT_ID !== 'your-google-client-id';
 
-console.log('🔍 Auth0 Configuration Debug:');
-console.log('  AUTH0_DOMAIN:', AUTH0_DOMAIN);
-console.log('  AUTH0_AUDIENCE:', AUTH0_AUDIENCE);
-console.log('  isAuth0Configured:', isAuth0Configured);
+console.log('🔍 Google Cloud Authentication Configuration Debug:');
+console.log('  GOOGLE_CLIENT_ID:', GOOGLE_CLIENT_ID);
+console.log('  isGoogleConfigured:', isGoogleConfigured);
 
-// Mock middleware for development when Auth0 is not configured
-const mockJwt = (req, res, next) => {
-    console.log('⚠️  Using mock JWT middleware - Auth0 not configured');
+// Initialize Google Auth client
+const googleClient = new OAuth2Client(GOOGLE_CLIENT_ID);
+
+// Mock middleware for development when Google Cloud is not configured
+const mockAuth = (req, res, next) => {
+    console.log('⚠️  Using mock authentication middleware - Google Cloud not configured');
     // Mock user object for development
     req.user = {
-        sub: 'auth0|mock-user-id',
+        id: 'google|mock-user-id',
         email: 'test@example.com',
-        email_verified: true
+        email_verified: true,
+        name: 'Test User',
+        picture: 'https://via.placeholder.com/150'
     };
     next();
 };
 
-// Debug middleware to check incoming tokens (simplified for production)
-const debugJwt = (req, res, next) => {
-    console.log('✅ JWT validated for user:', req.user?.sub);
+// Debug middleware to check authenticated users
+const debugAuth = (req, res, next) => {
+    console.log('✅ User authenticated:', req.user?.email);
     next();
 };
 
-// Auth0 JWT verification middleware
-const jwtMiddleware = jwt({
-    secret: jwksRsa.expressJwtSecret({
-        cache: true,
-        rateLimit: true,
-        jwksRequestsPerMinute: 5,
-        jwksUri: `https://${AUTH0_DOMAIN}/.well-known/jwks.json`
-    }),
-    audience: AUTH0_AUDIENCE,
-    issuer: `https://${AUTH0_DOMAIN}/`,
-    algorithms: ['RS256'],
-    requestProperty: 'user' // This forces express-jwt v7 to use req.user instead of req.auth
-});
+// Verify Google ID Token
+const verifyGoogleToken = async (token) => {
+    try {
+        const ticket = await googleClient.verifyIdToken({
+            idToken: token,
+            audience: GOOGLE_CLIENT_ID,
+        });
+        const payload = ticket.getPayload();
+        
+        return {
+            id: `google|${payload.sub}`,
+            email: payload.email,
+            email_verified: payload.email_verified,
+            name: payload.name,
+            picture: payload.picture,
+            sub: `google|${payload.sub}` // For compatibility with existing code
+        };
+    } catch (error) {
+        throw new Error('Invalid Google token');
+    }
+};
 
-const checkJwt = isAuth0Configured ? (req, res, next) => {
-    jwtMiddleware(req, res, (err) => {
-        if (err) {
-            console.log('❌ JWT Error:', err.message);
-            next(err);
-        } else {
-            debugJwt(req, res, next);
+// Google ID Token verification middleware
+const googleAuthMiddleware = async (req, res, next) => {
+    try {
+        const authHeader = req.headers.authorization;
+        if (!authHeader || !authHeader.startsWith('Bearer ')) {
+            return res.status(401).json({
+                error: 'Unauthorized',
+                message: 'No token provided'
+            });
         }
-    });
-} : mockJwt;
 
-// Optional JWT middleware (doesn't fail if no token)
-const optionalJwt = isAuth0Configured ? jwt({
-    secret: jwksRsa.expressJwtSecret({
-        cache: true,
-        rateLimit: true,
-        jwksRequestsPerMinute: 5,
-        jwksUri: `https://${AUTH0_DOMAIN}/.well-known/jwks.json`
-    }),
-    audience: AUTH0_AUDIENCE,
-    issuer: `https://${AUTH0_DOMAIN}/`,
-    algorithms: ['RS256'],
-    credentialsRequired: false,
-    requestProperty: 'user' // This forces express-jwt v7 to use req.user instead of req.auth
-}) : mockJwt;
+        const token = authHeader.split(' ')[1];
+        const user = await verifyGoogleToken(token);
+        req.user = user;
+        debugAuth(req, res, next);
+    } catch (error) {
+        console.log('❌ Google Auth Error:', error.message);
+        return res.status(401).json({
+            error: 'Unauthorized',
+            message: 'Invalid token'
+        });
+    }
+};
 
-// Error handler for JWT middleware
-const handleJwtError = (err, req, res, next) => {
-    if (err.name === 'UnauthorizedError') {
+const checkJwt = isGoogleConfigured ? googleAuthMiddleware : mockAuth;
+
+// Optional Google auth middleware (doesn't fail if no token)
+const optionalGoogleAuth = async (req, res, next) => {
+    try {
+        const authHeader = req.headers.authorization;
+        if (!authHeader || !authHeader.startsWith('Bearer ')) {
+            // No token provided, continue without authentication
+            return next();
+        }
+
+        const token = authHeader.split(' ')[1];
+        const user = await verifyGoogleToken(token);
+        req.user = user;
+        debugAuth(req, res, next);
+    } catch (error) {
+        // Token is invalid, but continue without authentication
+        console.log('⚠️  Optional Google Auth Warning:', error.message);
+        next();
+    }
+};
+
+const optionalJwt = isGoogleConfigured ? optionalGoogleAuth : mockAuth;
+
+// Error handler for authentication middleware
+const handleAuthError = (err, req, res, next) => {
+    if (err.message === 'Invalid Google token' || err.name === 'UnauthorizedError') {
         return res.status(401).json({
             error: 'Unauthorized',
             message: 'Invalid token or no token provided'
@@ -87,5 +118,5 @@ const handleJwtError = (err, req, res, next) => {
 module.exports = {
     checkJwt,
     optionalJwt,
-    handleJwtError
+    handleAuthError
 };
