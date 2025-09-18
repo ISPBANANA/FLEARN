@@ -28,6 +28,17 @@ export default function Home() {
   const [step, setStep] = useState(1);
   const [userData, setUserData] = useState<UserData | null>(null);
   const [authTokens, setAuthTokens] = useState<AuthTokens | null>(null);
+  
+  // Form data states
+  const [formData, setFormData] = useState({
+    displayName: '',
+    dateOfBirth: '',
+    educationLevel: '',
+    preferredSubjects: [] as string[],
+    consentAgreed: false
+  });
+
+  const [showValidationErrors, setShowValidationErrors] = useState(false);
 
   useEffect(() => {
     const loadSignupData = () => {
@@ -87,10 +98,22 @@ export default function Home() {
 
   function handleNext() {
     if (step === 1) {
-      //Check Data
-      setStep(2);
+      if (validateStep1()) {
+        setShowValidationErrors(false);
+        setStep(2);
+      } else {
+        setShowValidationErrors(true);
+      }
     } else if (step === 2) {
-      //check all data and submit
+      if (validateStep2()) {
+        // All validation passed, submit the form
+        console.log('Form submitted with data:', formData);
+        setShowValidationErrors(false);
+        // Here you would normally submit to your backend
+        alert('Account created successfully!');
+      } else {
+        setShowValidationErrors(true);
+      }
     }
   }
 
@@ -107,6 +130,54 @@ export default function Home() {
       };
       reader.readAsDataURL(file);
     }
+  };
+
+  // Form input handlers
+  const handleDisplayNameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setFormData(prev => ({ ...prev, displayName: e.target.value }));
+  };
+
+  const handleDateOfBirthChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setFormData(prev => ({ ...prev, dateOfBirth: e.target.value }));
+  };
+
+  const handleEducationLevelChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setFormData(prev => ({ ...prev, educationLevel: e.target.value }));
+  };
+
+  const handleSubjectChange = (subject: string, checked: boolean) => {
+    setFormData(prev => ({
+      ...prev,
+      preferredSubjects: checked
+        ? [...prev.preferredSubjects, subject]
+        : prev.preferredSubjects.filter(s => s !== subject)
+    }));
+  };
+
+  const handleConsentChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setFormData(prev => ({ ...prev, consentAgreed: e.target.checked }));
+  };
+
+  // Validation functions
+  const validateStep1 = () => {
+    return formData.displayName.trim() !== '' && formData.dateOfBirth !== '';
+  };
+
+  const validateStep2 = () => {
+    return (
+      formData.educationLevel !== '' && 
+      formData.preferredSubjects.length > 0 && 
+      formData.consentAgreed
+    );
+  };
+
+  const isFormValid = () => {
+    if (step === 1) {
+      return validateStep1();
+    } else if (step === 2) {
+      return validateStep2();
+    }
+    return false;
   };
 
   return (
@@ -155,7 +226,22 @@ export default function Home() {
                   </label>
 
                   <label className="text-left w-full text-xl mb-2 font-semibold flex items-center gap-1"><Asterisk className="text-[#9333EA]" width={12} height={12}/>Display name :</label>
-                  <input type="input" placeholder="Ex: FunLearn" className="w-full py-2 px-4 mb-4 border border-gray-300 rounded-xl" style={{ boxShadow: '0px 0px 5px rgba(0, 0, 0, 0.25)' }}/>
+                  <input 
+                    type="input" 
+                    placeholder="Ex: FunLearn" 
+                    className={`w-full py-2 px-4 mb-1 border rounded-xl ${
+                      showValidationErrors && formData.displayName.trim() === '' 
+                        ? 'border-red-500 bg-red-50' 
+                        : 'border-gray-300'
+                    }`}
+                    style={{ boxShadow: '0px 0px 5px rgba(0, 0, 0, 0.25)' }}
+                    value={formData.displayName}
+                    onChange={handleDisplayNameChange}
+                  />
+                  {showValidationErrors && formData.displayName.trim() === '' && (
+                    <p className="text-red-500 text-sm mb-3">Display name is required</p>
+                  )}
+                  {!(showValidationErrors && formData.displayName.trim() === '') && <div className="mb-3"></div>}
                   <label className="text-left w-full text-xl mb-2 font-semibold flex items-center gap-1"><Asterisk className="text-[#9333EA]" width={12} height={12}/>Email :</label>
                   <input 
                     type="email" 
@@ -166,7 +252,21 @@ export default function Home() {
                     disabled
                   />
                   <label className="text-left w-full text-xl mb-2 font-semibold flex items-center gap-1"><Asterisk className="text-[#9333EA]" width={12} height={12}/>Date of Birth :</label>
-                  <input type="date" className="w-full py-2 px-4 mb-4 border border-gray-300 rounded-xl" style={{ boxShadow: '0px 0px 5px rgba(0, 0, 0, 0.25)' }}/>
+                  <input 
+                    type="date" 
+                    className={`w-full py-2 px-4 mb-1 border rounded-xl ${
+                      showValidationErrors && formData.dateOfBirth === '' 
+                        ? 'border-red-500 bg-red-50' 
+                        : 'border-gray-300'
+                    }`}
+                    style={{ boxShadow: '0px 0px 5px rgba(0, 0, 0, 0.25)' }}
+                    value={formData.dateOfBirth}
+                    onChange={handleDateOfBirthChange}
+                  />
+                  {showValidationErrors && formData.dateOfBirth === '' && (
+                    <p className="text-red-500 text-sm mb-3">Date of birth is required</p>
+                  )}
+                  {!(showValidationErrors && formData.dateOfBirth === '') && <div className="mb-3"></div>}
                 </>
               ) : (
                 <>
@@ -175,49 +275,112 @@ export default function Home() {
                   </label>
                   <div className="flex flex-col gap-3 mb-6 w-full px-4">
                     <label className="flex items-center gap-3">
-                      <input type="radio" name="education" className="w-4 h-4 text-purple-500" />
+                      <input 
+                        type="radio" 
+                        name="education" 
+                        className="w-4 h-4 text-purple-500" 
+                        value="primary"
+                        checked={formData.educationLevel === 'primary'}
+                        onChange={handleEducationLevelChange}
+                      />
                       <span>Primary School</span>
                     </label>
                     <label className="flex items-center gap-3">
-                      <input type="radio" name="education" className="w-4 h-4 text-purple-500" />
+                      <input 
+                        type="radio" 
+                        name="education" 
+                        className="w-4 h-4 text-purple-500" 
+                        value="high_school"
+                        checked={formData.educationLevel === 'high_school'}
+                        onChange={handleEducationLevelChange}
+                      />
                       <span>High School / Secondary</span>
                     </label>
                     <label className="flex items-center gap-3">
-                      <input type="radio" name="education" className="w-4 h-4 text-purple-500" />
+                      <input 
+                        type="radio" 
+                        name="education" 
+                        className="w-4 h-4 text-purple-500" 
+                        value="university"
+                        checked={formData.educationLevel === 'university'}
+                        onChange={handleEducationLevelChange}
+                      />
                       <span>University / College</span>
                     </label>
                     <label className="flex items-center gap-3">
-                      <input type="radio" name="education" className="w-4 h-4 text-purple-500" />
+                      <input 
+                        type="radio" 
+                        name="education" 
+                        className="w-4 h-4 text-purple-500" 
+                        value="not_studying"
+                        checked={formData.educationLevel === 'not_studying'}
+                        onChange={handleEducationLevelChange}
+                      />
                       <span>Not Currently Studying</span>
                     </label>
                   </div>
+                  {showValidationErrors && formData.educationLevel === '' && (
+                    <p className="text-red-500 text-sm mb-4 px-4">Please select an education level</p>
+                  )}
 
                   <label className="text-left w-full text-xl mb-4 font-semibold flex items-center gap-1">
                     <Asterisk className="text-[#9333EA]" width={12} height={12}/>Preferred Subject :
                   </label>
                   <div className="flex flex-col gap-3 mb-6 w-full px-4">
                     <label className="flex items-center gap-3">
-                      <input type="checkbox" className="w-4 h-4 text-purple-500" />
+                      <input 
+                        type="checkbox" 
+                        className="w-4 h-4 text-purple-500" 
+                        checked={formData.preferredSubjects.includes('mathematics')}
+                        onChange={(e) => handleSubjectChange('mathematics', e.target.checked)}
+                      />
                       <span>Mathematics</span>
                     </label>
                     <label className="flex items-center gap-3">
-                      <input type="checkbox" className="w-4 h-4 text-purple-500" />
+                      <input 
+                        type="checkbox" 
+                        className="w-4 h-4 text-purple-500" 
+                        checked={formData.preferredSubjects.includes('physics')}
+                        onChange={(e) => handleSubjectChange('physics', e.target.checked)}
+                      />
                       <span>Physics</span>
                     </label>
                     <label className="flex items-center gap-3">
-                      <input type="checkbox" className="w-4 h-4 text-purple-500" />
+                      <input 
+                        type="checkbox" 
+                        className="w-4 h-4 text-purple-500" 
+                        checked={formData.preferredSubjects.includes('biology')}
+                        onChange={(e) => handleSubjectChange('biology', e.target.checked)}
+                      />
                       <span>Biology</span>
                     </label>
                     <label className="flex items-center gap-3">
-                      <input type="checkbox" className="w-4 h-4 text-purple-500" />
+                      <input 
+                        type="checkbox" 
+                        className="w-4 h-4 text-purple-500" 
+                        checked={formData.preferredSubjects.includes('chemistry')}
+                        onChange={(e) => handleSubjectChange('chemistry', e.target.checked)}
+                      />
                       <span>Chemistry</span>
                     </label>
                   </div>
+                  {showValidationErrors && formData.preferredSubjects.length === 0 && (
+                    <p className="text-red-500 text-sm mb-4 px-4">Please select at least one preferred subject</p>
+                  )}
 
-                  <label className="text-left w-full text-sm mb-4 font-normal flex items-start gap-2">
-                    <input type="checkbox" className="w-4 h-4 text-purple-500 mt-1" />
+                  <label className="text-left w-full text-sm mb-1 font-normal flex items-start gap-2">
+                    <input 
+                      type="checkbox" 
+                      className="w-4 h-4 text-purple-500 mt-1" 
+                      checked={formData.consentAgreed}
+                      onChange={handleConsentChange}
+                    />
                     <span>I hereby give my consent for the FLearn platform to collect, process, and use my personal data in accordance with the purposes outlined in the <Link href="/policy" target="_blank" className="text-[#9333EA] hover:underline">Privacy Policy</Link> and <Link href="/tos" target="_blank" className="text-[#9333EA] hover:underline">Terms of Service</Link>.</span>
                   </label>
+                  {showValidationErrors && !formData.consentAgreed && (
+                    <p className="text-red-500 text-sm mb-4">You must agree to the terms and privacy policy to continue</p>
+                  )}
+                  {!(showValidationErrors && !formData.consentAgreed) && <div className="mb-4"></div>}
                 </>
               )}
             </div>
@@ -226,7 +389,16 @@ export default function Home() {
               <button type="button" onClick={goBack} className={`bg-[#ffffff] ${step === 2 ? 'text-[#454545] border border-[#454545]' : 'text-red-500 border border-red-500 hover:text-red-600 hover:border-red-600'} py-2 px-4 w-50 rounded transition`}>
                   {step === 2 ? 'Go Back' : 'Cancel'}
               </button>
-              <button type="button" onClick={handleNext} className="bg-purple-400 text-white py-2 px-4 w-50 rounded hover:bg-purple-500 transition">
+              <button 
+                type="button" 
+                onClick={handleNext} 
+                disabled={!isFormValid()}
+                className={`py-2 px-4 w-50 rounded transition ${
+                  isFormValid() 
+                    ? 'bg-purple-400 text-white hover:bg-purple-500' 
+                    : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                }`}
+              >
                   {step === 2 ? 'Create' : 'Next'}
               </button>
           </div>
