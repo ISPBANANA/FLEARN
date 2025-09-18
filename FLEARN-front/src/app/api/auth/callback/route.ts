@@ -145,8 +145,8 @@ export async function GET(request: NextRequest) {
     return response;
   } catch (error) {
     console.error('Auth callback error:', error);
-    return NextResponse.json({ 
-      error: 'Authentication failed', 
+    return NextResponse.json({
+      error: 'Authentication failed',
       message: error instanceof Error ? error.message : 'Unknown error'
     }, { status: 500 });
   }

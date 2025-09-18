@@ -1,17 +1,19 @@
-// Auth0 Configuration
-export const auth0Config = {
-  domain: process.env.AUTH0_ISSUER_BASE_URL!.replace('https://', ''),
-  clientId: process.env.AUTH0_CLIENT_ID!,
-  clientSecret: process.env.AUTH0_CLIENT_SECRET!,
-  audience: process.env.AUTH0_AUDIENCE!,
-  redirectUri: process.env.AUTH0_BASE_URL! + '/api/auth/callback',
+// Google OAuth Configuration
+export const googleAuthConfig = {
+  clientId: process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID!,
+  redirectUri: process.env.NEXTAUTH_URL! + '/api/auth/callback',
   scope: 'openid profile email'
 };
 
-// Auth0 API endpoints
-export const auth0Endpoints = {
-  authorize: `${process.env.AUTH0_ISSUER_BASE_URL}/authorize`,
-  token: `${process.env.AUTH0_ISSUER_BASE_URL}/oauth/token`,
-  userinfo: `${process.env.AUTH0_ISSUER_BASE_URL}/userinfo`,
-  logout: `${process.env.AUTH0_ISSUER_BASE_URL}/v2/logout`
+// Google OAuth endpoints
+export const googleAuthEndpoints = {
+  authorize: 'https://accounts.google.com/oauth2/v2/auth',
+  token: 'https://oauth2.googleapis.com/token',
+  userinfo: 'https://www.googleapis.com/oauth2/v2/userinfo',
+  // For logout, we'll clear local state and redirect to a logout page
+  logout: process.env.NEXTAUTH_URL + '/'
 };
+
+// Backwards compatibility - keeping the same interface as auth0-config
+export const auth0Config = googleAuthConfig;
+export const auth0Endpoints = googleAuthEndpoints;

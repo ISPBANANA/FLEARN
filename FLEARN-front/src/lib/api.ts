@@ -17,7 +17,9 @@ const getApiBaseUrl = () => {
 
 const API_BASE_URL = getApiBaseUrl();
 
-// Helper function to get access token from cookies
+// Helper function to get Google ID token from cookies
+// Note: Cookie name preserved as 'auth0_access_token' for backward compatibility, 
+// but now contains Google ID token
 function getAccessToken(): string | null {
   if (typeof document === 'undefined') return null;
   
@@ -32,6 +34,8 @@ function getAccessToken(): string | null {
 }
 
 // Helper function to get user info from cookies
+// Note: Cookie name preserved as 'auth0_user' for backward compatibility,
+// but now contains Google user information
 export function getCurrentUser() {
   if (typeof document === 'undefined') return null;
   

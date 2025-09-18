@@ -54,7 +54,7 @@ CREATE TABLE garden (
 );
 
 -- Create indexes for better query performance
-CREATE INDEX idx_user_auth0_id ON "user"(auth0_id);
+CREATE INDEX idx_user_google_id ON "user"(google_id);
 CREATE INDEX idx_user_email ON "user"(email);
 CREATE INDEX idx_prefered_user_id ON prefered(user_id);
 CREATE INDEX idx_friend_user1_id ON friend(user1_id);
