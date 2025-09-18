@@ -6,6 +6,9 @@ const { v4: uuidv4 } = require('uuid');
 const router = express.Router();
 
 // Get user profile (protected route)
+// Usage Example:
+// GET /api/users/profile
+// Headers: Authorization: Bearer <JWT_TOKEN>
 router.get('/profile', checkJwt, async (req, res) => {
     try {
         const auth0Id = req.user.sub;
@@ -40,6 +43,15 @@ router.get('/profile', checkJwt, async (req, res) => {
 });
 
 // Create or update user profile
+// Usage Example:
+// POST /api/users/profile
+// Headers: Authorization: Bearer <JWT_TOKEN>
+// Body: {
+//   "profile_pic": "https://example.com/pic.jpg",
+//   "name": "John Doe",
+//   "birthdate": "1990-01-01",
+//   "edu_level": "Bachelor"
+// }
 router.post('/profile', checkJwt, async (req, res) => {
     try {
         const auth0Id = req.user.sub;
@@ -108,6 +120,9 @@ router.post('/profile', checkJwt, async (req, res) => {
 });
 
 // Get user preferences
+// Usage Example:
+// GET /api/users/preferences
+// Headers: Authorization: Bearer <JWT_TOKEN>
 router.get('/preferences', checkJwt, async (req, res) => {
     try {
         const auth0Id = req.user.sub;
@@ -147,6 +162,12 @@ router.get('/preferences', checkJwt, async (req, res) => {
 });
 
 // Add user preference
+// Usage Example:
+// POST /api/users/preferences
+// Headers: Authorization: Bearer <JWT_TOKEN>
+// Body: {
+//   "subject": "mathematics"
+// }
 router.post('/preferences', checkJwt, async (req, res) => {
     try {
         const auth0Id = req.user.sub;
@@ -195,6 +216,16 @@ router.post('/preferences', checkJwt, async (req, res) => {
 });
 
 // Update user experience points
+// Usage Example:
+// PATCH /api/users/experience
+// Headers: Authorization: Bearer <JWT_TOKEN>
+// Body: {
+//   "daily_exp": 50,
+//   "math_exp": 100,
+//   "phy_exp": 75,
+//   "bio_exp": 60,
+//   "chem_exp": 80
+// }
 router.patch('/experience', checkJwt, async (req, res) => {
     try {
         const auth0Id = req.user.sub;
@@ -233,6 +264,51 @@ router.patch('/experience', checkJwt, async (req, res) => {
         res.status(500).json({
             error: 'Internal server error',
             message: 'Failed to update experience points'
+        });
+    }
+});
+
+// Get username by user ID (public endpoint)
+// Usage Example:
+// GET /api/users/username/12345678-1234-1234-1234-123456789012
+router.get('/username/:userId', async (req, res) => {
+    try {
+        const { userId } = req.params;
+        
+        if (!userId) {
+            return res.status(400).json({
+                error: 'Bad request',
+                message: 'User ID is required'
+            });
+        }
+        
+        const query = `
+            SELECT name FROM "user" 
+            WHERE user_id = $1
+        `;
+        
+        const result = await pgPool.query(query, [userId]);
+        
+        if (result.rows.length === 0) {
+            return res.status(404).json({
+                error: 'User not found',
+                message: 'No user found with the provided ID'
+            });
+        }
+        
+        const username = result.rows[0].name;
+        
+        res.json({
+            message: 'Username retrieved successfully',
+            userId: userId,
+            username: username
+        });
+        
+    } catch (error) {
+        console.error('Error fetching username:', error);
+        res.status(500).json({
+            error: 'Internal server error',
+            message: 'Failed to fetch username'
         });
     }
 });

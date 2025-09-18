@@ -5,6 +5,9 @@ const { checkJwt } = require('../middleware/auth');
 const router = express.Router();
 
 // Get user's friends
+// Usage Example:
+// GET /api/friends
+// Headers: Authorization: Bearer <JWT_TOKEN>
 router.get('/', checkJwt, async (req, res) => {
     try {
         const auth0Id = req.user.sub;
@@ -68,6 +71,12 @@ router.get('/', checkJwt, async (req, res) => {
 });
 
 // Send friend request
+// Usage Example:
+// POST /api/friends/request
+// Headers: Authorization: Bearer <JWT_TOKEN>
+// Body: {
+//   "friend_email": "newFriend@example.com"
+// }
 router.post('/request', checkJwt, async (req, res) => {
     try {
         const auth0Id = req.user.sub;
@@ -152,6 +161,12 @@ router.post('/request', checkJwt, async (req, res) => {
 });
 
 // Accept/reject friend request
+// Usage Example:
+// PATCH /api/friends/456/status
+// Headers: Authorization: Bearer <JWT_TOKEN>
+// Body: {
+//   "status": "accepted"
+// }
 router.patch('/:friendshipId/status', checkJwt, async (req, res) => {
     try {
         const auth0Id = req.user.sub;
@@ -210,6 +225,9 @@ router.patch('/:friendshipId/status', checkJwt, async (req, res) => {
 });
 
 // Remove friend
+// Usage Example:
+// DELETE /api/friends/456
+// Headers: Authorization: Bearer <JWT_TOKEN>
 router.delete('/:friendshipId', checkJwt, async (req, res) => {
     try {
         const auth0Id = req.user.sub;

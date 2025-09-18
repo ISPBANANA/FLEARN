@@ -5,6 +5,9 @@ const { checkJwt } = require('../middleware/auth');
 const router = express.Router();
 
 // Get user's gardens
+// Usage Example:
+// GET /api/gardens
+// Headers: Authorization: Bearer <JWT_TOKEN>
 router.get('/', checkJwt, async (req, res) => {
     try {
         const auth0Id = req.user.sub;
@@ -70,6 +73,12 @@ router.get('/', checkJwt, async (req, res) => {
 });
 
 // Create a new garden with a friend
+// Usage Example:
+// POST /api/gardens
+// Headers: Authorization: Bearer <JWT_TOKEN>
+// Body: {
+//   "partner_email": "friend@example.com"
+// }
 router.post('/', checkJwt, async (req, res) => {
     try {
         const auth0Id = req.user.sub;
@@ -169,6 +178,12 @@ router.post('/', checkJwt, async (req, res) => {
 });
 
 // Update garden streak
+// Usage Example:
+// PATCH /api/gardens/123/streak
+// Headers: Authorization: Bearer <JWT_TOKEN>
+// Body: {
+//   "increment": true
+// }
 router.patch('/:gardenId/streak', checkJwt, async (req, res) => {
     try {
         const auth0Id = req.user.sub;
@@ -238,6 +253,12 @@ router.patch('/:gardenId/streak', checkJwt, async (req, res) => {
 });
 
 // Update garden status
+// Usage Example:
+// PATCH /api/gardens/123/status
+// Headers: Authorization: Bearer <JWT_TOKEN>
+// Body: {
+//   "status": "active"
+// }
 router.patch('/:gardenId/status', checkJwt, async (req, res) => {
     try {
         const auth0Id = req.user.sub;
@@ -296,6 +317,9 @@ router.patch('/:gardenId/status', checkJwt, async (req, res) => {
 });
 
 // Delete garden
+// Usage Example:
+// DELETE /api/gardens/123
+// Headers: Authorization: Bearer <JWT_TOKEN>
 router.delete('/:gardenId', checkJwt, async (req, res) => {
     try {
         const auth0Id = req.user.sub;
