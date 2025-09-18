@@ -1,6 +1,16 @@
 # FLEARN - Interactive Learning Platform
 
-![FLEARN Logo](https://img.shields.io/badge/FLEARN-Learning%20Platform-blue)
+![FLEARN Logo](https- **[🏠 Home](../../wiki/Home)** - Main documentation hub
+- **[🚀 - Testing requirements
+
+## 🛠️ Development
+
+### Quick Commandsng Started](../../wiki/Getting-Started)** - Setup and installation guide
+- **[🏗️ Architecture](../../wiki/Architecture)** - System design and components
+- **[🔧 API Setup](../../wiki/API-Setup-Guide)** - Backend configuration
+- **[🔐 Authentication](../../wiki/Authentication-Auth0)** - Auth0 integration guide
+- **[🐳 Docker Deployment](../../wiki/Docker-Deployment)** - Container setup and deployment
+- **[🔒 Port Configuration](../../wiki/Port-Configuration)** - Port reference and securityshields.io/badge/FLEARN-Learning%20Platform-blue)
 ![Next.js](https://img.shields.io/badge/Next.js-15.5.2-black)
 ![Node.js](https://img.shields.io/badge/Node.js-Express-green)
 ![MongoDB](https://img.shields.io/badge/MongoDB-7.0-green)
@@ -28,8 +38,16 @@ FLEARN is an interactive learning platform designed to make education engaging a
 
 ## 🎯 Project Links
 
+<<<<<<< HEAD
+<<<<<<< HEAD
+- **� Website Link (On Dev)**: [http://hongrocker49.thddns.net:2725/](http://hongrocker49.thddns.net:2725/)
+- **�🎬 Pitching Video**: [Watch on YouTube](https://youtu.be/YiV91YK47vU)
+=======
+=======
+>>>>>>> 32041f01aa71e884a8e4979c31b990c979e091aa
 - **🌐 Website Link (On Dev)**: [http://hongrocker49.thddns.net:2725/](http://hongrocker49.thddns.net:2725/)
 - **🎬 Pitching Video**: [Watch on YouTube](https://youtu.be/YiV91YK47vU)
+>>>>>>> 332ca2e69c084c80546bf7dbd6d05ce7974e5e81
 - **📋 Project Proposal**: [Google Docs](https://docs.google.com/document/d/1RPuF_MChizx3Fs8yoE2WUcgqADlSC1DL95WdcP_SXaw/edit?usp=sharing)
 - **📊 Project Management**: [Jira Board](https://isp-banana.atlassian.net/jira/software/projects/FLEARN/boards/1/backlog)
 - **🎨 UI/UX Design**: [Figma](https://www.figma.com/design/aNtaPV5XsyTG1ETtTOuYwJ/FLEARN?t=uRrKrAPrcLgo4Q3D-1)

@@ -9,8 +9,10 @@
     "lint": "eslint"
   },
   "dependencies": {
+    "@auth0/nextjs-auth0": "^4.10.0",
     "@gsap/react": "^2.1.2",
     "@next/font": "^14.2.15",
+    "arctic": "^3.7.0",
     "gsap": "^3.13.0",
     "lenis": "^1.3.11",
     "lucide-react": "^0.542.0",

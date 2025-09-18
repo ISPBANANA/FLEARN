@@ -4,9 +4,15 @@ const https = require('https');
 const querystring = require('querystring');
 
 // Auth0 Configuration
+<<<<<<< HEAD
+const AUTH0_DOMAIN = 'genai-5051199463733487.jp.auth0.com';
+const AUTH0_CLIENT_ID = 'lcf2KrgpqZCw0XzHtKvOn1cCTnDJQH1m';
+const AUTH0_CLIENT_SECRET = '9dhc65x9ZWTjZSbUJ2EHKTB6ao9mwJcXGo6U8xJVyaw9vMvk-CsdLzoH3Dlu4MPD';
+=======
 const AUTH0_DOMAIN = 'YOUR-AUTH0-DOMAIN.auth0.com';
 const AUTH0_CLIENT_ID = 'YOUR_CLIENT_ID_HERE';
 const AUTH0_CLIENT_SECRET = 'YOUR_CLIENT_SECRET_HERE';
+>>>>>>> 32041f01aa71e884a8e4979c31b990c979e091aa
 const AUTH0_AUDIENCE = 'https://FLEARN-api.com';
 
 console.log('🔑 Testing Auth0 Token Generation');

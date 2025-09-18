@@ -107,6 +107,10 @@ echo ""
 echo $BACKEND_PID > .backend_pid
 
 echo -e "${GREEN}🔐 Auth0 Configuration:${NC}"
+<<<<<<< HEAD
+echo "  • Domain:     genai-5051199463733487.jp.auth0.com"
+=======
 echo "  • Domain:     YOUR-AUTH0-DOMAIN.auth0.com"
+>>>>>>> 32041f01aa71e884a8e4979c31b990c979e091aa
 echo "  • Audience:   https://FLEARN-api.com"
 echo "  • Status:     ✅ Ready for testing"

@@ -4,7 +4,8 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { Factory, UserRound } from 'lucide-react';
-import { use } from 'react';
+import { use, useState, useEffect } from 'react';
+import { AuthButton } from './auth';
 
 export function Nav() {
     const pathname = usePathname();
@@ -37,15 +38,19 @@ export function Nav() {
                 </li>
               ))}
               <li>
-                <UserRound
-                  width={30}
-                  height={30}
+                <Link
+                  href="/api/auth/login"
                   className={`text-[#9A41FF] duration-200 ${
                     pathname === '/profile'
                       ? 'opacity-100'
                       : 'opacity-70 hover:opacity-100'
                   }`}
-                />
+                >
+                  <UserRound
+                    width={30}
+                    height={30}
+                  />
+                </Link>
               </li>
             </ul>
           </nav>

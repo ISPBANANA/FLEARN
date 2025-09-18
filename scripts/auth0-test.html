@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FLEARN Auth0 Test</title>
+    <script src="https://cdn.auth0.com/js/auth0/9.19.0/auth0.min.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .btn {
+            background: #007bff;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 10px 0;
+            font-size: 16px;
+        }
+        .btn:hover {
+            background: #0056b3;
+        }
+        .btn:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+        .result {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 10px 0;
+            font-family: monospace;
+            white-space: pre-wrap;
+        }
+        .success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        .error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        .info {
+            background: #cce7ff;
+            color: #004085;
+            border: 1px solid #b3d7ff;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔐 FLEARN Auth0 Integration Test</h1>
+        <p>This page demonstrates Auth0 authentication with the FLEARN API.</p>
+        
+        <div id="auth-status">
+            <h3>Authentication Status</h3>
+            <div id="status-display" class="result info">Not authenticated</div>
+        </div>
+        
+        <div id="auth-controls">
+            <button id="login-btn" class="btn">Login with Auth0</button>
+            <button id="logout-btn" class="btn" style="display: none;">Logout</button>
+        </div>
+        
+        <div id="user-info" style="display: none;">
+            <h3>User Information</h3>
+            <div id="user-display" class="result"></div>
+        </div>
+        
+        <div id="api-test">
+            <h3>API Testing</h3>
+            <button id="test-public-btn" class="btn">Test Public API</button>
+            <button id="test-protected-btn" class="btn" disabled>Test Protected API</button>
+            <div id="api-results" class="result" style="display: none;"></div>
+        </div>
+        
+        <div id="token-info" style="display: none;">
+            <h3>JWT Token</h3>
+            <div id="token-display" class="result"></div>
+        </div>
+    </div>
+
+    <script>
+        // Auth0 Configuration
+        const auth0 = new auth0.WebAuth({
+            domain: 'genai-5051199463733487.jp.auth0.com',
+            clientID: 'lcf2KrgpqZCw0XzHtKvOn1cCTnDJQH1m',
+            redirectUri: window.location.origin,
+            audience: 'https://FLEARN-api.com',
+            responseType: 'token id_token',
+            scope: 'openid profile email'
+        });
+
+        const API_BASE = 'http://localhost:8099';
+        let accessToken = null;
+
+        // DOM Elements
+        const statusDisplay = document.getElementById('status-display');
+        const userDisplay = document.getElementById('user-display');
+        const tokenDisplay = document.getElementById('token-display');
+        const apiResults = document.getElementById('api-results');
+        const loginBtn = document.getElementById('login-btn');
+        const logoutBtn = document.getElementById('logout-btn');
+        const testPublicBtn = document.getElementById('test-public-btn');
+        const testProtectedBtn = document.getElementById('test-protected-btn');
+
+        // Event Listeners
+        loginBtn.addEventListener('click', login);
+        logoutBtn.addEventListener('click', logout);
+        testPublicBtn.addEventListener('click', testPublicAPI);
+        testProtectedBtn.addEventListener('click', testProtectedAPI);
+
+        // Functions
+        function login() {
+            auth0.authorize();
+        }
+
+        function logout() {
+            accessToken = null;
+            updateUI(null);
+            auth0.logout({
+                returnTo: window.location.origin
+            });
+        }
+
+        function handleAuthentication() {
+            auth0.parseHash((err, authResult) => {
+                if (authResult && authResult.accessToken && authResult.idToken) {
+                    window.location.hash = '';
+                    accessToken = authResult.accessToken;
+                    
+                    auth0.client.userInfo(accessToken, (err, user) => {
+                        if (err) {
+                            console.error('Error getting user info:', err);
+                            return;
+                        }
+                        updateUI(user);
+                    });
+                } else if (err) {
+                    console.error('Authentication error:', err);
+                    statusDisplay.textContent = `Authentication error: ${err.error_description}`;
+                    statusDisplay.className = 'result error';
+                }
+            });
+        }
+
+        function updateUI(user) {
+            if (user) {
+                statusDisplay.textContent = '✅ Authenticated';
+                statusDisplay.className = 'result success';
+                
+                userDisplay.textContent = JSON.stringify(user, null, 2);
+                document.getElementById('user-info').style.display = 'block';
+                
+                tokenDisplay.textContent = `Access Token: ${accessToken.substring(0, 50)}...
+Token Type: Bearer
+Expires: ${new Date(Date.now() + 86400000).toLocaleString()}`;
+                document.getElementById('token-info').style.display = 'block';
+                
+                loginBtn.style.display = 'none';
+                logoutBtn.style.display = 'inline-block';
+                testProtectedBtn.disabled = false;
+            } else {
+                statusDisplay.textContent = 'Not authenticated';
+                statusDisplay.className = 'result info';
+                
+                document.getElementById('user-info').style.display = 'none';
+                document.getElementById('token-info').style.display = 'none';
+                
+                loginBtn.style.display = 'inline-block';
+                logoutBtn.style.display = 'none';
+                testProtectedBtn.disabled = true;
+            }
+        }
+
+        async function testPublicAPI() {
+            apiResults.style.display = 'block';
+            apiResults.textContent = 'Testing public API...';
+            apiResults.className = 'result info';
+            
+            try {
+                const response = await fetch(`${API_BASE}/`);
+                const data = await response.json();
+                
+                apiResults.textContent = `Public API Response (${response.status}):
+${JSON.stringify(data, null, 2)}`;
+                apiResults.className = response.ok ? 'result success' : 'result error';
+            } catch (error) {
+                apiResults.textContent = `Public API Error: ${error.message}`;
+                apiResults.className = 'result error';
+            }
+        }
+
+        async function testProtectedAPI() {
+            if (!accessToken) {
+                apiResults.textContent = 'No access token available';
+                apiResults.className = 'result error';
+                return;
+            }
+
+            apiResults.style.display = 'block';
+            apiResults.textContent = 'Testing protected API...';
+            apiResults.className = 'result info';
+            
+            try {
+                const response = await fetch(`${API_BASE}/api/users/profile`, {
+                    headers: {
+                        'Authorization': `Bearer ${accessToken}`
+                    }
+                });
+                const data = await response.json();
+                
+                apiResults.textContent = `Protected API Response (${response.status}):
+${JSON.stringify(data, null, 2)}
+
+${response.status === 404 ? '✅ Token was validated! User not found is expected for new users.' : ''}`;
+                apiResults.className = (response.ok || response.status === 404) ? 'result success' : 'result error';
+            } catch (error) {
+                apiResults.textContent = `Protected API Error: ${error.message}`;
+                apiResults.className = 'result error';
+            }
+        }
+
+        // Initialize
+        window.addEventListener('load', () => {
+            handleAuthentication();
+            updateUI(null);
+        });
+    </script>
+</body>
+</html>
