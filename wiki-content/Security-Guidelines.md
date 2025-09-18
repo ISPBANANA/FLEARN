@@ -28,11 +28,7 @@ POSTGRES_PASSWORD=123456
 MONGO_PASSWORD=password
 
 # DON'T - Real secrets in examples
-<<<<<<< HEAD
-AUTH0_CLIENT_ID=lcf2KrgpqZCw0XzHtKvOn1cCTnDJQH1m
-=======
 AUTH0_CLIENT_ID=YOUR_CLIENT_ID_HERE
->>>>>>> 32041f01aa71e884a8e4979c31b990c979e091aa
 AUTH0_DOMAIN=mycompany.auth0.com
 ```
 
