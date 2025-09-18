@@ -9,6 +9,10 @@ export async function GET(request: NextRequest) {
     return handleLogin();
   }
   
+  if (pathname.includes('/signup')) {
+    return handleLogin(); // Same OAuth flow for both login and signup
+  }
+  
   if (pathname.includes('/logout')) {
     return handleLogout();
   }
@@ -21,17 +25,35 @@ export async function GET(request: NextRequest) {
 }
 
 function handleLogin() {
+  // Check if required environment variables are set
+  if (!process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID || !process.env.NEXTAUTH_URL) {
+    console.error('Missing required environment variables:', {
+      NEXT_PUBLIC_GOOGLE_CLIENT_ID: !!process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID,
+      NEXTAUTH_URL: !!process.env.NEXTAUTH_URL
+    });
+    return NextResponse.json({ 
+      error: 'OAuth configuration error',
+      message: 'Missing required environment variables' 
+    }, { status: 500 });
+  }
+  
   const state = Math.random().toString(36).substring(7);
   const nonce = Math.random().toString(36).substring(7);
   
-  const authUrl = new URL('https://accounts.google.com/oauth2/v2/auth');
+  const redirectUri = `${process.env.NEXTAUTH_URL}/api/auth/callback`;
+  console.log('OAuth redirect URI:', redirectUri);
+  
+  // Use the newer OAuth 2.0 endpoint
+  const authUrl = new URL('https://accounts.google.com/o/oauth2/v2/auth');
   
   authUrl.searchParams.set('response_type', 'code');
   authUrl.searchParams.set('client_id', process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID!);
-  authUrl.searchParams.set('redirect_uri', `${process.env.NEXTAUTH_URL}/api/auth/callback`);
+  authUrl.searchParams.set('redirect_uri', redirectUri);
   authUrl.searchParams.set('scope', 'openid profile email');
   authUrl.searchParams.set('state', state);
   authUrl.searchParams.set('nonce', nonce);
+  authUrl.searchParams.set('access_type', 'offline');
+  authUrl.searchParams.set('prompt', 'consent');
   
   const response = NextResponse.redirect(authUrl);
   response.cookies.set('auth_state', state, {
@@ -70,8 +92,8 @@ async function handleCallback(request: NextRequest) {
   
   // Check for OAuth error
   if (error) {
-    console.error('OAuth error:', error);
-    return NextResponse.redirect(`${process.env.NEXTAUTH_URL}/?error=oauth_error`);
+    console.error('OAuth error:', error, 'URL:', request.url);
+    return NextResponse.redirect(`${process.env.NEXTAUTH_URL}/?error=oauth_error&details=${encodeURIComponent(error)}`);
   }
   
   // Verify state parameter
@@ -134,7 +156,40 @@ async function handleCallback(request: NextRequest) {
       email_verified: userInfo.verified_email
     };
     
-    const response = NextResponse.redirect(process.env.NEXTAUTH_URL!);
+    // Check if user exists in the database
+    let isNewUser = false;
+    try {
+      const userCheckResponse = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/users/profile`, {
+        headers: {
+          'Authorization': `Bearer ${id_token}`,
+        },
+      });
+      
+      if (userCheckResponse.status === 404) {
+        isNewUser = true;
+      }
+    } catch (error) {
+      console.error('Error checking user profile:', error);
+      // If we can't check, assume existing user to avoid breaking login
+      isNewUser = false;
+    }
+    
+    let response;
+    
+    if (isNewUser) {
+      // Redirect new users to signup page with their data
+      const signupData = {
+        user,
+        access_token,
+        id_token
+      };
+      
+      const encodedData = Buffer.from(JSON.stringify(signupData)).toString('base64');
+      response = NextResponse.redirect(`${process.env.NEXTAUTH_URL}/signup?data=${encodedData}`);
+    } else {
+      // Redirect existing users to home page
+      response = NextResponse.redirect(process.env.NEXTAUTH_URL!);
+    }
     
     // Set cookies with authentication info (keeping same names for compatibility)
     response.cookies.set('auth0_access_token', id_token, { // Using id_token as access_token for backend compatibility

@@ -1,9 +1,14 @@
 const mongoose = require('mongoose');
 const { Pool } = require('pg');
-require('dotenv').config();
+require('dotenv').config({ path: '../../.env' });
 
-// MongoDB connection
+// MongoDB connection (optional)
 const connectMongoDB = async () => {
+    if (!process.env.MONGO_URL) {
+        console.log('⚠️  MongoDB URL not configured, skipping MongoDB connection');
+        return;
+    }
+    
     try {
         await mongoose.connect(process.env.MONGO_URL, {
             useNewUrlParser: true,
@@ -12,7 +17,7 @@ const connectMongoDB = async () => {
         console.log('✅ MongoDB connected successfully');
     } catch (error) {
         console.error('❌ MongoDB connection failed:', error.message);
-        process.exit(1);
+        console.log('⚠️  Continuing without MongoDB...');
     }
 };
 
