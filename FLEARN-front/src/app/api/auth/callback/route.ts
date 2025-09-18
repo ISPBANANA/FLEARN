@@ -1,16 +1,21 @@
 import { NextRequest, NextResponse } from 'next/server';
 
 export async function GET(request: NextRequest) {
+  
   // Handle Auth0 callback - exchange code for tokens
   const url = new URL(request.url);
   const code = url.searchParams.get('code');
   const state = url.searchParams.get('state');
-  
+
   if (!code) {
+    console.error('❌ No authorization code received');
     return NextResponse.json({ error: 'No authorization code received' }, { status: 400 });
   }
   
   try {
+    console.log('🔄 Exchanging code for tokens...');
+    const redirectUri = `${process.env.AUTH0_BASE_URL}/api/auth/callback`;
+
     // Exchange authorization code for tokens
     const tokenResponse = await fetch(`${process.env.AUTH0_ISSUER_BASE_URL}/oauth/token`, {
       method: 'POST',
@@ -22,15 +27,18 @@ export async function GET(request: NextRequest) {
         client_id: process.env.AUTH0_CLIENT_ID,
         client_secret: process.env.AUTH0_CLIENT_SECRET,
         code: code,
-        redirect_uri: `${process.env.AUTH0_BASE_URL}/api/auth/callback`,
+        redirect_uri: redirectUri,
       }),
     });
 
     if (!tokenResponse.ok) {
-      throw new Error('Failed to exchange code for tokens');
+      const errorData = await tokenResponse.text();
+      console.error('❌ Token exchange failed:', tokenResponse.status, errorData);
+      throw new Error(`Failed to exchange code for tokens: ${tokenResponse.status} ${errorData}`);
     }
 
     const tokens = await tokenResponse.json();
+    console.log('✅ Tokens received successfully');
     
     // Get user info from Auth0
     const userResponse = await fetch(`${process.env.AUTH0_ISSUER_BASE_URL}/userinfo`, {
@@ -57,6 +65,8 @@ export async function GET(request: NextRequest) {
 
       if (checkUserResponse.status === 404) {
         // User doesn't exist, redirect to signup page with encoded data
+        console.log('User not found in backend, redirecting to signup');
+        
         const signupData = {
           access_token: tokens.access_token,
           id_token: tokens.id_token,
@@ -72,25 +82,25 @@ export async function GET(request: NextRequest) {
         return NextResponse.redirect(`${process.env.AUTH0_BASE_URL}/signup?data=${encodedData}`);
       }
 
-      // If user exists, create/update profile
-      const backendResponse = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/users/profile`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${tokens.access_token}`,
-        },
-        body: JSON.stringify({
-          name: user.name || user.nickname,
-          email: user.email,
-          profile_pic: user.picture,
-        }),
-      });
+      // // If user exists, create/update profile
+      // const backendResponse = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/users/profile`, {
+      //   method: 'POST',
+      //   headers: {
+      //     'Content-Type': 'application/json',
+      //     'Authorization': `Bearer ${tokens.access_token}`,
+      //   },
+      //   body: JSON.stringify({
+      //     name: user.name || user.nickname,
+      //     email: user.email,
+      //     profile_pic: user.picture,
+      //   }),
+      // });
 
-      if (backendResponse.ok) {
-        console.log('✅ User profile synced with FLEARN backend');
-      } else {
-        console.warn('⚠️ Failed to sync user profile with backend:', backendResponse.statusText);
-      }
+      // if (backendResponse.ok) {
+      //   console.log('✅ User profile synced with FLEARN backend');
+      // } else {
+      //   console.warn('⚠️ Failed to sync user profile with backend:', backendResponse.statusText);
+      // }
     } catch (backendError) {
       console.warn('⚠️ Backend sync error:', backendError instanceof Error ? backendError.message : 'Unknown error');
       // Continue even if backend sync fails
