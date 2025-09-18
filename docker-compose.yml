@@ -55,9 +55,12 @@ services:
     environment:
       NODE_ENV: ${NODE_ENV}
       PORT: 3000
+      NEXT_PUBLIC_API_BASE_URL: http://localhost:${PORT}
       # Override the global PORT variable for frontend
     ports:
       - "3000:3000"
+    depends_on:
+      - flearn-backend
     networks:
       - flearn_network
 

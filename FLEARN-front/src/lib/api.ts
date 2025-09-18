@@ -1,6 +1,21 @@
 // API utility functions for FLEARN backend communication
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:8099';
+// For Docker networking, use the service name. For local development, use localhost.
+const getApiBaseUrl = () => {
+  // Client-side requests (browser)
+  if (typeof window !== 'undefined') {
+    return process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:8099';
+  }
+  
+  // Server-side requests (Next.js server)
+  if (process.env.NODE_ENV === 'production') {
+    return 'http://flearn-backend:8099';
+  }
+  
+  return process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:8099';
+};
+
+const API_BASE_URL = getApiBaseUrl();
 
 // Helper function to get access token from cookies
 function getAccessToken(): string | null {
