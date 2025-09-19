@@ -6,8 +6,50 @@ import { Footer } from "@/components/footer";
 import SplitText from "@/components/SplitText";
 import FadeContent from '@/components/fadeContent'
 import Link from 'next/link';
+import { useEffect } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
+import { SessionManager } from '@/lib/session';
 
 export default function Home() {
+  const router = useRouter();
+  const searchParams = useSearchParams();
+
+  useEffect(() => {
+    // Handle session data from auth callback
+    const sessionParam = searchParams.get('session');
+    if (sessionParam) {
+      try {
+        const sessionData = JSON.parse(Buffer.from(sessionParam, 'base64').toString());
+        
+        // If user picture is missing (due to size constraints), we could fetch it separately
+        // For now, just set the session with available data
+        SessionManager.setSession({
+          user: sessionData.user,
+          access_token: sessionData.access_token,
+          id_token: sessionData.id_token
+        });
+        
+        console.log('✅ User session restored from login');
+        
+        // Clean up URL by removing the session parameter
+        const url = new URL(window.location.href);
+        url.searchParams.delete('session');
+        router.replace(url.pathname + url.search);
+        
+      } catch (error) {
+        console.error('Failed to restore session:', error);
+      }
+    }
+
+    // Check if user is already logged in
+    const existingSession = SessionManager.getSession();
+    if (existingSession) {
+      console.log('User is already logged in:', existingSession.user.name);
+      // Optionally redirect logged-in users to dashboard
+      // router.replace('/dashboard');
+    }
+  }, [searchParams, router]);
+
   return (
     <div className="min-h-screen bg-white">
       <Nav />

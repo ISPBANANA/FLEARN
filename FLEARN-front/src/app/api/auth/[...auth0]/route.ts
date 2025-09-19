@@ -158,6 +158,7 @@ async function handleCallback(request: NextRequest) {
     
     // Check if user exists in the database
     let isNewUser = false;
+    let userData = null;
     try {
       const userCheckResponse = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/users/profile`, {
         headers: {
@@ -167,17 +168,21 @@ async function handleCallback(request: NextRequest) {
       
       if (userCheckResponse.status === 404) {
         isNewUser = true;
+      } else {
+        const responseData = await userCheckResponse.json();
+        userData = responseData.user; // Extract user data from response
       }
     } catch (error) {
       console.error('Error checking user profile:', error);
       // If we can't check, assume existing user to avoid breaking login
       isNewUser = false;
+      userData = null; // Make sure userData is null if there's an error
     }
     
     let response;
     
     if (isNewUser) {
-      // Redirect new users to signup page with their data
+      // Redirect new users to signup page with their Google OAuth data
       const signupData = {
         user,
         access_token,
@@ -187,24 +192,59 @@ async function handleCallback(request: NextRequest) {
       const encodedData = Buffer.from(JSON.stringify(signupData)).toString('base64');
       response = NextResponse.redirect(`${process.env.NEXTAUTH_URL}/signup?data=${encodedData}`);
     } else {
-      // Redirect existing users to home page
-      response = NextResponse.redirect(process.env.NEXTAUTH_URL!);
+      // For existing users, redirect to home page with minimal session data
+      const existingUserSession = {
+        sub: user.sub,
+        email: user.email,
+        name: (userData && userData.name) ? userData.name : user.name,
+        picture: (userData && userData.profile_pic) ? userData.profile_pic : user.picture,
+        email_verified: user.email_verified
+      };
+      
+      // Create minimal session data (without large profile picture to avoid URL length issues)
+      const sessionData = {
+        user: {
+          sub: existingUserSession.sub,
+          email: existingUserSession.email,
+          name: existingUserSession.name,
+          picture: existingUserSession.picture && existingUserSession.picture.length > 500 ? '' : existingUserSession.picture, // Skip large pictures
+          email_verified: existingUserSession.email_verified
+        },
+        access_token,
+        id_token
+      };
+      const encodedSessionData = Buffer.from(JSON.stringify(sessionData)).toString('base64');
+      response = NextResponse.redirect(`${process.env.NEXTAUTH_URL}/?session=${encodedSessionData}`);
     }
     
-    // Set cookies with authentication info (keeping same names for compatibility)
-    response.cookies.set('auth0_access_token', id_token, { // Using id_token as access_token for backend compatibility
-      httpOnly: true,
-      path: '/',
-      sameSite: 'lax',
-      maxAge: 3600 // 1 hour
-    });
-    
-    response.cookies.set('auth0_user', encodeURIComponent(JSON.stringify(user)), {
-      httpOnly: false, // Frontend needs to read this
-      path: '/',
-      sameSite: 'lax',
-      maxAge: 3600 // 1 hour
-    });
+    // Only set cookies and session for existing users
+    if (!isNewUser) {
+      // Set cookies with authentication info (keeping same names for compatibility)
+      response.cookies.set('auth0_access_token', id_token, { // Using id_token as access_token for backend compatibility
+        httpOnly: true,
+        path: '/',
+        sameSite: 'lax',
+        maxAge: 3600 // 1 hour
+      });
+      
+      // Use database user data for existing users (with picture size check for cookies)
+      const cookieUserData = {
+        sub: user.sub,
+        email: user.email,
+        name: (userData && userData.name) ? userData.name : user.name,
+        picture: (userData && userData.profile_pic && userData.profile_pic.length <= 500) ? userData.profile_pic : 
+                 (user.picture && user.picture.length <= 500) ? user.picture : '', // Skip large pictures for cookies
+        email_verified: user.email_verified
+      };
+      
+      response.cookies.set('auth0_user', encodeURIComponent(JSON.stringify(cookieUserData)), {
+        httpOnly: false, // Frontend needs to read this
+        path: '/',
+        sameSite: 'lax',
+        maxAge: 3600 // 1 hour
+      });
+    }
+    // New users don't get cookies/session until they complete signup
     
     // Clear temporary cookies
     response.cookies.delete('auth_state');

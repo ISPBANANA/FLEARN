@@ -8,6 +8,7 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import { FileUp, Asterisk } from 'lucide-react';
 import { useRouter, useSearchParams } from 'next/navigation';
+import { SessionManager } from '@/lib/session';
 
 // Get API base URL for backend calls
 const getApiBaseUrl = () => {
@@ -241,12 +242,23 @@ export default function Home() {
               console.error('Failed to retrieve user profile');
             }
 
-
+            // Create user session after successful signup
+            if (authTokens && userData) {
+              SessionManager.setSession({
+                user: {
+                  sub: userData.sub,
+                  email: userData.email,
+                  name: formData.displayName,
+                  picture: formData.profilePicture,
+                  email_verified: true
+                },
+                access_token: authTokens.access_token,
+                id_token: authTokens.id_token
+              });
+            }
 
             // Redirect to dashboard or home page
             router.replace('/');
-
-
 
           } else {
             const error = await response.json();
