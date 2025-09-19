@@ -28,7 +28,8 @@ CREATE TABLE prefered (
     row_id SERIAL PRIMARY KEY,
     user_id UUID REFERENCES "user"(user_id) ON DELETE CASCADE,
     subject TEXT NOT NULL,
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    UNIQUE(user_id, subject)
 );
 
 CREATE TABLE friend (
@@ -57,6 +58,7 @@ CREATE TABLE garden (
 CREATE INDEX idx_user_google_id ON "user"(google_id);
 CREATE INDEX idx_user_email ON "user"(email);
 CREATE INDEX idx_prefered_user_id ON prefered(user_id);
+CREATE INDEX idx_prefered_subject ON prefered(subject);
 CREATE INDEX idx_friend_user1_id ON friend(user1_id);
 CREATE INDEX idx_friend_user2_id ON friend(user2_id);
 CREATE INDEX idx_garden_user1_id ON garden(user1_id);
