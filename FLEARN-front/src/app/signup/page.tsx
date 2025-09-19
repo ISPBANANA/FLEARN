@@ -34,7 +34,8 @@ export default function Home() {
     displayName: '',
     dateOfBirth: '',
     educationLevel: '',
-    preferredSubjects: [] as string[],
+    preferredSubjects: '',
+    profilePicture: '',
     consentAgreed: false
   });
 
@@ -96,6 +97,23 @@ export default function Home() {
     }
   }
 
+  const [fileName, setFileName] = useState('');
+  const [imagePreview, setImagePreview] = useState('');
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      setFileName(file.name);
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        const base64String = reader.result as string;
+        setImagePreview(base64String);
+        setFormData(prev => ({ ...prev, profilePicture: base64String }));
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
   function handleNext() {
     if (step === 1) {
       if (validateStep1()) {
@@ -117,20 +135,6 @@ export default function Home() {
     }
   }
 
-  const [fileName, setFileName] = useState('');
-  const [imagePreview, setImagePreview] = useState('');
-
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      setFileName(file.name);
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setImagePreview(reader.result as string);
-      };
-      reader.readAsDataURL(file);
-    }
-  };
 
   // Form input handlers
   const handleDisplayNameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -146,12 +150,16 @@ export default function Home() {
   };
 
   const handleSubjectChange = (subject: string, checked: boolean) => {
-    setFormData(prev => ({
-      ...prev,
-      preferredSubjects: checked
-        ? [...prev.preferredSubjects, subject]
-        : prev.preferredSubjects.filter(s => s !== subject)
-    }));
+    setFormData(prev => {
+      const currentSubjects = prev.preferredSubjects ? prev.preferredSubjects.split(',').filter(s => s.trim()) : [];
+      const updatedSubjects = checked
+        ? [...currentSubjects, subject]
+        : currentSubjects.filter(s => s !== subject);
+      return {
+        ...prev,
+        preferredSubjects: updatedSubjects.join(',')
+      };
+    });
   };
 
   const handleConsentChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -164,9 +172,10 @@ export default function Home() {
   };
 
   const validateStep2 = () => {
+    const hasSubjects = formData.preferredSubjects.trim() !== '';
     return (
       formData.educationLevel !== '' && 
-      formData.preferredSubjects.length > 0 && 
+      hasSubjects && 
       formData.consentAgreed
     );
   };
@@ -364,7 +373,7 @@ export default function Home() {
                       <span>Chemistry</span>
                     </label>
                   </div>
-                  {showValidationErrors && formData.preferredSubjects.length === 0 && (
+                  {showValidationErrors && formData.preferredSubjects.trim() === '' && (
                     <p className="text-red-500 text-sm mb-4 px-4">Please select at least one preferred subject</p>
                   )}
 
