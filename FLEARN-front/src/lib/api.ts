@@ -1,4 +1,5 @@
 // API utility functions for FLEARN backend communication
+import { SessionManager } from './session';
 
 // For Docker networking, use the service name. For local development, use localhost.
 const getApiBaseUrl = () => {
@@ -17,12 +18,19 @@ const getApiBaseUrl = () => {
 
 const API_BASE_URL = getApiBaseUrl();
 
-// Helper function to get Google ID token from cookies
+// Helper function to get Google ID token from cookies or session
 // Note: Cookie name preserved as 'auth0_access_token' for backward compatibility, 
 // but now contains Google ID token
 function getAccessToken(): string | null {
   if (typeof document === 'undefined') return null;
   
+  // First try to get from SessionManager (localStorage)
+  const sessionToken = SessionManager.getAuthToken();
+  if (sessionToken) {
+    return sessionToken;
+  }
+  
+  // Fallback to cookies for backward compatibility
   const cookies = document.cookie.split(';');
   const tokenCookie = cookies.find(cookie => cookie.trim().startsWith('auth0_access_token='));
   
@@ -33,12 +41,19 @@ function getAccessToken(): string | null {
   return null;
 }
 
-// Helper function to get user info from cookies
+// Helper function to get user info from cookies or session
 // Note: Cookie name preserved as 'auth0_user' for backward compatibility,
 // but now contains Google user information
 export function getCurrentUser() {
   if (typeof document === 'undefined') return null;
   
+  // First try to get from SessionManager (localStorage)
+  const sessionUser = SessionManager.getCurrentUser();
+  if (sessionUser) {
+    return sessionUser;
+  }
+  
+  // Fallback to cookies for backward compatibility
   const cookies = document.cookie.split(';');
   const userCookie = cookies.find(cookie => cookie.trim().startsWith('auth0_user='));
   
@@ -57,6 +72,12 @@ export function getCurrentUser() {
 
 // Check if user is authenticated
 export function isAuthenticated(): boolean {
+  // First check SessionManager
+  if (SessionManager.isAuthenticated()) {
+    return true;
+  }
+  
+  // Fallback to cookie check
   return getCurrentUser() !== null;
 }
 
@@ -71,6 +92,14 @@ async function apiCall(endpoint: string, options: RequestInit = {}) {
   
   if (token) {
     headers['Authorization'] = `Bearer ${token}`;
+  } else {
+    // For protected endpoints, we need a token
+    const protectedEndpoints = ['/api/users/', '/api/friends/', '/api/gardens/'];
+    const isProtectedEndpoint = protectedEndpoints.some(path => endpoint.startsWith(path));
+    
+    if (isProtectedEndpoint) {
+      throw new Error('No token provided - please log in to access this resource');
+    }
   }
   
   const response = await fetch(`${API_BASE_URL}${endpoint}`, {
@@ -80,6 +109,11 @@ async function apiCall(endpoint: string, options: RequestInit = {}) {
   
   if (!response.ok) {
     const errorData = await response.json().catch(() => ({}));
+    
+    if (response.status === 401) {
+      throw new Error('Unauthorized - please log in again');
+    }
+    
     throw new Error(errorData.message || `API call failed: ${response.status}`);
   }
   

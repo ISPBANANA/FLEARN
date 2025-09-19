@@ -1,17 +1,15 @@
 'use client';
 
-import Image from 'next/image';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Factory, UserRound, LogOut } from 'lucide-react';
-import { use, useState, useEffect } from 'react';
-import { AuthButton } from './auth';
-import { SessionManager } from '@/lib/session';
+import { UserRound, LogOut } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
+import { useUserProfile } from '@/hooks/useUserProfile';
 
 export function Nav() {
     const pathname = usePathname();
     const { user, isAuthenticated, logout } = useAuth();
+    const { profile, isLoading: profileLoading } = useUserProfile();
 
     const navItems = [
         { name: 'Home', path: '/' },
@@ -51,10 +49,22 @@ export function Nav() {
                 <>
                   <li className="flex items-center gap-2">
                     <img 
-                      src={user.picture || '/profile-icon.svg'} 
+                      src={
+                        // Priority: 1. API profile picture, 2. Session user picture, 3. Default fallback
+                        profile?.profile_pic || 
+                        user.picture || 
+                        '/profile-icon.svg'
+                      } 
                       alt="Profile" 
-                      className="w-8 h-8 rounded-full"
+                      className="w-8 h-8 rounded-full object-cover"
+                      onError={(e) => {
+                        // If image fails to load, fallback to default
+                        e.currentTarget.src = '/profile-icon.svg';
+                      }}
                     />
+                    {profileLoading && (
+                      <div className="w-2 h-2 bg-[#9A41FF] rounded-full animate-pulse"></div>
+                    )}
                   </li>
                   <li>
                     <button

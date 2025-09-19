@@ -65,7 +65,9 @@ export default function Home() {
                 alt="Hero Image"
                 height={500}
                 width={500}
+                priority
                 className="drop-shadow-lg"
+                style={{ height: 'auto', width: 'auto' }}
               />
             </FadeContent>
           </div>
