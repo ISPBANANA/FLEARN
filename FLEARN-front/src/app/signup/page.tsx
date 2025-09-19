@@ -9,6 +9,16 @@ import Link from "next/link";
 import { FileUp, Asterisk } from 'lucide-react';
 import { useRouter, useSearchParams } from 'next/navigation';
 
+// Get API base URL for backend calls
+const getApiBaseUrl = () => {
+  if (typeof window !== 'undefined') {
+    return process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:8099';
+  }
+  return process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:8099';
+};
+
+const API_BASE_URL = getApiBaseUrl();
+
 
 interface UserData {
   sub: string;
@@ -104,17 +114,50 @@ export default function Home() {
     const file = e.target.files?.[0];
     if (file) {
       setFileName(file.name);
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        const base64String = reader.result as string;
-        setImagePreview(base64String);
-        setFormData(prev => ({ ...prev, profilePicture: base64String }));
+      
+      // Compress and resize image before converting to base64
+      const canvas = document.createElement('canvas');
+      const ctx = canvas.getContext('2d');
+      const img = document.createElement('img') as HTMLImageElement;
+      
+      img.onload = () => {
+        // Set maximum dimensions
+        const MAX_WIDTH = 512;
+        const MAX_HEIGHT = 512;
+        
+        let { width, height } = img;
+        
+        // Calculate new dimensions while maintaining aspect ratio
+        if (width > height) {
+          if (width > MAX_WIDTH) {
+            height = (height * MAX_WIDTH) / width;
+            width = MAX_WIDTH;
+          }
+        } else {
+          if (height > MAX_HEIGHT) {
+            width = (width * MAX_HEIGHT) / height;
+            height = MAX_HEIGHT;
+          }
+        }
+        
+        canvas.width = width;
+        canvas.height = height;
+        
+        // Draw and compress the image
+        ctx?.drawImage(img, 0, 0, width, height);
+        
+        // Convert to base64 with reduced quality for JPEG
+        const compressedBase64 = canvas.toDataURL('image/jpeg', 0.7);
+        
+        setImagePreview(compressedBase64);
+        setFormData(prev => ({ ...prev, profilePicture: compressedBase64 }));
       };
-      reader.readAsDataURL(file);
+      
+      img.src = URL.createObjectURL(file);
     }
   };
 
-  function handleNext() {
+  async function handleNext() {
     if (step === 1) {
       if (validateStep1()) {
         setShowValidationErrors(false);
@@ -125,10 +168,99 @@ export default function Home() {
     } else if (step === 2) {
       if (validateStep2()) {
         // All validation passed, submit the form
-        console.log('Form submitted with data:', formData);
         setShowValidationErrors(false);
-        // Here you would normally submit to your backend
-        alert('Account created successfully!');
+        
+        // Check if we have the required ID token
+        if (!authTokens?.id_token) {
+          alert('Authentication error: No valid token available. Please try logging in again.');
+          router.replace('/');
+          return;
+        }
+        
+        try {
+          const response = await fetch(`${API_BASE_URL}/api/users/profile`, {
+            method: 'POST',
+            mode: 'cors',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${authTokens?.id_token}`,
+              'Accept': 'application/json'
+            },
+            body: JSON.stringify({
+              profile_pic: formData.profilePicture,
+              name: formData.displayName,
+              email: userData?.email,
+              birthdate: formData.dateOfBirth,
+              edu_level: formData.educationLevel,
+            })
+          });
+          
+          if (response.ok) {
+            // Get user profile to retrieve user_id
+            const profileResponse = await fetch(`${API_BASE_URL}/api/users/profile`, {
+              method: 'GET',
+              mode: 'cors',
+              headers: {
+                'Authorization': `Bearer ${authTokens?.id_token}`,
+                'Accept': 'application/json'
+              }
+            });
+            
+            if (profileResponse.ok) {
+              const profileData = await profileResponse.json();
+              const userId = profileData.user.user_id;
+              
+              // Save preferred subjects separately
+              if (formData.preferredSubjects.trim() !== '') {
+                const subjectsArray = formData.preferredSubjects.split(',').map(s => s.trim()).filter(s => s);
+                
+                // Post each subject individually
+                for (const subject of subjectsArray) {
+                  const subjectResponse = await fetch(`${API_BASE_URL}/api/users/preferred-subjects`, {
+                    method: 'POST',
+                    mode: 'cors',
+                    headers: {
+                      'Content-Type': 'application/json',
+                      'Authorization': `Bearer ${authTokens?.id_token}`,
+                      'Accept': 'application/json'
+                    },
+                    body: JSON.stringify({
+                      subject: subject,
+                      user_id: userId
+                    })
+                  });
+                  
+                  if (subjectResponse.ok) {
+                    console.log(`Subject ${subject} saved successfully`);
+                  } else {
+                    console.error(`Failed to save subject ${subject}`);
+                  }
+                }
+              }
+            } else {
+              console.error('Failed to retrieve user profile');
+            }
+
+
+
+            // Redirect to dashboard or home page
+            router.replace('/');
+
+
+
+          } else {
+            const error = await response.json();
+            console.error('Profile creation failed:', error);
+            alert(`Failed to create account: ${error.message || 'Unknown error'}`);
+          }
+        } catch (error) {
+          console.error('Network error:', error);
+          if (error instanceof TypeError && error.message.includes('Failed to fetch')) {
+            alert('Network error: Unable to connect to server. Please check if the backend is running and CORS is configured properly.');
+          } else {
+            alert(`Network error: ${error instanceof Error ? error.message : 'Unknown error'}`);
+          }
+        }
       } else {
         setShowValidationErrors(true);
       }

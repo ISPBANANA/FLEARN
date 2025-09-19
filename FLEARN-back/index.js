@@ -34,13 +34,46 @@ const corsOptions = {
         }
     },
     credentials: true,
-    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With']
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'HEAD', 'PATCH'],
+    allowedHeaders: [
+        'Content-Type', 
+        'Authorization', 
+        'X-Requested-With',
+        'Accept',
+        'Origin',
+        'Cache-Control',
+        'X-File-Name'
+    ],
+    exposedHeaders: ['Content-Range', 'X-Content-Range'],
+    optionsSuccessStatus: 200, // For legacy browser support
+    preflightContinue: false // Pass control to the next handler
 };
 
 app.use(cors(corsOptions));
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
+
+// Handle preflight requests explicitly
+app.options('*', cors(corsOptions));
+
+// Increase body size limits for image uploads (base64 images can be large)
+app.use(express.json({ limit: '10mb', parameterLimit: 1000000 }));
+app.use(express.urlencoded({ extended: true, limit: '10mb', parameterLimit: 1000000 }));
+
+// Error handler for body size limits
+app.use((error, req, res, next) => {
+    if (error instanceof SyntaxError && error.status === 413) {
+        return res.status(413).json({
+            error: 'Payload too large',
+            message: 'Request body exceeds the maximum allowed size (10MB). Please reduce image size or use a smaller image.'
+        });
+    }
+    if (error.type === 'entity.too.large') {
+        return res.status(413).json({
+            error: 'Payload too large',
+            message: 'Request body exceeds the maximum allowed size (10MB). Please reduce image size or use a smaller image.'
+        });
+    }
+    next(error);
+});
 
 // Import routes
 const userRoutes = require('./routes/users');

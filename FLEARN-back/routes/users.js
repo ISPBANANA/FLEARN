@@ -55,9 +55,9 @@ router.get('/profile', checkJwt, async (req, res) => {
 router.post('/profile', checkJwt, async (req, res) => {
     try {
         const googleId = req.user.sub || req.user.id;
-        const email = req.user.email || req.body.email;
-        const name = req.user.name || req.body.name;
-        const profile_pic = req.user.picture || req.body.profile_pic;
+        const email = req.body.email || req.user.email;
+        const name = req.body.name || req.user.name;
+        const profile_pic = req.body.profile_pic || req.user.picture;
         
         const {
             birthdate,
