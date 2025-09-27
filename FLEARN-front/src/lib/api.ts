@@ -127,6 +127,11 @@ export const userAPI = {
     return apiCall('/api/users/profile');
   },
 
+  // Get user profile by ID
+  async getProfileById(userId: string) {
+    return apiCall(`/api/users/profilebyid?id=${encodeURIComponent(userId)}`);
+  },
+
   // Create or update user profile
   async updateProfile(profileData: {
     name?: string;

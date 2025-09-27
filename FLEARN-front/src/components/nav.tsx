@@ -48,20 +48,25 @@ export function Nav() {
                 // Show user profile and logout for authenticated users
                 <>
                   <li className="flex items-center gap-2">
-                    <img 
-                      src={
-                        // Priority: 1. API profile picture, 2. Session user picture, 3. Default fallback
-                        profile?.profile_pic || 
-                        user.picture || 
-                        '/profile-icon.svg'
-                      } 
-                      alt="Profile" 
-                      className="w-8 h-8 rounded-full object-cover"
-                      onError={(e) => {
-                        // If image fails to load, fallback to default
-                        e.currentTarget.src = '/profile-icon.svg';
-                      }}
-                    />
+                    <Link 
+                      href={profile?.user_id ? `/profile/${profile.user_id}` : '#'}
+                      className="cursor-pointer"
+                    >
+                      <img 
+                        src={
+                          // Priority: 1. API profile picture, 2. Session user picture, 3. Default fallback
+                          profile?.profile_pic || 
+                          user.picture || 
+                          '/profile-icon.svg'
+                        } 
+                        alt="Profile" 
+                        className="w-8 h-8 rounded-full object-cover hover:ring-2 hover:ring-[#9A41FF] transition-all duration-200"
+                        onError={(e) => {
+                          // If image fails to load, fallback to default
+                          e.currentTarget.src = '/profile-icon.svg';
+                        }}
+                      />
+                    </Link>
                     {profileLoading && (
                       <div className="w-2 h-2 bg-[#9A41FF] rounded-full animate-pulse"></div>
                     )}

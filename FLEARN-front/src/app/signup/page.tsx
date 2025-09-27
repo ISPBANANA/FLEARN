@@ -257,8 +257,15 @@ export default function Home() {
               });
             }
 
-            // Redirect to dashboard or home page
-            router.replace('/');
+            // Redirect to user's profile page using the user_id from the created profile
+            if (profileResponse.ok) {
+              const profileData = await profileResponse.json();
+              const userId = profileData.user.user_id;
+              router.replace(`/profile/${userId}`);
+            } else {
+              // Fallback to home page if profile fetch failed
+              router.replace('/');
+            }
 
           } else {
             const error = await response.json();

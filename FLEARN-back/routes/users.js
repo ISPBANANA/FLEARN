@@ -42,6 +42,47 @@ router.get('/profile', checkJwt, async (req, res) => {
     }
 });
 
+router.get('/profilebyid', checkJwt, async (req, res) => {
+    try {
+        const userId = req.query.id;
+
+        // Validate that userId is provided
+        if (!userId) {
+            return res.status(400).json({
+                error: 'Bad request',
+                message: 'User ID parameter is required'
+            });
+        }
+
+        const query = `
+            SELECT * FROM "user" 
+            WHERE user_id = $1
+        `;
+        
+        const result = await pgPool.query(query, [userId]);
+        
+        if (result.rows.length === 0) {
+            return res.status(404).json({
+                error: 'User not found',
+                message: 'User with the specified ID does not exist'
+            });
+        }
+        
+        const user = result.rows[0];
+        res.json({
+            message: 'User profile retrieved successfully',
+            user: user
+        });
+        
+    } catch (error) {
+        console.error('Error fetching user profile:', error);
+        res.status(500).json({
+            error: 'Internal server error',
+            message: 'Failed to fetch user profile'
+        });
+    }
+});
+
 // Create or update user profile
 // Usage Example:
 // POST /api/users/profile

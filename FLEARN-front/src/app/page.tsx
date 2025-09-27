@@ -9,10 +9,14 @@ import Link from 'next/link';
 import { useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { SessionManager } from '@/lib/session';
+import { useAuth } from '@/hooks/useAuth';
+import { useUserProfile } from '@/hooks/useUserProfile';
 
 export default function Home() {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const { isAuthenticated } = useAuth();
+  const { profile } = useUserProfile();
 
   useEffect(() => {
     // Handle session data from auth callback
@@ -31,10 +35,38 @@ export default function Home() {
         
         console.log('✅ User session restored from login');
         
-        // Clean up URL by removing the session parameter
-        const url = new URL(window.location.href);
-        url.searchParams.delete('session');
-        router.replace(url.pathname + url.search);
+        // After successful login, try to get user profile and redirect to profile page
+        const fetchProfileAndRedirect = async () => {
+          try {
+            const response = await fetch('/api/users/profile', {
+              method: 'GET',
+              headers: {
+                'Authorization': `Bearer ${sessionData.id_token}`,
+                'Content-Type': 'application/json',
+              },
+            });
+            
+            if (response.ok) {
+              const profileData = await response.json();
+              const userId = profileData.user.user_id;
+              router.replace(`/profile/${userId}`);
+              return;
+            } else {
+              // If profile doesn't exist, redirect to signup
+              const encodedData = Buffer.from(JSON.stringify(sessionData)).toString('base64');
+              router.replace(`/signup?data=${encodedData}`);
+              return;
+            }
+          } catch (error) {
+            console.error('Failed to fetch profile after login:', error);
+            // Clean up URL by removing the session parameter and stay on landing page
+            const url = new URL(window.location.href);
+            url.searchParams.delete('session');
+            router.replace(url.pathname + url.search);
+          }
+        };
+
+        fetchProfileAndRedirect();
         
       } catch (error) {
         console.error('Failed to restore session:', error);
@@ -75,7 +107,7 @@ export default function Home() {
           <div className="flex flex-col justify-center items-end space-y-10">
             <p className="text-7xl font-semibold text-[#454545] text-right">What do you<br></br>wanna <span className="font-bold text-[#9A41FF]">FLearn</span><br></br>Today</p>
             <Link
-                href="/api/auth/login"
+                href={isAuthenticated && profile?.user_id ? `/profile/${profile.user_id}` : "/api/auth/login"}
             >
               <FadeContent blur={true} duration={1000} easing="ease-out" initialOpacity={0}>
                   <button
@@ -99,7 +131,9 @@ export default function Home() {
                         }}
                       />
                     </span>
-                    <p className="text-2xl">Let&rsquo;s get started</p>
+                    <p className="text-2xl">
+                      {isAuthenticated && profile?.user_id ? "Go to Profile" : "Let's get started"}
+                    </p>
                     <style jsx>{`
                       button.group {
                         position: relative;
