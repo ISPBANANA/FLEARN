@@ -161,22 +161,22 @@ export default function ProfilePage({ params }: ProfilePageProps) {
                       </svg>
                     </button>
                   </div>
-                  <div className="grid grid-cols-4 gap-3 flex-grow content-start">
-                    {['Takoyaki', 'Hong', 'Chiriew', 'RoteeBoy'].map((name, index) => (
-                      <div key={index} className="text-center">
-                        <div className="w-14 h-14 bg-gray-300 rounded-full mx-auto mb-2 flex items-center justify-center overflow-hidden">
+                  <ul className="gap-3 flex flex-row overflow-x-auto overflow-y-hidden h-52 items-center py-4 px-1">
+                    {['Takoyaki', 'Hong', 'Chiriew', 'RoteeBoy', 'NewFriend', "test"].map((name, index) => (
+                      <li key={index} className="text-center h-40 w-32 min-w-32 flex-shrink-0 rounded-lg flex flex-col items-center justify-center" style={{boxShadow: '0px 0px 5px rgba(0, 0, 0, 0.25)'}}>
+                        <div className="w-20 h-20 bg-gray-300 rounded-full mx-auto mb-2 flex items-center justify-center overflow-hidden">
                           <Image
                             src="/Chr/cry.png"
                             alt={name}
-                            width={56}
-                            height={56}
+                            width={100}
+                            height={100}
                             className="rounded-full object-cover"
                           />
                         </div>
-                        <p className="text-xs font-medium text-[#454545]">{name}</p>
-                      </div>
+                        <p className="text-sm font-medium text-[#454545]">{name}</p>
+                      </li>
                     ))}
-                  </div>
+                  </ul>
                 </div>
 
                 {/* Milestones Section - div6 */}
@@ -233,38 +233,38 @@ export default function ProfilePage({ params }: ProfilePageProps) {
                   <div className="space-y-3">
                     <div>
                       <div className="flex justify-between mb-2">
-                        <span className="text-sm font-medium text-[#454545]">Mathematics (10)</span>
-                        <span className="text-sm text-[#454545]">200/1000 EXPs</span>
+                        <span className="text-sm font-medium text-[#454545]">Mathematics ({Math.floor(profileData.math_exp / 1000)})</span>
+                        <span className="text-sm text-[#454545]">{profileData.math_exp % 1000}/1000 EXPs</span>
                       </div>
                       <div className="w-full bg-gray-200 rounded-full h-2.5">
-                        <div className="bg-gradient-to-r from-green-400 to-green-600 h-2.5 rounded-full" style={{ width: '20%' }}></div>
+                        <div className="bg-gradient-to-r from-green-400 to-green-600 h-2.5 rounded-full" style={{ width: `${Math.floor(profileData.math_exp / 1000) * 100}%` }}></div>
                       </div>
                     </div>
                     <div>
                       <div className="flex justify-between mb-2">
-                        <span className="text-sm font-medium text-[#454545]">Physics (2)</span>
-                        <span className="text-sm text-[#454545]">500/1000 EXPs</span>
+                        <span className="text-sm font-medium text-[#454545]">Physics ({Math.floor(profileData.phy_exp / 1000)})</span>
+                        <span className="text-sm text-[#454545]">{profileData.phy_exp % 1000}/1000 EXPs</span>
                       </div>
                       <div className="w-full bg-gray-200 rounded-full h-2.5">
-                        <div className="bg-gradient-to-r from-green-400 to-green-600 h-2.5 rounded-full" style={{ width: '50%' }}></div>
+                        <div className="bg-gradient-to-r from-green-400 to-green-600 h-2.5 rounded-full" style={{ width: `${Math.floor(profileData.phy_exp / 1000) * 100}%` }}></div>
                       </div>
                     </div>
                     <div>
                       <div className="flex justify-between mb-2">
-                        <span className="text-sm font-medium text-[#454545]">Chemistry (0)</span>
-                        <span className="text-sm text-[#454545]">0/1000 EXPs</span>
+                        <span className="text-sm font-medium text-[#454545]">Chemistry ({Math.floor(profileData.chem_exp / 1000)})</span>
+                        <span className="text-sm text-[#454545]">{profileData.chem_exp % 1000}/1000 EXPs</span>
                       </div>
                       <div className="w-full bg-gray-200 rounded-full h-2.5">
-                        <div className="bg-gradient-to-r from-green-400 to-green-600 h-2.5 rounded-full" style={{ width: '0%' }}></div>
+                        <div className="bg-gradient-to-r from-green-400 to-green-600 h-2.5 rounded-full" style={{ width: `${Math.floor(profileData.chem_exp / 1000) * 100}%` }}></div>
                       </div>
                     </div>
                     <div>
                       <div className="flex justify-between mb-2">
-                        <span className="text-sm font-medium text-[#454545]">Biology (0)</span>
-                        <span className="text-sm text-[#454545]">100/1000 EXPs</span>
+                        <span className="text-sm font-medium text-[#454545]">Biology ({Math.floor(profileData.bio_exp / 1000)})</span>
+                        <span className="text-sm text-[#454545]">{profileData.bio_exp % 1000}/1000 EXPs</span>
                       </div>
                       <div className="w-full bg-gray-200 rounded-full h-2.5">
-                        <div className="bg-gradient-to-r from-green-400 to-green-600 h-2.5 rounded-full" style={{ width: '10%' }}></div>
+                        <div className="bg-gradient-to-r from-green-400 to-green-600 h-2.5 rounded-full" style={{ width: `${Math.floor(profileData.bio_exp / 1000) * 100}%` }}></div>
                       </div>
                     </div>
                   </div>
@@ -307,14 +307,14 @@ export default function ProfilePage({ params }: ProfilePageProps) {
                   </div>
 
                   <div className="space-y-3">
-                    <button className="w-full bg-purple-50 text-purple-600 py-3 px-4 rounded-lg border border-purple-200 hover:bg-purple-100 transition-colors flex items-center justify-center gap-2 text-sm font-medium">
+                    <button className="w-full bg-purple-50 text-purple-600 py-3 px-4 rounded border border-purple-200 hover:bg-purple-100 transition-colors flex items-center justify-center gap-2 text-sm font-medium">
                       <Users size={18} />
                       Find Friend
                       <svg className="w-4 h-4 ml-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
                       </svg>
                     </button>
-                    <button className="w-full bg-green-50 text-green-600 py-3 px-4 rounded-lg border border-green-200 hover:bg-green-100 transition-colors flex items-center justify-center gap-2 text-sm font-medium">
+                    <button className="w-full bg-green-50 text-green-600 py-3 px-4 rounded border border-green-200 hover:bg-green-100 transition-colors flex items-center justify-center gap-2 text-sm font-medium">
                       <TreePine size={18} />
                       Garden
                       <svg className="w-4 h-4 ml-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
