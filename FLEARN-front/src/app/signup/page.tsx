@@ -4,7 +4,7 @@ import Image from "next/image";
 import { Nav } from "@/components/nav";
 import { Footer } from "@/components/footer";
 import SplitText from "@/components/SplitText";
-import { useState, useEffect, Suspense } from "react";
+import { useState, useEffect, Suspense, useCallback } from "react";
 import Link from "next/link";
 import { FileUp, Asterisk } from 'lucide-react';
 import { useRouter } from 'next/navigation';
@@ -53,7 +53,7 @@ export default function Home() {
   const [showValidationErrors, setShowValidationErrors] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const handleDataLoaded = (encodedData: string) => {
+  const handleDataLoaded = useCallback((encodedData: string) => {
     try {
       // Decode the data from base64
       const decodedData = JSON.parse(Buffer.from(encodedData, 'base64').toString());
@@ -72,7 +72,7 @@ export default function Home() {
       localStorage.removeItem('signup_data');
       router.replace('/');
     }
-  };
+  }, [router]);
 
   function goBack() {
     if (step === 1) {
@@ -183,13 +183,15 @@ export default function Home() {
             // Get user profile data from the creation response
             const profileData = await response.json();
             const userId = profileData.user.user_id;
+            
+            console.log('Profile created successfully, user_id:', userId);
               
-            // Save preferred subjects separately
+            // Save preferred subjects separately (don't let this block the redirect)
             if (formData.preferredSubjects.trim() !== '') {
               const subjectsArray = formData.preferredSubjects.split(',').map(s => s.trim()).filter(s => s);
               
-              // Post each subject individually
-              for (const subject of subjectsArray) {
+              // Post each subject individually in the background
+              const subjectPromises = subjectsArray.map(async (subject) => {
                 try {
                   const subjectResponse = await fetch(`${API_BASE_URL}/api/users/preferred-subjects`, {
                     method: 'POST',
@@ -216,7 +218,12 @@ export default function Home() {
                 } catch (subjectError) {
                   console.error(`Error saving subject ${subject}:`, subjectError);
                 }
-              }
+              });
+              
+              // Save subjects in background, don't wait for completion
+              Promise.all(subjectPromises).catch(error => {
+                console.error('Error saving some subjects:', error);
+              });
             }
 
             // Create user session after successful signup
@@ -234,16 +241,30 @@ export default function Home() {
               });
             }
 
-            // Redirect to user's profile page using the user_id from the created profile
-            router.replace(`/profile/${userId}`);
+            // Clear signup data from localStorage
+            localStorage.removeItem('signup_data');
+            
+            console.log('Redirecting to profile:', `/profile/${userId}`);
+            
+            // Use a small delay to ensure state updates are complete before redirect
+            setTimeout(() => {
+              // Redirect to user's profile page using the user_id from the created profile
+              router.push(`/profile/${userId}`);
+            }, 100);
 
           } else {
-            const error = await response.json();
-            console.error('Profile creation failed:', error);
+            const errorText = await response.text();
+            let error;
+            try {
+              error = JSON.parse(errorText);
+            } catch {
+              error = { message: errorText };
+            }
+            console.error('Profile creation failed:', error, 'Status:', response.status);
             alert(`Failed to create account: ${error.message || 'Unknown error'}`);
           }
         } catch (error) {
-          console.error('Network error:', error);
+          console.error('Network error during signup:', error);
           if (error instanceof TypeError && error.message.includes('Failed to fetch')) {
             alert('Network error: Unable to connect to server. Please check if the backend is running and CORS is configured properly.');
           } else {
