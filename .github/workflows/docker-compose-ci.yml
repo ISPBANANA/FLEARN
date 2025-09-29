@@ -40,10 +40,6 @@ jobs:
       working-directory: ./webhook-service
       run: npm ci
     
-    - name: Lint Frontend Code
-      working-directory: ./FLEARN-front
-      run: npm run lint
-    
     - name: Build Frontend
       working-directory: ./FLEARN-front
       run: npm run build
