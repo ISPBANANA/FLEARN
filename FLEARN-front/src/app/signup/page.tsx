@@ -4,11 +4,12 @@ import Image from "next/image";
 import { Nav } from "@/components/nav";
 import { Footer } from "@/components/footer";
 import SplitText from "@/components/SplitText";
-import { useState, useEffect } from "react";
+import { useState, useEffect, Suspense } from "react";
 import Link from "next/link";
 import { FileUp, Asterisk } from 'lucide-react';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { useRouter } from 'next/navigation';
 import { SessionManager } from '@/lib/session';
+import SignupSearchParamsHandler from '@/components/SignupSearchParamsHandler';
 
 // Get API base URL for backend calls
 const getApiBaseUrl = () => {
@@ -35,7 +36,6 @@ interface AuthTokens {
 
 export default function Home() {
   const router = useRouter();
-  const searchParams = useSearchParams();
   const [step, setStep] = useState(1);
   const [userData, setUserData] = useState<UserData | null>(null);
   const [authTokens, setAuthTokens] = useState<AuthTokens | null>(null);
@@ -53,28 +53,8 @@ export default function Home() {
   const [showValidationErrors, setShowValidationErrors] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  useEffect(() => {
-    const loadSignupData = () => {
-      // Try to get data from URL first
-      const encodedData = searchParams.get('data');
-      
-      if (!encodedData) {
-        // If not in URL, try localStorage
-        const storedData = localStorage.getItem('signup_data');
-        if (!storedData) {
-          router.replace('/');
-          return;
-        }
-        return storedData;
-      }
-      
-      return encodedData;
-    };
-
+  const handleDataLoaded = (encodedData: string) => {
     try {
-      const encodedData = loadSignupData();
-      if (!encodedData) return;
-
       // Decode the data from base64
       const decodedData = JSON.parse(Buffer.from(encodedData, 'base64').toString());
       
@@ -87,17 +67,12 @@ export default function Home() {
 
       // Store in localStorage for persistence
       localStorage.setItem('signup_data', encodedData);
-      
-      // If data was from URL, remove it
-      if (searchParams.get('data')) {
-        router.replace('/signup');
-      }
     } catch (e) {
       console.error('Failed to parse signup data:', e);
       localStorage.removeItem('signup_data');
       router.replace('/');
     }
-  }, [searchParams]);
+  };
 
   function goBack() {
     if (step === 1) {
@@ -339,6 +314,9 @@ export default function Home() {
 
   return (
     <div className="min-h-screen bg-white">
+      <Suspense fallback={null}>
+        <SignupSearchParamsHandler onDataLoaded={handleDataLoaded} />
+      </Suspense>
       <Nav />
 
       {/* Infomation here */}
