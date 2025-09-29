@@ -51,6 +51,7 @@ export default function Home() {
   });
 
   const [showValidationErrors, setShowValidationErrors] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
     const loadSignupData = () => {
@@ -171,12 +172,19 @@ export default function Home() {
         // All validation passed, submit the form
         setShowValidationErrors(false);
         
+        // Prevent multiple submissions
+        if (isSubmitting) {
+          return;
+        }
+        
         // Check if we have the required ID token
         if (!authTokens?.id_token) {
           alert('Authentication error: No valid token available. Please try logging in again.');
           router.replace('/');
           return;
         }
+        
+        setIsSubmitting(true);
         
         try {
           const response = await fetch(`${API_BASE_URL}/api/users/profile`, {
@@ -197,26 +205,17 @@ export default function Home() {
           });
           
           if (response.ok) {
-            // Get user profile to retrieve user_id
-            const profileResponse = await fetch(`${API_BASE_URL}/api/users/profile`, {
-              method: 'GET',
-              mode: 'cors',
-              headers: {
-                'Authorization': `Bearer ${authTokens?.id_token}`,
-                'Accept': 'application/json'
-              }
-            });
-            
-            if (profileResponse.ok) {
-              const profileData = await profileResponse.json();
-              const userId = profileData.user.user_id;
+            // Get user profile data from the creation response
+            const profileData = await response.json();
+            const userId = profileData.user.user_id;
               
-              // Save preferred subjects separately
-              if (formData.preferredSubjects.trim() !== '') {
-                const subjectsArray = formData.preferredSubjects.split(',').map(s => s.trim()).filter(s => s);
-                
-                // Post each subject individually
-                for (const subject of subjectsArray) {
+            // Save preferred subjects separately
+            if (formData.preferredSubjects.trim() !== '') {
+              const subjectsArray = formData.preferredSubjects.split(',').map(s => s.trim()).filter(s => s);
+              
+              // Post each subject individually
+              for (const subject of subjectsArray) {
+                try {
                   const subjectResponse = await fetch(`${API_BASE_URL}/api/users/preferred-subjects`, {
                     method: 'POST',
                     mode: 'cors',
@@ -233,13 +232,16 @@ export default function Home() {
                   
                   if (subjectResponse.ok) {
                     console.log(`Subject ${subject} saved successfully`);
+                  } else if (subjectResponse.status === 409) {
+                    // Subject already exists, this is OK
+                    console.log(`Subject ${subject} already exists for user`);
                   } else {
-                    console.error(`Failed to save subject ${subject}`);
+                    console.error(`Failed to save subject ${subject}:`, subjectResponse.status);
                   }
+                } catch (subjectError) {
+                  console.error(`Error saving subject ${subject}:`, subjectError);
                 }
               }
-            } else {
-              console.error('Failed to retrieve user profile');
             }
 
             // Create user session after successful signup
@@ -258,14 +260,7 @@ export default function Home() {
             }
 
             // Redirect to user's profile page using the user_id from the created profile
-            if (profileResponse.ok) {
-              const profileData = await profileResponse.json();
-              const userId = profileData.user.user_id;
-              router.replace(`/profile/${userId}`);
-            } else {
-              // Fallback to home page if profile fetch failed
-              router.replace('/');
-            }
+            router.replace(`/profile/${userId}`);
 
           } else {
             const error = await response.json();
@@ -279,6 +274,8 @@ export default function Home() {
           } else {
             alert(`Network error: ${error instanceof Error ? error.message : 'Unknown error'}`);
           }
+        } finally {
+          setIsSubmitting(false);
         }
       } else {
         setShowValidationErrors(true);
@@ -552,14 +549,14 @@ export default function Home() {
               <button 
                 type="button" 
                 onClick={handleNext} 
-                disabled={!isFormValid()}
+                disabled={!isFormValid() || isSubmitting}
                 className={`py-2 px-4 w-50 rounded transition ${
-                  isFormValid() 
+                  isFormValid() && !isSubmitting
                     ? 'bg-purple-400 text-white hover:bg-purple-500' 
                     : 'bg-gray-300 text-gray-500 cursor-not-allowed'
                 }`}
               >
-                  {step === 2 ? 'Create' : 'Next'}
+                  {step === 2 ? (isSubmitting ? 'Creating...' : 'Create') : 'Next'}
               </button>
           </div>
         </div>

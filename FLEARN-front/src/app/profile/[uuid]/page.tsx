@@ -94,6 +94,9 @@ export default function ProfilePage({ params }: ProfilePageProps) {
       window.location.href = '/';
   };
 
+  // Check if the user is viewing their own profile
+  const isOwnProfile = profile && profileData && profile.user_id === profileData.user_id;
+
   return (
     <ProtectedRoute redirectTo="/">
       <div className="min-h-screen bg-white">
@@ -138,11 +141,13 @@ export default function ProfilePage({ params }: ProfilePageProps) {
                   <div className="mb-6 flex flex-col justify-around">
                     <div className="flex items-center gap-2 py-4">
                       <h1 className="text-4xl font-bold text-purple-600">{profileData.name}</h1>
-                      <button className="text-purple-600 hover:text-purple-800 text-sm">
-                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                        </svg>
-                      </button>
+                      {isOwnProfile && (
+                        <button className="text-purple-600 hover:text-purple-800 text-sm">
+                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                          </svg>
+                        </button>
+                      )}
                     </div>
                     <p className="text-[#454545] text-sm mb-1">UUID: {profileData.user_id}</p>
                     <p className="text-[#454545] text-sm opacity-70">Join since: {new Date(profileData.created_at).toLocaleDateString()}</p>
@@ -154,12 +159,14 @@ export default function ProfilePage({ params }: ProfilePageProps) {
                 <div className="rounded-lg p-4 flex flex-col h-full" style={{ gridArea: '2 / 1 / 3 / 4', boxShadow: '0px 0px 5px rgba(0, 0, 0, 0.25)' }}>
                   <div className="flex items-center justify-between mb-4">
                     <h2 className="text-lg font-semibold text-[#454545]">Friends (NA)</h2>
-                    <button className="text-purple-600 hover:text-purple-800 text-sm flex items-center gap-1">
-                      Add Friend
-                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
-                      </svg>
-                    </button>
+                    {isOwnProfile && (
+                      <button className="text-purple-600 hover:text-purple-800 text-sm flex items-center gap-1">
+                        Add Friend
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                        </svg>
+                      </button>
+                    )}
                   </div>
                   <ul className="gap-3 flex flex-row overflow-x-auto overflow-y-hidden h-52 items-center py-4 px-1">
                     {['Takoyaki', 'Hong', 'Chiriew', 'RoteeBoy', 'NewFriend', "test"].map((name, index) => (
@@ -307,29 +314,40 @@ export default function ProfilePage({ params }: ProfilePageProps) {
                   </div>
 
                   <div className="space-y-3">
-                    <button className="w-full bg-purple-50 text-purple-600 py-3 px-4 rounded border border-purple-200 hover:bg-purple-100 transition-colors flex items-center justify-center gap-2 text-sm font-medium">
-                      <Users size={18} />
-                      Find Friend
-                      <svg className="w-4 h-4 ml-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
-                      </svg>
-                    </button>
+                    {isOwnProfile && (
+                      <button className="w-full bg-purple-50 text-purple-600 py-3 px-4 rounded border border-purple-200 hover:bg-purple-100 transition-colors flex items-center justify-center gap-2 text-sm font-medium">
+                        <Users size={18} />
+                        Find Friend
+                        <svg className="w-4 h-4 ml-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                        </svg>
+                      </button>
+                    )}
                     <button className="w-full bg-green-50 text-green-600 py-3 px-4 rounded border border-green-200 hover:bg-green-100 transition-colors flex items-center justify-center gap-2 text-sm font-medium">
                       <TreePine size={18} />
                       Garden
                       <svg className="w-4 h-4 ml-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
                       </svg>
                     </button>
                   </div>
                 </div>
 
-                {/* Logout and Learn Buttons Section - div7 */}
+                {/* Logout/Profile and Learn Buttons Section - div7 */}
                 <div className="rounded-lg py-4 flex gap-4 flex flex-row justify-between" style={{ gridArea: '5 / 1 / 6 / 6'}}>
-                  <button type="button" onClick={handleLogout} className={`bg-[#ffffff] text-red-500 border border-red-500 hover:text-red-600 hover:border-red-600 py-2 px-4 w-50 rounded transition h-10`}>
+                  {isOwnProfile ? (
+                    <button type="button" onClick={handleLogout} className={`bg-[#ffffff] text-red-500 border border-red-500 hover:text-red-600 hover:border-red-600 py-2 px-4 w-50 rounded transition h-10`}>
                     Logout
                   </button>
-                  <button className="bg-purple-500 hover:bg-purple-600 text-white py-2 px-4 w-50 rounded transition-all duration-200 shadow-md h-10">
+                  ) : (
+                    <button
+                      onClick={() => profile?.user_id && router.push(`/profile/${profile.user_id}`)}
+                      className={`bg-[#ffffff] text-red-500 border border-red-500 hover:text-red-600 hover:border-red-600 py-2 px-4 w-50 rounded transition h-10`}
+                    >
+                      To Profile
+                    </button>
+                  )}
+                  <button className={`bg-purple-500 text-white hover:text-white hover:bg-purple-600 py-2 px-4 w-50 rounded transition h-10`}>
                     Learn
                   </button>
                 </div>
@@ -337,7 +355,6 @@ export default function ProfilePage({ params }: ProfilePageProps) {
             )}
         </div>
         </div>
-
         <Footer />
       </div>
     </ProtectedRoute>
