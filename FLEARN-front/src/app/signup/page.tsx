@@ -11,6 +11,9 @@ import { useRouter } from 'next/navigation';
 import { SessionManager } from '@/lib/session';
 import SignupSearchParamsHandler from '@/components/SignupSearchParamsHandler';
 
+// Force dynamic rendering to avoid build-time issues with useSearchParams
+export const dynamic = 'force-dynamic';
+
 // Get API base URL for backend calls
 const getApiBaseUrl = () => {
   if (typeof window !== 'undefined') {
@@ -182,7 +185,9 @@ export default function Home() {
           if (response.ok) {
             // Get user profile data from the creation response
             const profileData = await response.json();
+            console.log('Profile creation response:', profileData);
             const userId = profileData.user.user_id;
+            console.log('Extracted userId:', userId);
               
             // Save preferred subjects separately
             if (formData.preferredSubjects.trim() !== '') {
@@ -235,7 +240,9 @@ export default function Home() {
             }
 
             // Redirect to user's profile page using the user_id from the created profile
+            console.log('Attempting to redirect to:', `/profile/${userId}`);
             router.replace(`/profile/${userId}`);
+            console.log('Redirect attempted');
 
           } else {
             const error = await response.json();

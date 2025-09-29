@@ -11,6 +11,9 @@ import SearchParamsHandler from '@/components/SearchParamsHandler';
 import { useAuth } from '@/hooks/useAuth';
 import { useUserProfile } from '@/hooks/useUserProfile';
 
+// Force dynamic rendering to avoid build-time issues with useSearchParams
+export const dynamic = 'force-dynamic';
+
 export default function Home() {
   const { isAuthenticated } = useAuth();
   const { profile } = useUserProfile();

@@ -47,15 +47,24 @@ services:
   flearn-frontend:
     build:
       context: ./FLEARN-front
-      dockerfile: Dockerfile
-      args:
-        - CACHEBUST=${CACHEBUST:-1}
+      # dockerfile: Dockerfile
+      # args:
+      #   - CACHEBUST=${CACHEBUST:-1}
+      dockerfile: Dockerfile.dev
     container_name: flearn_frontend
     restart: unless-stopped
+    env_file:
+      - .env
     environment:
       NODE_ENV: ${NODE_ENV}
       PORT: 3000
-      NEXT_PUBLIC_API_BASE_URL: http://localhost:${PORT}
+      NEXT_PUBLIC_API_BASE_URL: ${NEXT_PUBLIC_API_BASE_URL}
+      # OAuth Configuration
+      NEXTAUTH_URL: ${NEXTAUTH_URL}
+      NEXTAUTH_SECRET: ${NEXTAUTH_SECRET}
+      NEXT_PUBLIC_GOOGLE_CLIENT_ID: ${NEXT_PUBLIC_GOOGLE_CLIENT_ID}
+      GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID}
+      GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET}
       # Override the global PORT variable for frontend
     ports:
       - "3000:3000"

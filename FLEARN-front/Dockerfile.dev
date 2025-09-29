@@ -1,22 +1,20 @@
 # Use the latest Node.js 20 LTS Alpine image as the base image
 FROM node:20-alpine
 
-# Cache bust argument to force fresh git clone
-ARG CACHEBUST=1
-
-# Install git
+# Install git (in case needed)
 RUN apk add --no-cache git
 
 # Set working directory
 WORKDIR /app
 
-# Clone the latest version from main branch
-RUN git clone --depth 1 --branch main https://github.com/ISPBANANA/FLEARN.git temp && \
-    mv temp/FLEARN-front/* . && \
-    rm -rf temp
+# Copy package files first for better caching
+COPY package*.json ./
 
 # Install dependencies
 RUN npm ci
+
+# Copy all local source code
+COPY . .
 
 # Fix build configuration to ignore ESLint and TypeScript errors  
 RUN sed -i '/const nextConfig: NextConfig = {/a\  eslint: { ignoreDuringBuilds: true },\n  typescript: { ignoreBuildErrors: true },' next.config.ts
