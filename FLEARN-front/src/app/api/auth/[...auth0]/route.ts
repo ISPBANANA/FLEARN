@@ -40,7 +40,18 @@ function handleLogin() {
   const state = Math.random().toString(36).substring(7);
   const nonce = Math.random().toString(36).substring(7);
   
-  const redirectUri = `${process.env.NEXTAUTH_URL}/api/auth/callback`;
+  // Debug environment variables
+  console.log('All environment variables for NEXTAUTH:', {
+    NEXTAUTH_URL: process.env.NEXTAUTH_URL,
+    NODE_ENV: process.env.NODE_ENV,
+    NEXT_PUBLIC_API_BASE_URL: process.env.NEXT_PUBLIC_API_BASE_URL,
+    HOSTNAME: process.env.HOSTNAME,
+    HOST: process.env.HOST
+  });
+
+  // Force the correct URL if NEXTAUTH_URL is not set properly
+  const baseUrl = process.env.NEXTAUTH_URL || 'http://hongrocker49.thddns.net:2725';
+  const redirectUri = `${baseUrl}/api/auth/callback`;
   console.log('OAuth redirect URI:', redirectUri);
   
   // Use the newer OAuth 2.0 endpoint
@@ -73,7 +84,8 @@ function handleLogin() {
 }
 
 function handleLogout() {
-  const response = NextResponse.redirect(process.env.NEXTAUTH_URL!);
+  const baseUrl = process.env.NEXTAUTH_URL || 'http://hongrocker49.thddns.net:2725';
+  const response = NextResponse.redirect(baseUrl);
   
   // Clear all auth-related cookies
   response.cookies.delete('auth0_access_token');
@@ -90,22 +102,25 @@ async function handleCallback(request: NextRequest) {
   const state = url.searchParams.get('state');
   const error = url.searchParams.get('error');
   
+  // Force the correct URL if NEXTAUTH_URL is not set properly
+  const baseUrl = process.env.NEXTAUTH_URL || 'http://hongrocker49.thddns.net:2725';
+  
   // Check for OAuth error
   if (error) {
     console.error('OAuth error:', error, 'URL:', request.url);
-    return NextResponse.redirect(`${process.env.NEXTAUTH_URL}/?error=oauth_error&details=${encodeURIComponent(error)}`);
+    return NextResponse.redirect(`${baseUrl}/?error=oauth_error&details=${encodeURIComponent(error)}`);
   }
   
   // Verify state parameter
   const storedState = request.cookies.get('auth_state')?.value;
   if (!state || state !== storedState) {
     console.error('State mismatch or missing state');
-    return NextResponse.redirect(`${process.env.NEXTAUTH_URL}/?error=state_mismatch`);
+    return NextResponse.redirect(`${baseUrl}/?error=state_mismatch`);
   }
   
   if (!code) {
     console.error('No authorization code received');
-    return NextResponse.redirect(`${process.env.NEXTAUTH_URL}/?error=no_code`);
+    return NextResponse.redirect(`${baseUrl}/?error=no_code`);
   }
   
   try {
@@ -119,7 +134,7 @@ async function handleCallback(request: NextRequest) {
         code,
         client_id: process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID!,
         client_secret: process.env.GOOGLE_CLIENT_SECRET!,
-        redirect_uri: `${process.env.NEXTAUTH_URL}/api/auth/callback`,
+        redirect_uri: `${baseUrl}/api/auth/callback`,
         grant_type: 'authorization_code',
       }),
     });
@@ -127,7 +142,7 @@ async function handleCallback(request: NextRequest) {
     if (!tokenResponse.ok) {
       const errorData = await tokenResponse.text();
       console.error('Token exchange failed:', errorData);
-      return NextResponse.redirect(`${process.env.NEXTAUTH_URL}/?error=token_exchange_failed`);
+      return NextResponse.redirect(`${baseUrl}/?error=token_exchange_failed`);
     }
     
     const tokens = await tokenResponse.json();
@@ -142,7 +157,7 @@ async function handleCallback(request: NextRequest) {
     
     if (!userResponse.ok) {
       console.error('Failed to get user info');
-      return NextResponse.redirect(`${process.env.NEXTAUTH_URL}/?error=user_info_failed`);
+      return NextResponse.redirect(`${baseUrl}/?error=user_info_failed`);
     }
     
     const userInfo = await userResponse.json();
@@ -190,7 +205,7 @@ async function handleCallback(request: NextRequest) {
       };
       
       const encodedData = Buffer.from(JSON.stringify(signupData)).toString('base64');
-      response = NextResponse.redirect(`${process.env.NEXTAUTH_URL}/signup?data=${encodedData}`);
+      response = NextResponse.redirect(`${baseUrl}/signup?data=${encodedData}`);
     } else {
       // For existing users, redirect to home page with minimal session data
       const existingUserSession = {
@@ -214,7 +229,7 @@ async function handleCallback(request: NextRequest) {
         id_token
       };
       const encodedSessionData = Buffer.from(JSON.stringify(sessionData)).toString('base64');
-      response = NextResponse.redirect(`${process.env.NEXTAUTH_URL}/?session=${encodedSessionData}`);
+      response = NextResponse.redirect(`${baseUrl}/?session=${encodedSessionData}`);
     }
     
     // Only set cookies and session for existing users
@@ -254,6 +269,6 @@ async function handleCallback(request: NextRequest) {
     
   } catch (error) {
     console.error('Callback error:', error);
-    return NextResponse.redirect(`${process.env.NEXTAUTH_URL}/?error=callback_error`);
+    return NextResponse.redirect(`${baseUrl}/?error=callback_error`);
   }
 }

@@ -12,25 +12,44 @@ const mongoURL = process.env.MONGO_URL || 'mongodb://localhost:27017/flearn-db';
 
 const corsOptions = {
     origin: function (origin, callback) {
-        const allowedOrigins = process.env.ALLOWED_ORIGINS 
-            ? process.env.ALLOWED_ORIGINS.split(',')
-            : [
-                'http://localhost:3000', 
-                'http://localhost:3001', 
-                'http://localhost:5173',
-                'http://flearn-frontend:3000',  // Docker service name
-                'http://127.0.0.1:3000',
-                'http://0.0.0.0:3000'
-            ];
-        
-        // Allow requests with no origin (like mobile apps or curl requests)
-        if (!origin) return callback(null, true);
-        
-        if (allowedOrigins.indexOf(origin) !== -1) {
-            callback(null, true);
+        // In production, check environment variable for allowed origins
+        if (process.env.ALLOWED_ORIGINS) {
+            const allowedOrigins = process.env.ALLOWED_ORIGINS.split(',');
+            if (!origin) return callback(null, true); // Allow requests with no origin
+            
+            if (allowedOrigins.indexOf(origin) !== -1) {
+                callback(null, true);
+            } else {
+                console.log('CORS blocked origin:', origin);
+                callback(new Error('Not allowed by CORS'));
+            }
         } else {
-            console.log('CORS blocked origin:', origin);
-            callback(new Error('Not allowed by CORS'));
+            // Development/deployment mode - more flexible CORS
+            // Allow requests with no origin (like mobile apps or curl requests)
+            if (!origin) return callback(null, true);
+            
+            // Allow localhost and any IP addresses on common ports for development
+            const allowedPatterns = [
+                /^http:\/\/localhost:\d+$/,                    // localhost with any port
+                /^http:\/\/127\.0\.0\.1:\d+$/,                // 127.0.0.1 with any port
+                /^http:\/\/0\.0\.0\.0:\d+$/,                  // 0.0.0.0 with any port
+                /^http:\/\/flearn-frontend:\d+$/,             // Docker service name
+                /^http:\/\/\d+\.\d+\.\d+\.\d+:\d+$/,         // Any IP address with port
+                /^https:\/\/\d+\.\d+\.\d+\.\d+:\d+$/,        // Any IP address with port (HTTPS)
+                /^http:\/\/\d+\.\d+\.\d+\.\d+$/,             // Any IP address without port
+                /^https:\/\/\d+\.\d+\.\d+\.\d+$/             // Any IP address without port (HTTPS)
+            ];
+            
+            const isAllowed = allowedPatterns.some(pattern => pattern.test(origin));
+            
+            if (isAllowed) {
+                console.log('CORS allowed origin:', origin);
+                callback(null, true);
+            } else {
+                console.log('CORS blocked origin:', origin);
+                console.log('Available patterns:', allowedPatterns.map(p => p.toString()));
+                callback(new Error('Not allowed by CORS'));
+            }
         }
     },
     credentials: true,
@@ -53,6 +72,34 @@ app.use(cors(corsOptions));
 
 // Handle preflight requests explicitly
 app.options('*', cors(corsOptions));
+
+// Additional CORS headers middleware for extra compatibility
+app.use((req, res, next) => {
+    const origin = req.headers.origin;
+    
+    // Only set headers if origin is allowed by our CORS policy
+    if (!process.env.ALLOWED_ORIGINS && origin) {
+        const allowedPatterns = [
+            /^http:\/\/localhost:\d+$/,
+            /^http:\/\/127\.0\.0\.1:\d+$/,
+            /^http:\/\/0\.0\.0\.0:\d+$/,
+            /^http:\/\/flearn-frontend:\d+$/,
+            /^http:\/\/\d+\.\d+\.\d+\.\d+:\d+$/,
+            /^https:\/\/\d+\.\d+\.\d+\.\d+:\d+$/,
+            /^http:\/\/\d+\.\d+\.\d+\.\d+$/,
+            /^https:\/\/\d+\.\d+\.\d+\.\d+$/
+        ];
+        
+        const isAllowed = allowedPatterns.some(pattern => pattern.test(origin));
+        
+        if (isAllowed) {
+            res.header('Access-Control-Allow-Origin', origin);
+            res.header('Access-Control-Allow-Credentials', 'true');
+        }
+    }
+    
+    next();
+});
 
 // Increase body size limits for image uploads (base64 images can be large)
 app.use(express.json({ limit: '10mb', parameterLimit: 1000000 }));
