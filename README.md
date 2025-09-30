@@ -113,27 +113,28 @@ docker compose up -d
 
 ## 📱 Planned Features
 
-### Sprint 2 Development Goals
+### Sprint 3 Development Goals
 
 #### Frontend Development
-- [ ] Navigation component
-- [ ] Footer component
-- [ ] Landing page with animations
-- [ ] About Us page
-- [ ] Terms of Service
-- [ ] Privacy Policy
-- [ ] 404 and error pages
-- [ ] User registration form
-- [ ] Cookie-based session management
-- [ ] User profile pages (owner & visitor views)
+- [ ] Integrate Google Auth0,
+- [ ] Integrate SignUp with Back-end
+- [ ] User Profile (Owner Side)
+- [ ] User Profile (Cilent Side)
+- [ ] Search Friend Page
+- [ ] Handle Request or Accept
+- [ ] Graden Page
+- [ ] Create Invited and find compponents
+- [ ] Tree stage preview
 
 #### Backend Development
-- [ ] User database schema
-- [ ] User authentication API
-- [ ] User profile management API
-- [ ] Experience points system
-- [ ] Leaderboard functionality
-- [ ] Google Login integration
+- [ ] User change username and profile picture
+- [ ] Most today earn EXP Scoreboard
+- [ ] API Search Profile (Both finding and Request)
+- [ ] Update Friend database after accept request
+- [ ] Steak Update daily
+- [ ] Get Graden Data
+- [ ] Handle user pair request
+- [ ] Duo Steak reset daily
 
 ## 🤝 Contributing
 
