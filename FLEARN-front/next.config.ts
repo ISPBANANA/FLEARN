@@ -13,12 +13,13 @@ const nextConfig: NextConfig = {
     },
   },
   env: {
-    NEXT_PUBLIC_API_BASE_URL: process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:8099',
+    NEXT_PUBLIC_API_BASE_URL: process.env.NEXT_PUBLIC_API_BASE_URL,
     NEXT_PUBLIC_GOOGLE_CLIENT_ID: process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID,
-    NEXTAUTH_URL: process.env.NEXTAUTH_URL || 'http://localhost:3000',
+    NEXTAUTH_URL: process.env.NEXTAUTH_URL,
     NEXTAUTH_SECRET: process.env.NEXTAUTH_SECRET || process.env.JWT_SECRET,
     GOOGLE_CLIENT_SECRET: process.env.GOOGLE_CLIENT_SECRET,
   },
+  // Set up rewrites to proxy API requests to the backend server
   async rewrites() {
     return [
       // Proxy all API routes except auth routes to backend
@@ -44,5 +45,12 @@ const nextConfig: NextConfig = {
     ];
   },
 };
+
+// Debug logging
+console.log("Next.js Config - Environment Variables:", {
+  NEXTAUTH_URL: process.env.NEXTAUTH_URL,
+  NEXT_PUBLIC_API_BASE_URL: process.env.NEXT_PUBLIC_API_BASE_URL,
+  NODE_ENV: process.env.NODE_ENV
+});
 
 export default nextConfig;
