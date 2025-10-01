@@ -90,50 +90,30 @@ export default function Home() {
   const [fileName, setFileName] = useState('');
   const [imagePreview, setImagePreview] = useState('');
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
+  const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
     if (file) {
+      // Check if file is an image
+      if (!file.type.startsWith('image/')) {
+        alert('Please select an image file.');
+        return;
+      }
+      
+      // Check file size (limit to 5MB)
+      if (file.size > 5 * 1024 * 1024) {
+        alert('File size must be less than 5MB.');
+        return;
+      }
+
       setFileName(file.name);
-      
-      // Compress and resize image before converting to base64
-      const canvas = document.createElement('canvas');
-      const ctx = canvas.getContext('2d');
-      const img = document.createElement('img') as HTMLImageElement;
-      
-      img.onload = () => {
-        // Set maximum dimensions
-        const MAX_WIDTH = 512;
-        const MAX_HEIGHT = 512;
-        
-        let { width, height } = img;
-        
-        // Calculate new dimensions while maintaining aspect ratio
-        if (width > height) {
-          if (width > MAX_WIDTH) {
-            height = (height * MAX_WIDTH) / width;
-            width = MAX_WIDTH;
-          }
-        } else {
-          if (height > MAX_HEIGHT) {
-            width = (width * MAX_HEIGHT) / height;
-            height = MAX_HEIGHT;
-          }
-        }
-        
-        canvas.width = width;
-        canvas.height = height;
-        
-        // Draw and compress the image
-        ctx?.drawImage(img, 0, 0, width, height);
-        
-        // Convert to base64 with reduced quality for JPEG
-        const compressedBase64 = canvas.toDataURL('image/jpeg', 0.7);
-        
-        setImagePreview(compressedBase64);
-        setFormData(prev => ({ ...prev, profilePicture: compressedBase64 }));
+
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        const base64String = e.target?.result as string;
+        setImagePreview(base64String);
+        setFormData(prev => ({ ...prev, profilePicture: base64String }));
       };
-      
-      img.src = URL.createObjectURL(file);
+      reader.readAsDataURL(file);
     }
   };
 
