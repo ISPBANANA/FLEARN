@@ -25,6 +25,8 @@ export default function ProfilePage({ params }: ProfilePageProps) {
   const [profileLoading, setProfileLoading] = useState<boolean>(false);
   const [profileError, setProfileError] = useState<string | null>(null);
   const [profileNotFound, setProfileNotFound] = useState<boolean>(false);
+  const [showEditPopup, setShowEditPopup] = useState<boolean>(false);
+  const [editDisplayName, setEditDisplayName] = useState<string>('');
   const { profile, isLoading, error } = useUserProfile();
   const router = useRouter();
 
@@ -97,6 +99,28 @@ export default function ProfilePage({ params }: ProfilePageProps) {
   // Check if the user is viewing their own profile
   const isOwnProfile = profile && profileData && profile.user_id === profileData.user_id;
 
+  // Handle escape key to close popup
+  useEffect(() => {
+    const handleEscapeKey = (event: KeyboardEvent) => {
+      if (event.key === 'Escape' && showEditPopup) {
+        setShowEditPopup(false);
+      }
+    };
+
+    if (showEditPopup) {
+      document.addEventListener('keydown', handleEscapeKey);
+      // Prevent body scroll when popup is open
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = 'unset';
+    }
+
+    return () => {
+      document.removeEventListener('keydown', handleEscapeKey);
+      document.body.style.overflow = 'unset';
+    };
+  }, [showEditPopup]);
+
   return (
     <ProtectedRoute redirectTo="/">
       <div className="min-h-screen bg-white">
@@ -129,20 +153,26 @@ export default function ProfilePage({ params }: ProfilePageProps) {
               <>
                 {/* Profile Header - div1 */}
                 <div className="flex items-center gap-8 rounded-lg p-4 px-8" style={{ gridArea: '1 / 1 / 2 / 4', boxShadow: '0px 0px 5px rgba(0, 0, 0, 0.25)' }}>
-                  <div className="relative w-30 h-30 bg-gray-300 rounded-full flex items-center justify-center overflow-hidden">
-                    <Image
-                      src={profileData.profile_pic || "/Chr/cry.png"}
-                      alt="Profile"
-                      width={120}
-                      height={120}
-                      className="rounded-full object-cover"
-                    />
-                  </div>
+                    <div className="relative w-30 h-30 bg-gray-300 rounded-full flex items-center justify-center overflow-hidden">
+                      <Image
+                        src={profileData.profile_pic || "/Chr/cry.png"}
+                        alt="Profile"
+                        width={120}
+                        height={120}
+                        className="rounded-full object-cover"
+                      />
+                    </div>
                   <div className="mb-6 flex flex-col justify-around">
-                    <div className="flex items-center gap-2 py-4">
+                    <div className="flex items-start gap-2 py-4">
                       <h1 className="text-4xl font-bold text-purple-600">{profileData.name}</h1>
                       {isOwnProfile && (
-                        <button className="text-purple-600 hover:text-purple-800 text-sm">
+                        <button 
+                          onClick={() => {
+                            setEditDisplayName(profileData.name || '');
+                            setShowEditPopup(true);
+                          }}
+                          className="text-purple-600 hover:text-purple-800 text-sm"
+                        >
                           <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
                           </svg>
@@ -356,6 +386,75 @@ export default function ProfilePage({ params }: ProfilePageProps) {
         </div>
         </div>
         <Footer />
+
+        {/* Profile Edit Popup */}
+        {showEditPopup && (
+          <div className="fixed inset-0 backdrop-blur-sm flex items-center justify-center z-50" onClick={(e) => {
+            if (e.target === e.currentTarget) {
+              setShowEditPopup(false);
+            }
+          }}>
+            <div className="bg-white rounded-2xl p-8 w-96 shadow-xl relative" onClick={(e) => e.stopPropagation()}>
+              {/* Title */}
+              <h2 className="text-2xl font-bold text-purple-600 text-center mb-8">Edit Profile</h2>
+              
+              {/* Profile Picture Section */}
+              <div className="flex flex-col items-center mb-6">
+                <div className="relative w-24 h-24 bg-gray-300 rounded-full flex items-center justify-center overflow-hidden mb-4">
+                  <Image
+                    src={profileData?.profile_pic || "/Chr/cry.png"}
+                    alt="Profile"
+                    width={96}
+                    height={96}
+                    className="rounded-full object-cover"
+                  />
+                  {/* Default user icon overlay if no profile pic */}
+                  {!profileData?.profile_pic && (
+                    <UserRound size={40} className="text-gray-600 absolute" />
+                  )}
+                </div>
+                <button className="text-purple-600 hover:text-purple-800 font-medium flex items-center gap-2">
+                  Upload file
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M9 19l3 3 3-3M12 12l0 9" />
+                  </svg>
+                </button>
+              </div>
+
+              {/* Display Name Input */}
+              <div className="mb-8">
+                <label className="block text-[#454545] font-medium mb-2">Display Name :</label>
+                <input
+                  type="text"
+                  value={editDisplayName}
+                  onChange={(e) => setEditDisplayName(e.target.value)}
+                  placeholder="Ex: FunLearn"
+                  className="text-[#454545] w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:border-purple-500 focus:ring-1 focus:ring-purple-500"
+                />
+              </div>
+
+              {/* Action Buttons */}
+              <div className="flex gap-4">
+                <button
+                  onClick={() => setShowEditPopup(false)}
+                  className="flex-1 py-3 px-6 border border-red-500 text-red-500 rounded-lg hover:bg-red-50 transition-colors font-medium"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={() => {
+                    // TODO: Implement save functionality
+                    console.log('Saving profile with name:', editDisplayName);
+                    setShowEditPopup(false);
+                  }}
+                  className="flex-1 py-3 px-6 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors font-medium"
+                >
+                  Save
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </ProtectedRoute>
   );
