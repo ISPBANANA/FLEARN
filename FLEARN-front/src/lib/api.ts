@@ -146,6 +146,17 @@ export const userAPI = {
     });
   },
 
+  // Update only profile picture and name (doesn't affect other fields)
+  async updateProfileBasic(profileData: {
+    name?: string;
+    profile_pic?: string;
+  }) {
+    return apiCall('/api/users/profile-basic', {
+      method: 'PATCH',
+      body: JSON.stringify(profileData),
+    });
+  },
+
   // Get user preferences
   async getPreferences() {
     return apiCall('/api/users/preferences');

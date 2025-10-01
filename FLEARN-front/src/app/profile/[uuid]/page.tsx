@@ -27,6 +27,9 @@ export default function ProfilePage({ params }: ProfilePageProps) {
   const [profileNotFound, setProfileNotFound] = useState<boolean>(false);
   const [showEditPopup, setShowEditPopup] = useState<boolean>(false);
   const [editDisplayName, setEditDisplayName] = useState<string>('');
+  const [tempProfilePicture, setTempProfilePicture] = useState<string>('');
+  const [isSaving, setIsSaving] = useState<boolean>(false);
+  const [saveError, setSaveError] = useState<string | null>(null);
   const { profile, isLoading, error } = useUserProfile();
   const router = useRouter();
 
@@ -94,6 +97,100 @@ export default function ProfilePage({ params }: ProfilePageProps) {
       await logout();
       // Redirect to home page
       window.location.href = '/';
+  };
+
+  // Handle file upload and convert to base64
+  const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file) {
+      // Check if file is an image
+      if (!file.type.startsWith('image/')) {
+        alert('Please select an image file.');
+        return;
+      }
+      
+      // Check file size (limit to 5MB)
+      if (file.size > 5 * 1024 * 1024) {
+        alert('File size must be less than 5MB.');
+        return;
+      }
+
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        const base64String = e.target?.result as string;
+        setTempProfilePicture(base64String);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  // Handle saving profile changes
+  const handleSaveProfile = async () => {
+    try {
+      // Validation: Check if current user is authorized to edit this profile
+      if (!profile || !profileData) {
+        setSaveError('Unable to verify user permissions');
+        return;
+      }
+
+      // Check if the current user's ID matches the profile being edited
+      if (profile.user_id !== profileData.user_id) {
+        setSaveError('You can only edit your own profile');
+        return;
+      }
+
+      // Check if there are any changes to save
+      const hasNameChange = editDisplayName.trim() !== (profileData.name || '');
+      const hasPictureChange = tempProfilePicture !== '';
+
+      if (!hasNameChange && !hasPictureChange) {
+        // No changes, just close the popup
+        setShowEditPopup(false);
+        return;
+      }
+
+      setIsSaving(true);
+      setSaveError(null);
+
+      // Prepare update data - only send the fields that are being changed
+      const updateData: any = {};
+
+      if (hasNameChange) {
+        updateData.name = editDisplayName.trim();
+      }
+
+      if (hasPictureChange) {
+        updateData.profile_pic = tempProfilePicture;
+      }
+
+      // Call the new API endpoint that only updates profile picture and name
+      const response = await userAPI.updateProfileBasic(updateData);
+
+      // Update local profile data with the response
+      if (response.user) {
+        setProfileData(response.user);
+        
+        // Reset temporary states
+        setTempProfilePicture('');
+        setEditDisplayName('');
+        
+        // Close popup
+        setShowEditPopup(false);
+        
+        // Optional: Show success message
+        console.log('Profile updated successfully:', response.user);
+      }
+
+    } catch (error) {
+      console.error('Error saving profile:', error);
+      if (error instanceof Error) {
+        setSaveError(error.message);
+      } else {
+        setSaveError('Failed to save profile changes');
+      }
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   // Check if the user is viewing their own profile
@@ -169,6 +266,7 @@ export default function ProfilePage({ params }: ProfilePageProps) {
                         <button 
                           onClick={() => {
                             setEditDisplayName(profileData.name || '');
+                            setTempProfilePicture(''); // Reset temporary profile picture
                             setShowEditPopup(true);
                           }}
                           className="text-purple-600 hover:text-purple-800 text-sm"
@@ -402,18 +500,30 @@ export default function ProfilePage({ params }: ProfilePageProps) {
               <div className="flex flex-col items-center mb-6">
                 <div className="relative w-24 h-24 bg-gray-300 rounded-full flex items-center justify-center overflow-hidden mb-4">
                   <Image
-                    src={profileData?.profile_pic || "/Chr/cry.png"}
+                    src={tempProfilePicture || profileData?.profile_pic || "/Chr/cry.png"}
                     alt="Profile"
                     width={96}
                     height={96}
                     className="rounded-full object-cover"
                   />
-                  {/* Default user icon overlay if no profile pic */}
-                  {!profileData?.profile_pic && (
+                  {/* Default user icon overlay if no profile pic and no temp pic */}
+                  {!tempProfilePicture && !profileData?.profile_pic && (
                     <UserRound size={40} className="text-gray-600 absolute" />
                   )}
                 </div>
-                <button className="text-purple-600 hover:text-purple-800 font-medium flex items-center gap-2">
+                <input
+                  type="file"
+                  id="profile-pic-upload"
+                  accept="image/*"
+                  onChange={handleFileUpload}
+                  disabled={isSaving}
+                  className="hidden"
+                />
+                <button 
+                  onClick={() => document.getElementById('profile-pic-upload')?.click()}
+                  disabled={isSaving}
+                  className="text-purple-600 hover:text-purple-800 font-medium flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
                   Upload file
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M9 19l3 3 3-3M12 12l0 9" />
@@ -429,27 +539,43 @@ export default function ProfilePage({ params }: ProfilePageProps) {
                   value={editDisplayName}
                   onChange={(e) => setEditDisplayName(e.target.value)}
                   placeholder="Ex: FunLearn"
-                  className="text-[#454545] w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:border-purple-500 focus:ring-1 focus:ring-purple-500"
+                  disabled={isSaving}
+                  className="text-[#454545] w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:border-purple-500 focus:ring-1 focus:ring-purple-500 disabled:bg-gray-100 disabled:cursor-not-allowed"
                 />
+                {saveError && (
+                  <p className="text-red-500 text-sm mt-2">{saveError}</p>
+                )}
               </div>
 
               {/* Action Buttons */}
               <div className="flex gap-4">
                 <button
-                  onClick={() => setShowEditPopup(false)}
-                  className="flex-1 py-3 px-6 border border-red-500 text-red-500 rounded-lg hover:bg-red-50 transition-colors font-medium"
+                  onClick={() => {
+                    setShowEditPopup(false);
+                    setSaveError(null);
+                    setTempProfilePicture('');
+                  }}
+                  disabled={isSaving}
+                  className="flex-1 py-3 px-6 border border-red-500 text-red-500 rounded-lg hover:bg-red-50 transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   Cancel
                 </button>
                 <button
-                  onClick={() => {
-                    // TODO: Implement save functionality
-                    console.log('Saving profile with name:', editDisplayName);
-                    setShowEditPopup(false);
-                  }}
-                  className="flex-1 py-3 px-6 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors font-medium"
+                  onClick={handleSaveProfile}
+                  disabled={isSaving}
+                  className="flex-1 py-3 px-6 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                 >
-                  Save
+                  {isSaving ? (
+                    <>
+                      <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                      </svg>
+                      Saving...
+                    </>
+                  ) : (
+                    'Save'
+                  )}
                 </button>
               </div>
             </div>
