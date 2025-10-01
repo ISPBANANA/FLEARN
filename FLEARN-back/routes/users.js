@@ -702,4 +702,34 @@ router.get('/username/:userId', async (req, res) => {
     }
 });
 
+// Get top 50 users with highest daily_exp (public route)
+// Usage Example:
+// GET /api/users/leaderboard
+router.get('/leaderboard', async (req, res) => {
+    try {
+        const query = `
+            SELECT name, daily_exp 
+            FROM "user" 
+            WHERE name IS NOT NULL 
+            ORDER BY daily_exp DESC 
+            LIMIT 50
+        `;
+        
+        const result = await pgPool.query(query);
+        
+        res.json({
+            message: 'Top users retrieved successfully',
+            users: result.rows,
+            count: result.rows.length
+        });
+        
+    } catch (error) {
+        console.error('Error fetching leaderboard:', error);
+        res.status(500).json({
+            error: 'Internal server error',
+            message: 'Failed to fetch leaderboard'
+        });
+    }
+});
+
 module.exports = router;
