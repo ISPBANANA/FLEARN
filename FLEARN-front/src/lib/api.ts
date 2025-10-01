@@ -183,6 +183,11 @@ export const userAPI = {
       body: JSON.stringify(expData),
     });
   },
+
+  // Get leaderboard (top 50 users by daily_exp)
+  async getLeaderboard() {
+    return apiCall('/api/users/leaderboard');
+  },
 };
 
 // Friends API functions

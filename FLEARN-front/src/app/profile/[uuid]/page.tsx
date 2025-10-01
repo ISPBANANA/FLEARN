@@ -30,6 +30,9 @@ export default function ProfilePage({ params }: ProfilePageProps) {
   const [tempProfilePicture, setTempProfilePicture] = useState<string>('');
   const [isSaving, setIsSaving] = useState<boolean>(false);
   const [saveError, setSaveError] = useState<string | null>(null);
+  const [leaderboardData, setLeaderboardData] = useState<any[]>([]);
+  const [leaderboardLoading, setLeaderboardLoading] = useState<boolean>(false);
+  const [leaderboardError, setLeaderboardError] = useState<string | null>(null);
   const { profile, isLoading, error } = useUserProfile();
   const router = useRouter();
 
@@ -63,6 +66,25 @@ export default function ProfilePage({ params }: ProfilePageProps) {
     }
   };
 
+  // Fetch leaderboard data
+  const fetchLeaderboard = async () => {
+    setLeaderboardLoading(true);
+    setLeaderboardError(null);
+
+    try {
+      const data = await userAPI.getLeaderboard();
+      setLeaderboardData(data.users || []);
+    } catch (err) {
+      if (err instanceof Error) {
+        setLeaderboardError(err.message);
+      } else {
+        setLeaderboardError('Failed to fetch leaderboard');
+      }
+    } finally {
+      setLeaderboardLoading(false);
+    }
+  };
+
   useEffect(() => {
     params.then((resolvedParams) => {
       setUuid(resolvedParams.uuid);
@@ -71,6 +93,8 @@ export default function ProfilePage({ params }: ProfilePageProps) {
         fetchProfileByUuid(resolvedParams.uuid);
       }
     });
+    // Fetch leaderboard data
+    fetchLeaderboard();
   }, [params]);
 
   // Handle redirects when profile is not found or there's an error
@@ -408,38 +432,46 @@ export default function ProfilePage({ params }: ProfilePageProps) {
                 {/* Top FLearners of the Day - div4 */}
                 <div className="rounded-lg p-4 flex flex-col h-full" style={{ gridArea: '1 / 4 / 3 / 6', boxShadow: '0px 0px 5px rgba(0, 0, 0, 0.25)' }}>
                   <h2 className="text-lg font-semibold mb-4 text-[#454545]">Top FLearners of the Day</h2>
-                  <div className="space-y-2 flex-grow">
-                    <div className="flex items-center gap-3 p-2 rounded-lg bg-gradient-to-r from-yellow-100 to-yellow-200">
-                      <span className="text-sm font-bold text-[#454545]">#1</span>
-                      <span className="flex-1 text-sm text-[#454545]">AiTarInwza007</span>
-                      <span className="text-sm font-bold text-[#454545]">2950</span>
-                    </div>
-                    <div className="flex items-center gap-3 p-2 rounded-lg bg-gray-50">
-                      <span className="text-sm font-bold text-[#454545]">#2</span>
-                      <span className="flex-1 text-sm text-[#454545]">Hong</span>
-                      <span className="text-sm font-bold text-[#454545]">1112</span>
-                    </div>
-                    <div className="flex items-center gap-3 p-2 rounded-lg bg-gradient-to-r from-orange-100 to-orange-200">
-                      <span className="text-sm font-bold text-[#454545]">#3</span>
-                      <span className="flex-1 text-sm text-[#454545]">Chiriew</span>
-                      <span className="text-sm font-bold text-[#454545]">1000</span>
-                    </div>
-                    <div className="flex items-center gap-3 p-2 rounded-lg bg-blue-50">
-                      <span className="text-sm font-bold text-[#454545]">#4</span>
-                      <span className="flex-1 text-sm text-[#454545]">RoteeBoy</span>
-                      <span className="text-sm font-bold text-[#454545]">880</span>
-                    </div>
-                    <div className="flex items-center gap-3 p-2 rounded-lg bg-gray-50">
-                      <span className="text-sm font-bold text-[#454545]">#5</span>
-                      <span className="flex-1 text-sm text-[#454545]">Takoyaki</span>
-                      <span className="text-sm font-bold text-[#454545]">580</span>
-                    </div>
-                    <div className="flex items-center gap-3 p-2 rounded-lg bg-gray-50">
-                      <span className="text-sm font-bold text-[#454545]">#6</span>
-                      <span className="flex-1 text-sm text-[#454545]">KanJomKrnnon</span>
-                      <span className="text-sm font-bold text-[#454545]">520</span>
-                    </div>
-                  </div>
+                  {/* Scoreboard top 50 */}
+                  <ul className="space-y-2 flex-grow mb-4 overflow-y-auto pr-2 h-52">
+                    {leaderboardLoading ? (
+                      <li className="flex items-center justify-center p-4">
+                        <span className="text-sm text-[#454545]">Loading leaderboard...</span>
+                      </li>
+                    ) : leaderboardError ? (
+                      <li className="flex items-center justify-center p-4">
+                        <span className="text-sm text-red-500">Failed to load leaderboard</span>
+                      </li>
+                    ) : leaderboardData.length === 0 ? (
+                      <li className="flex items-center justify-center p-4">
+                        <span className="text-sm text-[#454545]">No data available</span>
+                      </li>
+                    ) : (
+                      leaderboardData.map((user, index) => {
+                        // Get the background color based on rank
+                        const getBackgroundClass = (rank: number) => {
+                          switch (rank) {
+                            case 1:
+                              return 'bg-gradient-to-r from-yellow-100 to-yellow-200';
+                            case 2:
+                              return 'bg-gradient-to-r from-red-100 to-red-200';
+                            case 3:
+                              return 'bg-gradient-to-r from-orange-100 to-orange-200';
+                            default:
+                              return 'bg-gradient-to-r from-gray-100 to-gray-200';
+                          }
+                        };
+
+                        return (
+                          <li key={index} className={`flex items-center gap-3 p-2 rounded-lg ${getBackgroundClass(index + 1)}`}>
+                            <span className="text-sm font-bold text-[#454545]">#{index + 1}</span>
+                            <span className="flex-1 text-sm text-[#454545]">{user.name || 'Unknown User'}</span>
+                            <span className="text-sm font-bold text-[#454545]">{user.daily_exp || 0}</span>
+                          </li>
+                        );
+                      })
+                    )}
+                  </ul>
 
                   <div className="space-y-3">
                     {isOwnProfile && (
