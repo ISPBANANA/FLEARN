@@ -10,6 +10,8 @@ import { FileUp, Asterisk } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { SessionManager } from '@/lib/session';
 import SignupSearchParamsHandler from '@/components/SignupSearchParamsHandler';
+import { useAPIWithCORSHandling } from '@/hooks/useCORS';
+import { CORSErrorDisplay } from '@/components/CORSErrorHandler';
 
 // Force dynamic rendering to avoid build-time issues with useSearchParams
 export const dynamic = 'force-dynamic';
@@ -55,6 +57,9 @@ export default function Home() {
 
   const [showValidationErrors, setShowValidationErrors] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // CORS error handling
+  const { executeAPI, corsError, clearErrors } = useAPIWithCORSHandling();
 
   const handleDataLoaded = useCallback((encodedData: string) => {
     try {
@@ -145,7 +150,8 @@ export default function Home() {
         setIsSubmitting(true);
         
         try {
-          const response = await fetch(`${API_BASE_URL}/api/users/profile`, {
+          // Use relative path to leverage Next.js rewrites and avoid CORS
+          const response = await fetch(`/api/users/profile`, {
             method: 'POST',
             mode: 'cors',
             headers: {
@@ -176,7 +182,7 @@ export default function Home() {
               // Post each subject individually in the background
               const subjectPromises = subjectsArray.map(async (subject) => {
                 try {
-                  const subjectResponse = await fetch(`${API_BASE_URL}/api/users/preferred-subjects`, {
+                  const subjectResponse = await fetch(`/api/users/preferred-subjects`, {
                     method: 'POST',
                     mode: 'cors',
                     headers: {
@@ -322,6 +328,20 @@ export default function Home() {
         <SignupSearchParamsHandler onDataLoaded={handleDataLoaded} />
       </Suspense>
       <Nav />
+
+      {/* CORS Error Display */}
+      {corsError && (
+        <div className="max-w-4xl mx-auto px-4 py-4">
+          <CORSErrorDisplay 
+            error={corsError}
+            onRetry={() => {
+              clearErrors();
+              handleNext();
+            }}
+            onDismiss={clearErrors}
+          />
+        </div>
+      )}
 
       {/* Infomation here */}
       <div className="my-2 p-4 h-auto w-full flex items-center z-1 bg-white flex-col min-h-screen">

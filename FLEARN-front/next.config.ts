@@ -38,6 +38,13 @@ const nextConfig: NextConfig = {
   // Set up rewrites to proxy API requests to the backend server
   async rewrites() {
     return [
+      // Proxy health checks to backend
+      {
+        source: '/health',
+        destination: process.env.NODE_ENV === 'production'
+          ? 'http://flearn-backend:8099/health'
+          : 'http://localhost:8099/health',
+      },
       // Proxy all API routes except auth routes to backend
       {
         source: '/api/users/:path*',

@@ -10,6 +10,7 @@ import { Suspense } from 'react';
 import SearchParamsHandler from '@/components/SearchParamsHandler';
 import { useAuth } from '@/hooks/useAuth';
 import { useUserProfile } from '@/hooks/useUserProfile';
+import { CORSStatusIndicator } from '@/components/CORSStatus';
 
 // Force dynamic rendering to avoid build-time issues with useSearchParams
 export const dynamic = 'force-dynamic';
@@ -225,6 +226,13 @@ export default function Home() {
       </div>
 
       <Footer />
+      
+      {/* Development-only CORS Status Indicator */}
+      {process.env.NODE_ENV === 'development' && (
+        <div className="fixed bottom-4 right-4 z-50">
+          <CORSStatusIndicator showDetails={false} autoCheck={false} />
+        </div>
+      )}
     </div>
   );
 }
