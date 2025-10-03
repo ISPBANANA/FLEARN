@@ -4,15 +4,13 @@ import Image from "next/image";
 import { Nav } from "@/components/nav";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
 import { Footer } from "@/components/footer";
-import SplitText from "@/components/SplitText";
 import { useState, useEffect, Suspense, useCallback } from "react";
 import Link from "next/link";
-import { FileUp, Asterisk } from 'lucide-react';
 import { useRouter } from 'next/navigation';
-import { SessionManager } from '@/lib/session';
-import SignupSearchParamsHandler from '@/components/SignupSearchParamsHandler';
 import { useAPIWithCORSHandling } from '@/hooks/useCORS';
 import { CORSErrorDisplay } from '@/components/CORSErrorHandler';
+import { useAuth } from "@/hooks/useAuth";
+import { userAPI } from '@/lib/api';
 
 // Force dynamic rendering to avoid build-time issues with useSearchParams
 export const dynamic = 'force-dynamic';
@@ -27,18 +25,99 @@ const getApiBaseUrl = () => {
 
 const API_BASE_URL = getApiBaseUrl();
 
-export default function Home() {
+interface ProfilePageProps {
+  params: Promise<{
+    uuid: string;
+  }>;
+}
+
+export default function garden({ params }: ProfilePageProps) {
   const router = useRouter();
+  const { user, isAuthenticated, logout } = useAuth();
+  const [uuid, setUuid] = useState<string>('');
+  const [profileData, setProfileData] = useState<any>(null);
+  const [profileLoading, setProfileLoading] = useState<boolean>(false);
+  const [profileError, setProfileError] = useState<string | null>(null);
+  const [profileNotFound, setProfileNotFound] = useState<boolean>(false);
+
+  const fetchProfileByUuid = async (userId: string) => {
+      if (!userId) return;
+  
+      setProfileLoading(true);
+      setProfileError(null);
+      setProfileNotFound(false);
+  
+      try {
+        const data = await userAPI.getProfileById(userId);
+        setProfileData(data.user);
+        setProfileNotFound(false);
+      } catch (err) {
+        if (err instanceof Error) {
+          if (err.message.includes('404')) {
+            setProfileNotFound(true);
+            setProfileData(null);
+          } else if (err.message.includes('401') || err.message.includes('Unauthorized')) {
+            setProfileError('Authentication required. Please login again.');
+          } else {
+            setProfileError(err.message);
+          }
+        } else {
+          setProfileError('Failed to fetch profile');
+        }
+      } finally {
+        setProfileLoading(false);
+      }
+    };
+
+    useEffect(() => {
+      params.then((resolvedParams) => {
+        setUuid(resolvedParams.uuid);
+        // Fetch profile data when UUID is available
+        if (resolvedParams.uuid) {
+          fetchProfileByUuid(resolvedParams.uuid);
+        }
+      });
+    }, [params]);
+
+    useEffect(() => {
+      if (profileNotFound && !profileLoading) {
+        const timer = setTimeout(() => {
+          router.push('/not-found');
+        }, 10); // 0.01 second delay to show the error message
+        return () => clearTimeout(timer);
+      }
+
+      // Only redirect on severe errors, not authentication errors
+      if (profileError && !profileError.includes('Authentication') && !profileLoading) {
+        const timer = setTimeout(() => {
+          router.push('/not-found');
+        }, 10); // 0.01 second delay to show the error message
+        return () => clearTimeout(timer);
+      }
+    }, [profileNotFound, profileError, profileLoading, router]);
 
   return (
     <ProtectedRoute redirectTo="/">
       <div className="min-h-screen bg-white">
         <Nav />
-
         {/* Infomation here */}
-        <div className="my-2 p-4 h-auto w-full flex items-center z-1 bg-white flex-col min-h-screen">
+        <div className="my-2 p-4 h-auto w-full flex items-center z-1 bg-white flex-col min-h-screen max-w-[1620px]">
+          <h1 className="text-5xl font-bold mb-4 text-[#9A41FF]">{profileData?.name}&rsquo;s Garden</h1>
 
-        <div className="py-10"></div>
+          <div className="h-4/5 min-h-[calc(75vh)] grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-4 w-full max-w-[1420px] px-24 py-4">
+            <div>
+              <h1 className="text-3xl font-bold mb-4">Garden</h1>
+            </div>
+          </div>
+          <div className="h-1/5 my-10 justify-start flex w-full max-w-[1420px] px-24">
+            <button
+              onClick={() => profileData?.user_id && router.push(`/profile/${profileData.user_id}`)}
+              className={`bg-[#ffffff] text-[#454545] border border-[#454545] py-2 px-4 w-50 rounded transition h-10 cursor-pointer`}
+            >
+              To Profile
+            </button>
+          </div>
+          <div className="py-5"></div>
         </div>
 
         <Footer />
