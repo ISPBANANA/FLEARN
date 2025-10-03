@@ -344,10 +344,15 @@ export default function ProfilePage({ params }: ProfilePageProps) {
                     <div className="flex items-center gap-3">
                       <div className="w-auto h-auto items-center justify-center">
                         <Image
-                          src="/Chr/cry.png"
-                          alt="Rank"
-                          width={100}
-                          height={100}
+                          src={(() => {
+                            if (!profileData?.uptime_streak) return "/stopSteak.png";
+                            const today = new Date().toDateString();
+                            const streakDate = new Date(profileData.uptime_streak).toDateString();
+                            return streakDate === today ? "/onSteak.png" : "/stopSteak.png";
+                          })()}
+                          alt="Streak"
+                          width={70}
+                          height={70}
                           className="rounded-full"
                         />
                       </div>
@@ -359,10 +364,10 @@ export default function ProfilePage({ params }: ProfilePageProps) {
                     <div className="flex items-center gap-3">
                       <div className="w-auto h-auto items-center justify-center">
                         <Image
-                          src="/Chr/cry.png"
+                          src="/Chr/Clap.png"
                           alt="Rank"
-                          width={100}
-                          height={100}
+                          width={120}
+                          height={120}
                           className="rounded-full"
                         />
                       </div>
@@ -374,7 +379,7 @@ export default function ProfilePage({ params }: ProfilePageProps) {
                     <div className="flex items-center gap-3">
                       <div className="w-auto h-auto items-center justify-center">
                         <Image
-                          src="/Chr/cry.png"
+                          src={`/rank/${profileData.rank}.png`}
                           alt="Rank"
                           width={100}
                           height={100}
@@ -571,9 +576,11 @@ export default function ProfilePage({ params }: ProfilePageProps) {
                   value={editDisplayName}
                   onChange={(e) => setEditDisplayName(e.target.value)}
                   placeholder="Ex: FunLearn"
+                  maxLength={15}
                   disabled={isSaving}
                   className="text-[#454545] w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:border-purple-500 focus:ring-1 focus:ring-purple-500 disabled:bg-gray-100 disabled:cursor-not-allowed"
                 />
+                <p className="text-[#454545] text-sm mt-1">{editDisplayName.length}/15 characters</p>
                 {saveError && (
                   <p className="text-red-500 text-sm mt-2">{saveError}</p>
                 )}
