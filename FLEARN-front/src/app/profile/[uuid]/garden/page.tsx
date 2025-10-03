@@ -2,6 +2,7 @@
 
 import Image from "next/image";
 import { Nav } from "@/components/nav";
+import { ProtectedRoute } from "@/components/ProtectedRoute";
 import { Footer } from "@/components/footer";
 import SplitText from "@/components/SplitText";
 import { useState, useEffect, Suspense, useCallback } from "react";
@@ -30,16 +31,18 @@ export default function Home() {
   const router = useRouter();
 
   return (
-    <div className="min-h-screen bg-white">
-      <Nav />
+    <ProtectedRoute redirectTo="/">
+      <div className="min-h-screen bg-white">
+        <Nav />
 
-      {/* Infomation here */}
-      <div className="my-2 p-4 h-auto w-full flex items-center z-1 bg-white flex-col min-h-screen">
+        {/* Infomation here */}
+        <div className="my-2 p-4 h-auto w-full flex items-center z-1 bg-white flex-col min-h-screen">
 
-      <div className="py-10"></div>
+        <div className="py-10"></div>
+        </div>
+
+        <Footer />
       </div>
-
-      <Footer />
-    </div>
+    </ProtectedRoute>
   );
 }

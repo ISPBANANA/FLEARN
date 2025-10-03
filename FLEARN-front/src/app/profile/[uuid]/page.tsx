@@ -11,6 +11,7 @@ import { UserRound, LogOut, Users, TreePine } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/hooks/useAuth';
+import { usePathname } from 'next/navigation';
 
 interface ProfilePageProps {
   params: Promise<{
@@ -34,8 +35,8 @@ export default function ProfilePage({ params }: ProfilePageProps) {
   const [leaderboardLoading, setLeaderboardLoading] = useState<boolean>(false);
   const [leaderboardError, setLeaderboardError] = useState<string | null>(null);
   const { profile, isLoading, error } = useUserProfile();
+  const pathname = usePathname();
   const router = useRouter();
-
   // Fetch profile by UUID
   const fetchProfileByUuid = async (userId: string) => {
     if (!userId) return;
@@ -473,23 +474,28 @@ export default function ProfilePage({ params }: ProfilePageProps) {
                     )}
                   </ul>
 
-                  <div className="space-y-3">
+                  <div className="space-y-3 grap-h-3 flex flex-col">
                     {isOwnProfile && (
-                      <button className="w-full bg-purple-50 text-purple-600 py-3 px-4 rounded border border-purple-200 hover:bg-purple-100 transition-colors flex items-center justify-center gap-2 text-sm font-medium">
-                        <Users size={18} />
-                        Find Friend
+                      <Link href="/search">
+                        <button className="w-full bg-purple-50 text-purple-600 py-3 px-4 rounded border border-purple-200 hover:bg-purple-100 transition-colors flex items-center justify-center gap-2 text-sm font-medium">
+                          <Users size={18} />
+                          Find Friend
+                          <svg className="w-4 h-4 ml-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                          </svg>
+                        </button>
+                      </Link>
+                    )}
+
+                    <Link href={`${pathname}/garden`}>
+                      <button className="w-full bg-green-50 text-green-600 py-3 px-4 rounded border border-green-200 hover:bg-green-100 transition-colors flex items-center justify-center gap-2 text-sm font-medium">
+                        <TreePine size={18} />
+                        Garden
                         <svg className="w-4 h-4 ml-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
                         </svg>
                       </button>
-                    )}
-                    <button className="w-full bg-green-50 text-green-600 py-3 px-4 rounded border border-green-200 hover:bg-green-100 transition-colors flex items-center justify-center gap-2 text-sm font-medium">
-                      <TreePine size={18} />
-                      Garden
-                      <svg className="w-4 h-4 ml-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
-                      </svg>
-                    </button>
+                    </Link>
                   </div>
                 </div>
 
