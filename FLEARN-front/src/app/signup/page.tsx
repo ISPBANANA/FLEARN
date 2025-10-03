@@ -376,7 +376,9 @@ export default function Home() {
                     style={{ boxShadow: '0px 0px 5px rgba(0, 0, 0, 0.25)' }}
                     value={formData.displayName}
                     onChange={handleDisplayNameChange}
+                    maxLength={15}
                   />
+                  <p className="text-[#454545] text-sm mt-1">{formData.displayName.length}/15 characters</p>
                   {showValidationErrors && formData.displayName.trim() === '' && (
                     <p className="text-red-500 text-sm mb-3">Display name is required</p>
                   )}
