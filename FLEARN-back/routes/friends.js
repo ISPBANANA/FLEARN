@@ -72,6 +72,79 @@ router.get('/', checkJwt, async (req, res) => {
     }
 });
 
+// Get friends for a specific user by user_id
+// Usage Example:
+// GET /api/friends/user/12345678-1234-1234-1234-123456789012
+// Headers: Authorization: Bearer <JWT_TOKEN>
+router.get('/user/:userId', checkJwt, async (req, res) => {
+    try {
+        const { userId } = req.params;
+        
+        if (!userId) {
+            return res.status(400).json({
+                error: 'Bad request',
+                message: 'User ID is required'
+            });
+        }
+
+        // Verify that the user exists
+        const userExistsQuery = `SELECT user_id FROM "user" WHERE user_id = $1`;
+        const userExistsResult = await pgPool.query(userExistsQuery, [userId]);
+        
+        if (userExistsResult.rows.length === 0) {
+            return res.status(404).json({
+                error: 'User not found',
+                message: 'User with this ID does not exist'
+            });
+        }
+        
+        const query = `
+            SELECT 
+                f.row_id,
+                f.status,
+                f.created_at,
+                f.updated_at,
+                f.user1_id,
+                f.user2_id,
+                CASE 
+                    WHEN f.user1_id = $1 THEN u2.name
+                    ELSE u1.name
+                END as friend_name,
+                CASE 
+                    WHEN f.user1_id = $1 THEN u2.email
+                    ELSE u1.email
+                END as friend_email,
+                CASE 
+                    WHEN f.user1_id = $1 THEN u2.profile_pic
+                    ELSE u1.profile_pic
+                END as friend_profile_pic,
+                CASE 
+                    WHEN f.user1_id = $1 THEN f.user2_id
+                    ELSE f.user1_id
+                END as friend_user_id
+            FROM friend f
+            JOIN "user" u1 ON f.user1_id = u1.user_id
+            JOIN "user" u2 ON f.user2_id = u2.user_id
+            WHERE (f.user1_id = $1 OR f.user2_id = $1) AND f.status = 'accepted'
+            ORDER BY f.updated_at DESC
+        `;
+        
+        const result = await pgPool.query(query, [userId]);
+        
+        res.json({
+            message: 'Friends retrieved successfully',
+            friends: result.rows
+        });
+        
+    } catch (error) {
+        console.error('Error fetching friends for user:', error);
+        res.status(500).json({
+            error: 'Internal server error',
+            message: 'Failed to fetch friends'
+        });
+    }
+});
+
 // Send friend request
 // Usage Example:
 // POST /api/friends/request

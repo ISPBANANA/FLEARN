@@ -424,9 +424,14 @@ export const userAPI = {
 
 // Friends API functions
 export const friendsAPI = {
-  // Get friends list
+  // Get friends list for the authenticated user
   async getFriends() {
     return apiCall('/api/friends');
+  },
+
+  // Get friends list for a specific user by user_id
+  async getFriendsByUserId(userId: string) {
+    return apiCall(`/api/friends/user/${encodeURIComponent(userId)}`);
   },
 
   // Send friend request

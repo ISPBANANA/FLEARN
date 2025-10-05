@@ -8,6 +8,7 @@ import React, { useState, useEffect } from "react";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
 import { userAPI, friendsAPI } from "@/lib/api";
 import { useUserProfile } from "@/hooks/useUserProfile";
+import { useRouter } from 'next/navigation';
 
 interface UserProfile {
   user_id: string;
@@ -39,6 +40,7 @@ export default function Home() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [hasLoadedInitial, setHasLoadedInitial] = useState(false);
+  const router = useRouter();
   
   // Get current user profile to access user_id
   const { profile: currentUserProfile } = useUserProfile();
@@ -258,7 +260,28 @@ export default function Home() {
       <div className="min-h-screen bg-white">
         <Nav />
         <div className="my-2 p-4 h-auto w-full flex items-center z-1 bg-white flex-col min-h-screen">
-          <div className="relative w-full max-w-6xl mt-8">
+          <div className="w-full max-w-6xl mt-8">
+            <button
+              onClick={() => router.push(`/profile/${currentUserProfile?.user_id}` || '/')}
+              className="flex items-center gap-2 mb-4 text-gray-600 hover:text-purple-600 transition-colors"
+            >
+              <svg
+                className="w-5 h-5"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M15 19l-7-7 7-7"
+                />
+              </svg>
+              Return to Profile
+            </button>
+          </div>
+          <div className="relative w-full max-w-6xl">
             <input
               type="text"
               placeholder="Search by name, or email"
@@ -342,7 +365,7 @@ export default function Home() {
             <div className="w-full max-w-6xl mt-8">
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 {searchResults.map((user) => (
-                  <div key={user.user_id} className="bg-white rounded-lg p-4 shadow-sm border border-gray-200">
+                  <div key={user.user_id} className="bg-white rounded-lg p-4 shadow-sm border border-gray-200 cursor-pointer" onClick={() => router.push(`/profile/${user.user_id}`)}>
                     <div className="flex items-start space-x-4">
                       <div className="relative w-16 h-16 rounded-full flex-shrink-0 overflow-hidden">
                         {user.profile_pic ? (
@@ -364,7 +387,10 @@ export default function Home() {
                     </div>
                     <div className="mt-4 flex justify-end">
                       <button
-                        onClick={() => handleFriendRequest(user)}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleFriendRequest(user);
+                        }}
                         className={`px-10 py-1 text-sm rounded-full ${
                           user.friendship_status === "pending"
                             ? "bg-yellow-100 text-yellow-700 border border-yellow-300"
@@ -390,7 +416,7 @@ export default function Home() {
             <div className="w-full max-w-6xl mt-8">
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 {pendingRequests.map((req) => (
-                  <div key={req.friend_user_id} className="bg-white rounded-lg p-4 shadow-md border border-gray-200">
+                  <div key={req.friend_user_id} className="bg-white rounded-lg p-4 shadow-md border border-gray-200 cursor-pointer" onClick={() => router.push(`/profile/${req.friend_user_id}`)}>
                     <div className="flex items-start space-x-4">
                       <div className="relative w-16 h-16 rounded-full flex-shrink-0 overflow-hidden">
                         {req.friend_profile_pic ? (
@@ -412,13 +438,19 @@ export default function Home() {
                     </div>
                     <div className="mt-4 flex justify-end gap-2">
                       <button
-                        onClick={() => handleAcceptRequest(req)}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleAcceptRequest(req);
+                        }}
                         className="px-4 py-1 text-sm rounded-full bg-green-500 text-white hover:bg-green-600 transition-colors"
                       >
                         Accept
                       </button>
                       <button
-                        onClick={() => handleRejectRequest(req)}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleRejectRequest(req);
+                        }}
                         className="px-4 py-1 text-sm rounded-full bg-red-500 text-white hover:bg-red-600 transition-colors"
                       >
                         Reject
