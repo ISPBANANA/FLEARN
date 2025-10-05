@@ -369,8 +369,7 @@ export default function Home() {
           )}
           {!isLoading && showRequests && pendingRequests.length > 0 && (
             <div className="w-full max-w-6xl mt-8">
-              <h2 className="text-lg font-semibold mb-4">Pending Friend Requests</h2>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 {pendingRequests.map((req) => (
                   <div key={req.friend_user_id} className="bg-white rounded-lg p-4 shadow-md border border-gray-200">
                     <div className="flex items-start space-x-4">
@@ -387,9 +386,9 @@ export default function Home() {
                         )}
                       </div>
                       <div className="flex-1 min-w-0">
-                        <p className="text-purple-600 font-medium truncate">{req.friend_name}</p>
-                        <p className="text-sm text-gray-500">{req.friend_email}</p>
-                        <p className="text-xs text-gray-400">Requested: {new Date(req.created_at || "").toLocaleDateString()}</p>
+                        <p className="text-purple-600 font-semibold text-xl truncate">{req.friend_name}</p>
+                        <p className="text-xs font-medium text-[#454545]">{req.friend_user_id}</p>
+                        <p className="text-xs text-[#454545]">Requested: {new Date(req.created_at || "").toLocaleDateString()}</p>
                       </div>
                     </div>
                     <div className="mt-4 flex justify-end gap-2">
