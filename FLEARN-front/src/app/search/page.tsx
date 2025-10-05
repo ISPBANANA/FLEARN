@@ -7,6 +7,7 @@ import SplitText from "@/components/SplitText";
 import React, { useState, useEffect } from "react";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
 import { userAPI, friendsAPI } from "@/lib/api";
+import { useUserProfile } from "@/hooks/useUserProfile";
 
 interface UserProfile {
   user_id: string;
@@ -26,6 +27,8 @@ interface FriendProfile {
   status: string;
   created_at: string;
   row_id: string;
+  user1_id?: string;
+  user2_id?: string;
 }
 
 export default function Home() {
@@ -36,6 +39,9 @@ export default function Home() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [hasLoadedInitial, setHasLoadedInitial] = useState(false);
+  
+  // Get current user profile to access user_id
+  const { profile: currentUserProfile } = useUserProfile();
 
   // Load all users on component mount
   useEffect(() => {
@@ -66,11 +72,20 @@ export default function Home() {
     setShowRequests(true);
     setSearchResults([]);
     try {
+      // Get current user ID from profile
+      if (!currentUserProfile || !currentUserProfile.user_id) {
+        setError("Unable to get current user information");
+        return;
+      }
+      
       const friendsData = await friendsAPI.getFriends();
       const friendships: FriendProfile[] = friendsData.friends || [];
       
-      // Only show requests where status is 'pending' and the current user is the recipient
-      const pending = friendships.filter(f => f.status === 'pending');
+      // Only show requests where status is 'pending' and the current user is the recipient (user1_id)
+      // NOT where the current user is the sender (user2_id)
+      const pending = friendships.filter(f => 
+        f.status === 'pending' && f.user1_id === currentUserProfile.user_id
+      );
       setPendingRequests(pending);
       if (pending.length === 0) {
         setError("No pending requests");
@@ -213,10 +228,12 @@ export default function Home() {
   // Accept friend request handler
   const handleAcceptRequest = async (request: FriendProfile) => {
     try {
+      console.log('Accepting friend request:', request.row_id);
       await friendsAPI.acceptFriendRequest(request.row_id);
       // Remove from pending requests
       setPendingRequests(prev => prev.filter(r => r.row_id !== request.row_id));
     } catch (err: unknown) {
+      console.error('Error accepting friend request:', err);
       const errorMessage = err instanceof Error ? err.message : "Failed to accept friend request";
       setError(errorMessage);
     }
@@ -225,10 +242,12 @@ export default function Home() {
   // Reject friend request handler
   const handleRejectRequest = async (request: FriendProfile) => {
     try {
+      console.log('Rejecting friend request:', request.row_id);
       await friendsAPI.blockFriendRequest(request.row_id);
       // Remove from pending requests
       setPendingRequests(prev => prev.filter(r => r.row_id !== request.row_id));
     } catch (err: unknown) {
+      console.error('Error rejecting friend request:', err);
       const errorMessage = err instanceof Error ? err.message : "Failed to reject friend request";
       setError(errorMessage);
     }
