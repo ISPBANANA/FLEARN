@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Fredoka } from "next/font/google";
 import "./globals.css";
+import { CORSErrorBoundary } from "@/components/CORSErrorHandler";
 
 const fredoka = Fredoka ({
   variable: '--font-fredoka',
@@ -22,7 +23,9 @@ export default function RootLayout({
       <body
         className={`${fredoka.variable} font-sans`}
       >
-        {children}
+        <CORSErrorBoundary>
+          {children}
+        </CORSErrorBoundary>
       </body>
     </html>
   );

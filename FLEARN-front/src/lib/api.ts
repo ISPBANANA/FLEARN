@@ -18,6 +18,193 @@ const getApiBaseUrl = () => {
 
 const API_BASE_URL = getApiBaseUrl();
 
+// CORS Error Detection and Handling
+export class CORSError extends Error {
+  constructor(
+    message: string,
+    public originalError: Error,
+    public requestUrl: string,
+    public suggestions: string[]
+  ) {
+    super(message);
+    this.name = 'CORSError';
+  }
+}
+
+// Enhanced error detection function
+function detectCORSError(error: Error, requestUrl: string): CORSError | null {
+  const errorMessage = error.message.toLowerCase();
+  const isNetworkError = error instanceof TypeError && errorMessage.includes('failed to fetch');
+  const isCORSError = errorMessage.includes('cors') || 
+                     errorMessage.includes('cross-origin') ||
+                     errorMessage.includes('blocked by cors policy') ||
+                     (isNetworkError && !errorMessage.includes('network'));
+
+  if (isCORSError || isNetworkError) {
+    const currentOrigin = typeof window !== 'undefined' ? window.location.origin : 'unknown';
+    const targetUrl = new URL(requestUrl);
+    const targetOrigin = targetUrl.origin;
+    
+    const suggestions = [
+      `Add '${currentOrigin}' to the backend's ALLOWED_ORIGINS environment variable`,
+      'Restart the backend server after updating CORS settings',
+      'Check if the backend server is running and accessible',
+      'Verify the API_BASE_URL is correct in your environment variables',
+      'Check browser developer console for detailed CORS error messages'
+    ];
+
+    // Add specific suggestions based on the environment
+    if (currentOrigin.includes('localhost') || currentOrigin.includes('127.0.0.1')) {
+      suggestions.push('If running locally, ensure both frontend and backend are on allowed ports');
+    }
+
+    if (targetOrigin !== currentOrigin) {
+      suggestions.push(`Cross-origin request detected: ${currentOrigin} → ${targetOrigin}`);
+    }
+
+    return new CORSError(
+      `CORS Error: Request from ${currentOrigin} to ${requestUrl} was blocked. This usually means the backend server is not configured to accept requests from your frontend domain.`,
+      error,
+      requestUrl,
+      suggestions
+    );
+  }
+
+  return null;
+}
+
+// CORS diagnostic function with reduced logging
+export async function diagnoseCORSIssue(apiUrl: string = API_BASE_URL, silent: boolean = false): Promise<{
+  canConnect: boolean;
+  corsConfigured: boolean;
+  healthCheck: boolean;
+  suggestions: string[];
+  details: any;
+}> {
+  const isBrowser = typeof window !== 'undefined';
+  const currentOrigin = isBrowser ? window.location.origin : 'unknown';
+  // In the browser, prefer same-origin diagnostics to avoid pointing at localhost on other devices
+  const resolvedApiUrl = isBrowser ? (apiUrl && !apiUrl.includes('localhost:') ? apiUrl : window.location.origin) : apiUrl;
+  const results = {
+    canConnect: false,
+    corsConfigured: false,
+    healthCheck: false,
+    suggestions: [] as string[],
+    details: {} as any
+  };
+
+  // Add a cache to prevent excessive diagnostic calls
+  const cacheKey = `cors_diagnostic_${apiUrl}`;
+  const cachedResult = sessionStorage.getItem(cacheKey);
+  const cacheTime = sessionStorage.getItem(`${cacheKey}_time`);
+  
+  if (cachedResult && cacheTime) {
+    const age = Date.now() - parseInt(cacheTime);
+    if (age < 30000) { // Cache for 30 seconds
+      if (!silent) console.log('🔄 Using cached CORS diagnostic result');
+      return JSON.parse(cachedResult);
+    }
+  }
+
+  try {
+    // Test 1: Basic connectivity
+    if (!silent) console.log('🔍 CORS Diagnostic: Testing basic connectivity...');
+  const healthResponse = await fetch(`${resolvedApiUrl}/health`, {
+      method: 'GET',
+      mode: 'cors',
+      credentials: 'include'
+    });
+    
+    results.canConnect = true;
+    results.healthCheck = healthResponse.ok;
+    results.details.healthStatus = healthResponse.status;
+    
+    if (!silent) console.log(`✅ Basic connectivity: OK (${healthResponse.status})`);
+
+    // Test 2: CORS preflight
+    if (!silent) console.log('🔍 CORS Diagnostic: Testing CORS preflight...');
+    try {
+  const preflightResponse = await fetch(`${resolvedApiUrl}/api/users/profile`, {
+        method: 'OPTIONS',
+        mode: 'cors',
+        headers: {
+          'Origin': currentOrigin,
+          'Access-Control-Request-Method': 'GET',
+          'Access-Control-Request-Headers': 'authorization,content-type'
+        }
+      });
+      
+      results.corsConfigured = preflightResponse.ok;
+      results.details.preflightStatus = preflightResponse.status;
+      results.details.corsHeaders = {};
+      
+      // Check CORS headers
+      const corsHeaders = [
+        'access-control-allow-origin',
+        'access-control-allow-methods',
+        'access-control-allow-headers',
+        'access-control-allow-credentials'
+      ];
+      
+      corsHeaders.forEach(header => {
+        const value = preflightResponse.headers.get(header);
+        if (value) {
+          results.details.corsHeaders[header] = value;
+        }
+      });
+      
+      if (!silent) console.log(`✅ CORS preflight: ${preflightResponse.ok ? 'OK' : 'Failed'} (${preflightResponse.status})`);
+    } catch (preflightError) {
+      if (!silent) console.log('❌ CORS preflight failed:', preflightError);
+      results.details.preflightError = preflightError instanceof Error ? preflightError.message : String(preflightError);
+    }
+
+  } catch (connectError) {
+    if (!silent) console.log('❌ Basic connectivity failed:', connectError);
+    results.details.connectError = connectError instanceof Error ? connectError.message : String(connectError);
+    
+    // Check if it's a CORS error even on basic connectivity
+    const corsError = detectCORSError(
+      connectError instanceof Error ? connectError : new Error(String(connectError)), 
+      `${resolvedApiUrl}/health`
+    );
+    if (corsError) {
+      results.suggestions.push(...corsError.suggestions);
+    }
+  }
+
+  // Generate suggestions based on results
+  if (!results.canConnect) {
+    results.suggestions.push(
+      'Backend server may not be running - check if it\'s started',
+      'Verify the API_BASE_URL environment variable is correct',
+      'Check if there are network connectivity issues'
+    );
+  }
+
+  if (results.canConnect && !results.corsConfigured) {
+    results.suggestions.push(
+      `Backend is running but CORS is not properly configured for origin: ${currentOrigin}`,
+      'Add your frontend URL to ALLOWED_ORIGINS in backend environment variables',
+      'Restart backend server after updating CORS configuration'
+    );
+  }
+
+  if (!results.suggestions.length && results.canConnect && results.corsConfigured) {
+    results.suggestions.push('CORS appears to be configured correctly!');
+  }
+
+  // Cache the results to prevent excessive calls
+  try {
+    sessionStorage.setItem(cacheKey, JSON.stringify(results));
+    sessionStorage.setItem(`${cacheKey}_time`, Date.now().toString());
+  } catch (e) {
+    // Ignore storage errors
+  }
+
+  return results;
+}
+
 // Helper function to get Google ID token from cookies or session
 // Note: Cookie name preserved as 'auth0_access_token' for backward compatibility, 
 // but now contains Google ID token
@@ -81,9 +268,12 @@ export function isAuthenticated(): boolean {
   return getCurrentUser() !== null;
 }
 
-// Generic API call function
+// Generic API call function with enhanced CORS error detection
 async function apiCall(endpoint: string, options: RequestInit = {}) {
   const token = getAccessToken();
+  // Build URL: on the browser, use relative path to leverage Next.js rewrites and avoid CORS
+  const isBrowser = typeof window !== 'undefined';
+  const requestUrl = isBrowser ? endpoint : `${API_BASE_URL}${endpoint}`;
   
   const headers: Record<string, string> = {
     'Content-Type': 'application/json',
@@ -101,23 +291,52 @@ async function apiCall(endpoint: string, options: RequestInit = {}) {
       throw new Error('No token provided - please log in to access this resource');
     }
   }
-  
-  const response = await fetch(`${API_BASE_URL}${endpoint}`, {
-    ...options,
-    headers,
-  });
-  
-  if (!response.ok) {
-    const errorData = await response.json().catch(() => ({}));
+
+  try {
+    const response = await fetch(requestUrl, {
+      ...options,
+      mode: 'cors', // Explicitly enable CORS
+      credentials: 'include', // Include credentials for CORS
+      headers,
+    });
     
-    if (response.status === 401) {
-      throw new Error('Unauthorized - please log in again');
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      
+      if (response.status === 401) {
+        throw new Error('Unauthorized - please log in again');
+      }
+      
+      throw new Error(errorData.message || `API call failed: ${response.status}`);
     }
     
-    throw new Error(errorData.message || `API call failed: ${response.status}`);
+    return response.json();
+  } catch (error) {
+    // Enhanced CORS error detection
+    const corsError = detectCORSError(
+      error instanceof Error ? error : new Error(String(error)), 
+      requestUrl
+    );
+    
+    if (corsError) {
+      // Log detailed CORS information for debugging
+  console.group('🚫 CORS Error Detected');
+  console.error('Request URL:', requestUrl);
+      console.error('Origin:', typeof window !== 'undefined' ? window.location.origin : 'server-side');
+      console.error('Error Details:', corsError.message);
+      console.group('💡 Suggestions:');
+      corsError.suggestions.forEach((suggestion, index) => {
+        console.log(`${index + 1}. ${suggestion}`);
+      });
+      console.groupEnd();
+      console.groupEnd();
+      
+      throw corsError;
+    }
+    
+    // Re-throw non-CORS errors
+    throw error instanceof Error ? error : new Error(String(error));
   }
-  
-  return response.json();
 }
 
 // User API functions
@@ -142,6 +361,17 @@ export const userAPI = {
   }) {
     return apiCall('/api/users/profile', {
       method: 'POST',
+      body: JSON.stringify(profileData),
+    });
+  },
+
+  // Update only profile picture and name (doesn't affect other fields)
+  async updateProfileBasic(profileData: {
+    name?: string;
+    profile_pic?: string;
+  }) {
+    return apiCall('/api/users/profile-basic', {
+      method: 'PATCH',
       body: JSON.stringify(profileData),
     });
   },
@@ -171,6 +401,11 @@ export const userAPI = {
       method: 'PATCH',
       body: JSON.stringify(expData),
     });
+  },
+
+  // Get leaderboard (top 50 users by daily_exp)
+  async getLeaderboard() {
+    return apiCall('/api/users/leaderboard');
   },
 };
 
@@ -238,12 +473,55 @@ export const gardensAPI = {
   },
 };
 
-// Health check
-export async function checkBackendHealth() {
+// Enhanced health check with CORS detection
+export async function checkBackendHealth(): Promise<{
+  isHealthy: boolean;
+  corsError?: CORSError;
+  error?: string;
+  status?: number;
+}> {
   try {
-    const response = await fetch(`${API_BASE_URL}/health`);
-    return response.ok;
+  const isBrowser = typeof window !== 'undefined';
+  const base = isBrowser ? window.location.origin : API_BASE_URL;
+  const response = await fetch(`${base}/health`, {
+      mode: 'cors',
+      credentials: 'include'
+    });
+    return {
+      isHealthy: response.ok,
+      status: response.status
+    };
   } catch (error) {
+    const corsError = detectCORSError(
+      error instanceof Error ? error : new Error(String(error)),
+      `${API_BASE_URL}/health`
+    );
+    
+    if (corsError) {
+      return {
+        isHealthy: false,
+        corsError
+      };
+    }
+    
+    return {
+      isHealthy: false,
+      error: error instanceof Error ? error.message : String(error)
+    };
+  }
+}
+
+// Quick CORS connectivity test
+export async function testCORSConnectivity(): Promise<boolean> {
+  try {
+    const healthResult = await checkBackendHealth();
+    if (healthResult.corsError) {
+      console.warn('CORS connectivity test failed:', healthResult.corsError.message);
+      return false;
+    }
+    return healthResult.isHealthy;
+  } catch (error) {
+    console.error('CORS connectivity test error:', error);
     return false;
   }
 }
@@ -255,4 +533,8 @@ export default {
   getCurrentUser,
   isAuthenticated,
   checkBackendHealth,
+  testCORSConnectivity,
+  diagnoseCORSIssue,
+  CORSError,
+  detectCORSError,
 };

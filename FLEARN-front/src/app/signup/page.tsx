@@ -10,6 +10,8 @@ import { FileUp, Asterisk } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { SessionManager } from '@/lib/session';
 import SignupSearchParamsHandler from '@/components/SignupSearchParamsHandler';
+import { useAPIWithCORSHandling } from '@/hooks/useCORS';
+import { CORSErrorDisplay } from '@/components/CORSErrorHandler';
 
 // Force dynamic rendering to avoid build-time issues with useSearchParams
 export const dynamic = 'force-dynamic';
@@ -56,6 +58,9 @@ export default function Home() {
   const [showValidationErrors, setShowValidationErrors] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  // CORS error handling
+  const { executeAPI, corsError, clearErrors } = useAPIWithCORSHandling();
+
   const handleDataLoaded = useCallback((encodedData: string) => {
     try {
       // Decode the data from base64
@@ -90,50 +95,30 @@ export default function Home() {
   const [fileName, setFileName] = useState('');
   const [imagePreview, setImagePreview] = useState('');
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
+  const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
     if (file) {
+      // Check if file is an image
+      if (!file.type.startsWith('image/')) {
+        alert('Please select an image file.');
+        return;
+      }
+      
+      // Check file size (limit to 5MB)
+      if (file.size > 5 * 1024 * 1024) {
+        alert('File size must be less than 5MB.');
+        return;
+      }
+
       setFileName(file.name);
-      
-      // Compress and resize image before converting to base64
-      const canvas = document.createElement('canvas');
-      const ctx = canvas.getContext('2d');
-      const img = document.createElement('img') as HTMLImageElement;
-      
-      img.onload = () => {
-        // Set maximum dimensions
-        const MAX_WIDTH = 512;
-        const MAX_HEIGHT = 512;
-        
-        let { width, height } = img;
-        
-        // Calculate new dimensions while maintaining aspect ratio
-        if (width > height) {
-          if (width > MAX_WIDTH) {
-            height = (height * MAX_WIDTH) / width;
-            width = MAX_WIDTH;
-          }
-        } else {
-          if (height > MAX_HEIGHT) {
-            width = (width * MAX_HEIGHT) / height;
-            height = MAX_HEIGHT;
-          }
-        }
-        
-        canvas.width = width;
-        canvas.height = height;
-        
-        // Draw and compress the image
-        ctx?.drawImage(img, 0, 0, width, height);
-        
-        // Convert to base64 with reduced quality for JPEG
-        const compressedBase64 = canvas.toDataURL('image/jpeg', 0.7);
-        
-        setImagePreview(compressedBase64);
-        setFormData(prev => ({ ...prev, profilePicture: compressedBase64 }));
+
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        const base64String = e.target?.result as string;
+        setImagePreview(base64String);
+        setFormData(prev => ({ ...prev, profilePicture: base64String }));
       };
-      
-      img.src = URL.createObjectURL(file);
+      reader.readAsDataURL(file);
     }
   };
 
@@ -165,7 +150,8 @@ export default function Home() {
         setIsSubmitting(true);
         
         try {
-          const response = await fetch(`${API_BASE_URL}/api/users/profile`, {
+          // Use relative path to leverage Next.js rewrites and avoid CORS
+          const response = await fetch(`/api/users/profile`, {
             method: 'POST',
             mode: 'cors',
             headers: {
@@ -196,7 +182,7 @@ export default function Home() {
               // Post each subject individually in the background
               const subjectPromises = subjectsArray.map(async (subject) => {
                 try {
-                  const subjectResponse = await fetch(`${API_BASE_URL}/api/users/preferred-subjects`, {
+                  const subjectResponse = await fetch(`/api/users/preferred-subjects`, {
                     method: 'POST',
                     mode: 'cors',
                     headers: {
@@ -343,6 +329,20 @@ export default function Home() {
       </Suspense>
       <Nav />
 
+      {/* CORS Error Display */}
+      {corsError && (
+        <div className="max-w-4xl mx-auto px-4 py-4">
+          <CORSErrorDisplay 
+            error={corsError}
+            onRetry={() => {
+              clearErrors();
+              handleNext();
+            }}
+            onDismiss={clearErrors}
+          />
+        </div>
+      )}
+
       {/* Infomation here */}
       <div className="my-2 p-4 h-auto w-full flex items-center z-1 bg-white flex-col min-h-screen">
         <div className="w-full max-w-[1620px] min-w-[600px] items-center flex flex-col px-25 py-7">
@@ -396,7 +396,9 @@ export default function Home() {
                     style={{ boxShadow: '0px 0px 5px rgba(0, 0, 0, 0.25)' }}
                     value={formData.displayName}
                     onChange={handleDisplayNameChange}
+                    maxLength={15}
                   />
+                  <p className="text-[#454545] text-sm mt-1">{formData.displayName.length}/15 characters</p>
                   {showValidationErrors && formData.displayName.trim() === '' && (
                     <p className="text-red-500 text-sm mb-3">Display name is required</p>
                   )}
