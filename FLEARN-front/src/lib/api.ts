@@ -475,28 +475,56 @@ export const gardensAPI = {
     return apiCall('/api/gardens');
   },
 
-  // Create new garden
-  async createGarden(gardenData: {
-    garden_name: string;
-    category: string;
-    description?: string;
-  }) {
+  // Get gardens for a specific user by user_id
+  async getGardensByUserId(userId: string) {
+    return apiCall(`/api/gardens/user/${encodeURIComponent(userId)}`);
+  },
+
+  // Send garden invitation to a friend
+  async sendGardenInvitation(partnerEmail: string) {
     return apiCall('/api/gardens', {
       method: 'POST',
-      body: JSON.stringify(gardenData),
+      body: JSON.stringify({ partner_email: partnerEmail }),
     });
   },
 
-  // Join garden
-  async joinGarden(gardenId: string) {
-    return apiCall(`/api/gardens/${gardenId}/join`, {
-      method: 'POST',
+  // Accept/reject garden invitation
+  async updateGardenInvitation(gardenId: string, status: 'accepted' | 'rejected') {
+    return apiCall(`/api/gardens/${gardenId}/invitation`, {
+      method: 'PATCH',
+      body: JSON.stringify({ status }),
     });
   },
 
-  // Leave garden
-  async leaveGarden(gardenId: string) {
-    return apiCall(`/api/gardens/${gardenId}/leave`, {
+  // Accept garden invitation (convenience method)
+  async acceptGardenInvitation(gardenId: string) {
+    return this.updateGardenInvitation(gardenId, 'accepted');
+  },
+
+  // Reject garden invitation (convenience method)  
+  async rejectGardenInvitation(gardenId: string) {
+    return this.updateGardenInvitation(gardenId, 'rejected');
+  },
+
+  // Update garden streak
+  async updateGardenStreak(gardenId: string, increment: boolean) {
+    return apiCall(`/api/gardens/${gardenId}/streak`, {
+      method: 'PATCH',
+      body: JSON.stringify({ increment }),
+    });
+  },
+
+  // Update garden status
+  async updateGardenStatus(gardenId: string, status: 'active' | 'inactive' | 'completed') {
+    return apiCall(`/api/gardens/${gardenId}/status`, {
+      method: 'PATCH',
+      body: JSON.stringify({ status }),
+    });
+  },
+
+  // Delete garden
+  async deleteGarden(gardenId: string) {
+    return apiCall(`/api/gardens/${gardenId}`, {
       method: 'DELETE',
     });
   },

@@ -46,7 +46,7 @@ CREATE TABLE garden (
     row_id SERIAL PRIMARY KEY,
     user1_id UUID REFERENCES "user"(user_id) ON DELETE CASCADE,
     user2_id UUID REFERENCES "user"(user_id) ON DELETE CASCADE,
-    status TEXT DEFAULT 'active' CHECK (status IN ('active', 'inactive', 'completed')),
+    status TEXT DEFAULT 'active' CHECK (status IN ('pending', 'active', 'inactive', 'completed')),
     streak INT DEFAULT 0,
     uptime_streak DATE,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
