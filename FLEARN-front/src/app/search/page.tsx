@@ -4,8 +4,9 @@ import Image from "next/image";
 import { Nav } from "@/components/nav";
 import { Footer } from "@/components/footer";
 import SplitText from "@/components/SplitText";
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
+import { userAPI, friendsAPI } from "@/lib/api";
 
 interface UserProfile {
   user_id: string;
@@ -13,7 +14,8 @@ interface UserProfile {
   email: string;
   profile_pic: string | null;
   created_at: string;
-  status?: "pending" | "none" | "accepted";
+  friendship_status: "pending" | "none" | "accepted" | "blocked";
+  friendship_id?: string;
 }
 
 interface FriendProfile {
@@ -23,6 +25,7 @@ interface FriendProfile {
   friend_profile_pic: string;
   status: string;
   created_at: string;
+  row_id: string;
 }
 
 export default function Home() {
@@ -32,6 +35,29 @@ export default function Home() {
   const [showRequests, setShowRequests] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [hasLoadedInitial, setHasLoadedInitial] = useState(false);
+
+  // Load all users on component mount
+  useEffect(() => {
+    if (!hasLoadedInitial) {
+      loadAllUsers();
+    }
+  }, [hasLoadedInitial]);
+
+  // Auto-search effect with debounce
+  useEffect(() => {
+    if (!hasLoadedInitial || showRequests) return; // Don't auto-search until initial load is complete or if showing requests
+
+    const timeoutId = setTimeout(() => {
+      if (!searchTerm.trim()) {
+        loadAllUsersAutoSearch();
+      } else {
+        handleAutoSearch();
+      }
+    }, 150); // 150ms debounce delay - faster response for single character searches
+
+    return () => clearTimeout(timeoutId);
+  }, [searchTerm, hasLoadedInitial, showRequests]);
 
   // Request handler: show pending friend requests
   const handleShowRequests = async () => {
@@ -40,16 +66,8 @@ export default function Home() {
     setShowRequests(true);
     setSearchResults([]);
     try {
-      const token = localStorage.getItem("access_token");
-      const headers = {
-        Authorization: `Bearer ${token}`,
-      };
-      const friendsResponse = await fetch("/api/friends", { headers });
-      let friendships: FriendProfile[] = [];
-      if (friendsResponse.ok) {
-        const friendsData = await friendsResponse.json();
-        friendships = friendsData.friends || [];
-      }
+      const friendsData = await friendsAPI.getFriends();
+      const friendships: FriendProfile[] = friendsData.friends || [];
       
       // Only show requests where status is 'pending' and the current user is the recipient
       const pending = friendships.filter(f => f.status === 'pending');
@@ -58,7 +76,8 @@ export default function Home() {
         setError("No pending requests");
       }
     } catch (err: unknown) {
-      setError("Failed to fetch requests");
+      const errorMessage = err instanceof Error ? err.message : "Failed to fetch requests";
+      setError(errorMessage);
       setPendingRequests([]);
     } finally {
       setIsLoading(false);
@@ -66,83 +85,113 @@ export default function Home() {
   };
 
   // Update user status in results
-  const updateUserStatus = (userId: string, newStatus: "pending" | "none" | "accepted") => {
+  const updateUserStatus = (userId: string, newStatus: "pending" | "none" | "accepted" | "blocked") => {
     setSearchResults((prevResults) =>
       prevResults.map((user) =>
-        user.user_id === userId ? { ...user, status: newStatus } : user
+        user.user_id === userId ? { ...user, friendship_status: newStatus } : user
       )
     );
   };
 
-  // Search handler
-  const handleSearch = async () => {
-    if (!searchTerm.trim()) return;
+  // Load all users function (for auto-search)
+  const loadAllUsersAutoSearch = async () => {
     setIsLoading(true);
     setError(null);
     setSearchResults([]);
+    
     try {
-      const token = localStorage.getItem("access_token");
-      const headers = {
-        Authorization: `Bearer ${token}`,
-      };
-
-      // Get current user's friends
-      const friendsResponse = await fetch("/api/friends", { headers });
-      let friendships: FriendProfile[] = [];
-      if (friendsResponse.ok) {
-        const friendsData = await friendsResponse.json();
-        friendships = friendsData.friends || [];
-      }
-
-      // Try to find by UUID first (exact match)
-      const users = new Map<string, UserProfile>();
-      if (searchTerm.length > 8) {
-        const profileResponse = await fetch(`/api/users/profilebyid?id=${encodeURIComponent(searchTerm)}`, { headers });
-        if (profileResponse.ok) {
-          const data = await profileResponse.json();
-          if (data.user) {
-            users.set(data.user.user_id, {
-              ...data.user,
-              status: "none",
-            });
-          }
-        }
-      }
-
-      // Try to find by name (partial match) using friends list
-      const searchLower = searchTerm.toLowerCase();
-      const profilesPromises: Promise<any>[] = [];
-      const knownUsers = friendships.map((f) => f.friend_user_id);
-      for (const userId of knownUsers) {
-        profilesPromises.push(
-          fetch(`/api/users/profilebyid?id=${userId}`, { headers }).then((r) => (r.ok ? r.json() : null))
-        );
-      }
-      const profiles = await Promise.all(profilesPromises);
-      profiles.forEach((profile) => {
-        if (profile?.user) {
-          const user = profile.user;
-          if (user.name.toLowerCase().includes(searchLower)) {
-            users.set(user.user_id, user);
-          }
-        }
-      });
-
-      // Format results with friendship status
-      const finalResults: UserProfile[] = Array.from(users.values()).map((user) => {
-        const friendship = friendships.find((f) => f.friend_user_id === user.user_id);
-        return {
-          ...user,
-          status: friendship ? (friendship.status as "pending" | "none" | "accepted") : "none",
-        };
-      });
-
-      setSearchResults(finalResults);
-      if (finalResults.length === 0) {
+      const allUsersData = await userAPI.getAllUsers(50, 0);
+      const users: UserProfile[] = allUsersData.users || [];
+      
+      setSearchResults(users);
+      if (users.length === 0) {
         setError("No users found");
       }
-    } catch (err: any) {
-      setError(err?.message || "An error occurred while searching");
+    } catch (err: unknown) {
+      const errorMessage = err instanceof Error ? err.message : "An error occurred while loading users";
+      setError(errorMessage);
+      setSearchResults([]);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Load all users function
+  const loadAllUsers = async () => {
+    setIsLoading(true);
+    setError(null);
+    setSearchResults([]);
+    setShowRequests(false);
+    
+    try {
+      const allUsersData = await userAPI.getAllUsers(50, 0);
+      const users: UserProfile[] = allUsersData.users || [];
+      
+      setSearchResults(users);
+      setHasLoadedInitial(true);
+      if (users.length === 0) {
+        setError("No users found");
+      }
+    } catch (err: unknown) {
+      const errorMessage = err instanceof Error ? err.message : "An error occurred while loading users";
+      setError(errorMessage);
+      setSearchResults([]);
+      setHasLoadedInitial(true);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Auto search handler (for real-time search)
+  const handleAutoSearch = async () => {
+    // Only auto-search if we're not showing requests
+    if (showRequests) return;
+    
+    setIsLoading(true);
+    setError(null);
+    setSearchResults([]);
+    
+    try {
+      const searchData = await userAPI.searchUsers(searchTerm);
+      const users: UserProfile[] = searchData.users || [];
+      
+      setSearchResults(users);
+      if (users.length === 0) {
+        setError("No users found");
+      }
+    } catch (err: unknown) {
+      const errorMessage = err instanceof Error ? err.message : "An error occurred while searching";
+      setError(errorMessage);
+      setSearchResults([]);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Search handler
+  const handleSearch = async () => {
+    // If search term is empty, load all users
+    if (!searchTerm.trim()) {
+      loadAllUsers();
+      return;
+    }
+    
+    setIsLoading(true);
+    setError(null);
+    setSearchResults([]);
+    setShowRequests(false);
+    
+    try {
+      const searchData = await userAPI.searchUsers(searchTerm);
+      const users: UserProfile[] = searchData.users || [];
+      
+      setSearchResults(users);
+      if (users.length === 0) {
+        setError("No users found");
+      }
+    } catch (err: unknown) {
+      const errorMessage = err instanceof Error ? err.message : "An error occurred while searching";
+      setError(errorMessage);
       setSearchResults([]);
     } finally {
       setIsLoading(false);
@@ -151,22 +200,37 @@ export default function Home() {
 
   // Friend request handler
   const handleFriendRequest = async (user: UserProfile) => {
-    if (user.status === "pending") return;
+    if (user.friendship_status === "pending") return;
     try {
-      const response = await fetch("/api/friends/request", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${localStorage.getItem("access_token")}`,
-        },
-        body: JSON.stringify({ friend_email: user.email }),
-      });
-      if (!response.ok) {
-        throw new Error("Failed to send friend request");
-      }
+      await friendsAPI.sendFriendRequest(user.user_id);
       updateUserStatus(user.user_id, "pending");
-    } catch (err: any) {
-      setError(err?.message || "Failed to send friend request");
+    } catch (err: unknown) {
+      const errorMessage = err instanceof Error ? err.message : "Failed to send friend request";
+      setError(errorMessage);
+    }
+  };
+
+  // Accept friend request handler
+  const handleAcceptRequest = async (request: FriendProfile) => {
+    try {
+      await friendsAPI.acceptFriendRequest(request.row_id);
+      // Remove from pending requests
+      setPendingRequests(prev => prev.filter(r => r.row_id !== request.row_id));
+    } catch (err: unknown) {
+      const errorMessage = err instanceof Error ? err.message : "Failed to accept friend request";
+      setError(errorMessage);
+    }
+  };
+
+  // Reject friend request handler
+  const handleRejectRequest = async (request: FriendProfile) => {
+    try {
+      await friendsAPI.blockFriendRequest(request.row_id);
+      // Remove from pending requests
+      setPendingRequests(prev => prev.filter(r => r.row_id !== request.row_id));
+    } catch (err: unknown) {
+      const errorMessage = err instanceof Error ? err.message : "Failed to reject friend request";
+      setError(errorMessage);
     }
   };
 
@@ -178,10 +242,18 @@ export default function Home() {
           <div className="relative w-full max-w-6xl mt-8">
             <input
               type="text"
-              placeholder="UUID / Name"
+              placeholder="Search by name, or email"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              onKeyPress={(e) => e.key === "Enter" && handleSearch()}
+              onKeyPress={(e) => {
+                if (e.key === "Enter") {
+                  if (!searchTerm.trim()) {
+                    loadAllUsers();
+                  } else {
+                    handleSearch();
+                  }
+                }
+              }}
               className="w-full px-6 py-2 text-gray-600 border-1 border-gray-300 rounded-2xl focus:outline-none placeholder-gray-400 shadow-md"
             />
             <button
@@ -206,10 +278,17 @@ export default function Home() {
           <div className="w-full max-w-6xl mt-12 flex justify-start">
             <div className="flex gap-2">
               <button
-                onClick={() => { setShowRequests(false); handleSearch(); }}
+                onClick={() => { 
+                  setShowRequests(false); 
+                  if (!searchTerm.trim()) {
+                    loadAllUsers();
+                  } else {
+                    handleSearch();
+                  }
+                }}
                 className="px-8 py-1 bg-white text-gray-400 border border-gray-400 rounded-xl hover:border-gray-600 hover:text-gray-600 transition-colors shadow-md"
               >
-                Search
+                {!searchTerm.trim() ? 'All Users' : 'Search'}
               </button>
               <button
                 onClick={handleShowRequests}
@@ -236,7 +315,7 @@ export default function Home() {
             <div className="w-full max-w-6xl mt-8">
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 {searchResults.map((user) => (
-                  <div key={user.user_id} className="bg-white rounded-lg p-4 shadow-md border border-gray-200">
+                  <div key={user.user_id} className="bg-white rounded-lg p-4 shadow-sm border border-gray-200">
                     <div className="flex items-start space-x-4">
                       <div className="relative w-16 h-16 rounded-full flex-shrink-0 overflow-hidden">
                         {user.profile_pic ? (
@@ -250,22 +329,29 @@ export default function Home() {
                           <div className="w-full h-full bg-gray-200" />
                         )}
                       </div>
-                      <div className="flex-1 min-w-0">
-                        <p className="text-purple-600 font-medium truncate">{user.name}</p>
-                        <p className="text-sm text-gray-500">{user.email}</p>
-                        <p className="text-xs text-gray-400">Joined: {new Date(user.created_at || "").toLocaleDateString()}</p>
+                      <div className="flex-1 min-w-0 gap-1">
+                        <p className="text-purple-600 font-semibold truncate text-xl">{user.name}</p>
+                        <p className="text-xs text-[#454545] font-medium">{user.user_id}</p>
+                        <p className="text-xs text-[#454545]">Joined: {new Date(user.created_at || "").toLocaleDateString()}</p>
                       </div>
                     </div>
                     <div className="mt-4 flex justify-end">
                       <button
                         onClick={() => handleFriendRequest(user)}
-                        className={`px-4 py-1 text-sm rounded-full ${
-                          user.status === "pending"
+                        className={`px-10 py-1 text-sm rounded-full ${
+                          user.friendship_status === "pending"
                             ? "bg-yellow-100 text-yellow-700 border border-yellow-300"
-                            : "bg-white text-gray-600 border border-gray-300 hover:border-purple-400 hover:text-purple-500"
+                            : user.friendship_status === "accepted"
+                            ? "bg-green-100 text-green-700 border border-green-300"
+                            : "bg-white text-[#454545] border border-[#454545] hover:border-purple-400 hover:text-purple-500"
                         } transition-colors`}
+                        disabled={user.friendship_status === "pending" || user.friendship_status === "accepted"}
                       >
-                        {user.status === "pending" ? "Pending" : "Add"}
+                        {user.friendship_status === "pending" 
+                          ? "Pending" 
+                          : user.friendship_status === "accepted" 
+                          ? "Friends" 
+                          : "Add"}
                       </button>
                     </div>
                   </div>
@@ -298,8 +384,19 @@ export default function Home() {
                         <p className="text-xs text-gray-400">Requested: {new Date(req.created_at || "").toLocaleDateString()}</p>
                       </div>
                     </div>
-                    <div className="mt-4 flex justify-end">
-                      <span className="px-4 py-1 text-sm rounded-full bg-yellow-100 text-yellow-700 border border-yellow-300">Pending</span>
+                    <div className="mt-4 flex justify-end gap-2">
+                      <button
+                        onClick={() => handleAcceptRequest(req)}
+                        className="px-4 py-1 text-sm rounded-full bg-green-500 text-white hover:bg-green-600 transition-colors"
+                      >
+                        Accept
+                      </button>
+                      <button
+                        onClick={() => handleRejectRequest(req)}
+                        className="px-4 py-1 text-sm rounded-full bg-red-500 text-white hover:bg-red-600 transition-colors"
+                      >
+                        Reject
+                      </button>
                     </div>
                   </div>
                 ))}
