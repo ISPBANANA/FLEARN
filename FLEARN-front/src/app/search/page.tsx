@@ -286,13 +286,21 @@ export default function Home() {
                     handleSearch();
                   }
                 }}
-                className="px-8 py-1 bg-white text-gray-400 border border-gray-400 rounded-xl hover:border-gray-600 hover:text-gray-600 transition-colors shadow-md"
+                className={`px-8 py-1 bg-white rounded-xl transition-colors shadow-md ${
+                  !showRequests 
+                    ? "text-purple-500 border border-purple-500 hover:border-purple-600 hover:text-purple-600" 
+                    : "text-[#454545] border border-[#454545] hover:border-gray-600 hover:text-gray-600"
+                }`}
               >
                 {!searchTerm.trim() ? 'All Users' : 'Search'}
               </button>
               <button
                 onClick={handleShowRequests}
-                className="px-8 py-1 bg-white text-gray-400 border border-gray-400 rounded-xl hover:border-gray-600 hover:text-gray-600 transition-colors shadow-md"
+                className={`px-8 py-1 bg-white rounded-xl transition-colors shadow-md ${
+                  showRequests 
+                    ? "text-purple-500 border border-purple-500 hover:border-purple-600 hover:text-purple-600" 
+                    : "text-[#454545] border border-[#454545] hover:border-gray-600 hover:text-gray-600"
+                }`}
               >
                 Request
               </button>

@@ -49,6 +49,21 @@ export function Nav() {
                 <>
                   <li className="flex items-center gap-2">
                     <Link 
+                        href="/search"
+                        className={`text-[#9A41FF] transition-all duration-200 ${
+                          pathname === '/search'
+                          ? 'opacity-100 border-b-2 border-[#9A41FF] pb-1'
+                          : 'opacity-70 hover:opacity-100'
+                      }`}
+                    >
+                      Search
+                    </Link>
+                    {profileLoading && (
+                      <div className="w-2 h-2 bg-[#9A41FF] rounded-full animate-pulse"></div>
+                    )}
+                  </li>
+                  <li className="flex items-center gap-2">
+                    <Link 
                       href={profile?.user_id ? `/profile/${profile.user_id}` : '#'}
                       className="cursor-pointer"
                     >
