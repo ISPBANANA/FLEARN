@@ -6,7 +6,12 @@ import path from 'path';
 config({ path: path.resolve(__dirname, '../.env') });
 
 const nextConfig: NextConfig = {
-  /* config options here */
+  images: {
+    domains: [
+      'th3.googleusercontent.com',
+      'lh3.googleusercontent.com'
+    ],
+  },
   experimental: {
     turbo: {
       root: path.resolve(__dirname),
