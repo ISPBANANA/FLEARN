@@ -83,6 +83,164 @@ router.get('/profilebyid', checkJwt, async (req, res) => {
     }
 });
 
+// Get all users with pagination
+// Usage Example:
+// GET /api/users/all?limit=50&offset=0
+// Headers: Authorization: Bearer <JWT_TOKEN>
+router.get('/all', checkJwt, async (req, res) => {
+    try {
+        const googleId = req.user.sub || req.user.id;
+        const limit = parseInt(req.query.limit) || 50;
+        const offset = parseInt(req.query.offset) || 0;
+        
+        // Validate pagination parameters
+        if (limit > 100) {
+            return res.status(400).json({
+                error: 'Bad request',
+                message: 'Limit cannot exceed 100'
+            });
+        }
+        
+        // First get user_id from google_id
+        const userQuery = `SELECT user_id FROM "user" WHERE google_id = $1`;
+        const userResult = await pgPool.query(userQuery, [googleId]);
+        
+        if (userResult.rows.length === 0) {
+            return res.status(404).json({
+                error: 'User not found',
+                message: 'Please complete your profile setup first'
+            });
+        }
+        
+        const currentUserId = userResult.rows[0].user_id;
+        
+        const query = `
+            SELECT 
+                u.user_id,
+                u.name,
+                u.email,
+                u.profile_pic,
+                u.created_at,
+                CASE 
+                    WHEN f.status IS NOT NULL THEN f.status
+                    ELSE 'none'
+                END as friendship_status,
+                f.row_id as friendship_id
+            FROM "user" u
+            LEFT JOIN friend f ON (
+                (f.user1_id = $1 AND f.user2_id = u.user_id) OR 
+                (f.user2_id = $1 AND f.user1_id = u.user_id)
+            )
+            WHERE u.user_id != $1
+            ORDER BY u.name, u.created_at DESC
+            LIMIT $2 OFFSET $3
+        `;
+        
+        const result = await pgPool.query(query, [currentUserId, limit, offset]);
+        
+        res.json({
+            message: 'All users retrieved successfully',
+            users: result.rows,
+            count: result.rows.length,
+            limit: limit,
+            offset: offset
+        });
+        
+    } catch (error) {
+        console.error('Error fetching all users:', error);
+        res.status(500).json({
+            error: 'Internal server error',
+            message: 'Failed to fetch users'
+        });
+    }
+});
+
+// Search users by name or email
+// Usage Example:
+// GET /api/users/search?q=john
+// Headers: Authorization: Bearer <JWT_TOKEN>
+router.get('/search', checkJwt, async (req, res) => {
+    try {
+        const googleId = req.user.sub || req.user.id;
+        const searchTerm = req.query.q;
+        
+        // Validate that search term is provided
+        if (!searchTerm || typeof searchTerm !== 'string' || searchTerm.trim().length < 1) {
+            return res.status(400).json({
+                error: 'Bad request',
+                message: 'Search query cannot be empty'
+            });
+        }
+        
+        // First get user_id from google_id
+        const userQuery = `SELECT user_id FROM "user" WHERE google_id = $1`;
+        const userResult = await pgPool.query(userQuery, [googleId]);
+        
+        if (userResult.rows.length === 0) {
+            return res.status(404).json({
+                error: 'User not found',
+                message: 'Please complete your profile setup first'
+            });
+        }
+        
+        const currentUserId = userResult.rows[0].user_id;
+        const searchPattern = `%${searchTerm.toLowerCase()}%`;
+        
+        // Check if search term is a valid UUID format
+        const isValidUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(searchTerm);
+        
+        const query = `
+            SELECT 
+                u.user_id,
+                u.name,
+                u.email,
+                u.profile_pic,
+                u.created_at,
+                CASE 
+                    WHEN f.status IS NOT NULL THEN f.status
+                    ELSE 'none'
+                END as friendship_status,
+                f.row_id as friendship_id
+            FROM "user" u
+            LEFT JOIN friend f ON (
+                (f.user1_id = $1 AND f.user2_id = u.user_id) OR 
+                (f.user2_id = $1 AND f.user1_id = u.user_id)
+            )
+            WHERE u.user_id != $1
+            AND (
+                LOWER(u.name) LIKE $2 OR 
+                LOWER(u.email) LIKE $2 
+                ${isValidUUID ? 'OR u.user_id = $3' : ''}
+            )
+            ORDER BY 
+                CASE 
+                    ${isValidUUID ? 'WHEN u.user_id = $3 THEN 0' : ''}
+                    WHEN LOWER(u.name) LIKE $2 THEN 1
+                    WHEN LOWER(u.email) LIKE $2 THEN 2
+                    ELSE 3
+                END,
+                u.name
+            LIMIT 20
+        `;
+        
+        const queryParams = isValidUUID ? [currentUserId, searchPattern, searchTerm] : [currentUserId, searchPattern];
+        const result = await pgPool.query(query, queryParams);
+        
+        res.json({
+            message: 'User search completed successfully',
+            users: result.rows,
+            count: result.rows.length
+        });
+        
+    } catch (error) {
+        console.error('Error searching users:', error);
+        res.status(500).json({
+            error: 'Internal server error',
+            message: 'Failed to search users'
+        });
+    }
+});
+
 // Create or update user profile
 // Usage Example:
 // POST /api/users/profile

@@ -31,6 +31,8 @@ router.get('/', checkJwt, async (req, res) => {
                 f.status,
                 f.created_at,
                 f.updated_at,
+                f.user1_id,
+                f.user2_id,
                 CASE 
                     WHEN f.user1_id = $1 THEN u2.name
                     ELSE u1.name
@@ -70,26 +72,91 @@ router.get('/', checkJwt, async (req, res) => {
     }
 });
 
+// Get friends for a specific user by user_id
+// Usage Example:
+// GET /api/friends/user/12345678-1234-1234-1234-123456789012
+// Headers: Authorization: Bearer <JWT_TOKEN>
+router.get('/user/:userId', checkJwt, async (req, res) => {
+    try {
+        const { userId } = req.params;
+        
+        if (!userId) {
+            return res.status(400).json({
+                error: 'Bad request',
+                message: 'User ID is required'
+            });
+        }
+
+        // Verify that the user exists
+        const userExistsQuery = `SELECT user_id FROM "user" WHERE user_id = $1`;
+        const userExistsResult = await pgPool.query(userExistsQuery, [userId]);
+        
+        if (userExistsResult.rows.length === 0) {
+            return res.status(404).json({
+                error: 'User not found',
+                message: 'User with this ID does not exist'
+            });
+        }
+        
+        const query = `
+            SELECT 
+                f.row_id,
+                f.status,
+                f.created_at,
+                f.updated_at,
+                f.user1_id,
+                f.user2_id,
+                CASE 
+                    WHEN f.user1_id = $1 THEN u2.name
+                    ELSE u1.name
+                END as friend_name,
+                CASE 
+                    WHEN f.user1_id = $1 THEN u2.email
+                    ELSE u1.email
+                END as friend_email,
+                CASE 
+                    WHEN f.user1_id = $1 THEN u2.profile_pic
+                    ELSE u1.profile_pic
+                END as friend_profile_pic,
+                CASE 
+                    WHEN f.user1_id = $1 THEN f.user2_id
+                    ELSE f.user1_id
+                END as friend_user_id
+            FROM friend f
+            JOIN "user" u1 ON f.user1_id = u1.user_id
+            JOIN "user" u2 ON f.user2_id = u2.user_id
+            WHERE (f.user1_id = $1 OR f.user2_id = $1) AND f.status = 'accepted'
+            ORDER BY f.updated_at DESC
+        `;
+        
+        const result = await pgPool.query(query, [userId]);
+        
+        res.json({
+            message: 'Friends retrieved successfully',
+            friends: result.rows
+        });
+        
+    } catch (error) {
+        console.error('Error fetching friends for user:', error);
+        res.status(500).json({
+            error: 'Internal server error',
+            message: 'Failed to fetch friends'
+        });
+    }
+});
+
 // Send friend request
 // Usage Example:
 // POST /api/friends/request
 // Headers: Authorization: Bearer <JWT_TOKEN>
 // Body: {
-//   "friend_email": "newFriend@example.com"
+//   "friend_user_id": "12345678-1234-1234-1234-123456789012"
 // }
 router.post('/request', checkJwt, async (req, res) => {
     try {
         const googleId = req.user.sub || req.user.id;
-        const { friend_email } = req.body;
         
-        if (!friend_email) {
-            return res.status(400).json({
-                error: 'Bad request',
-                message: 'Friend email is required'
-            });
-        }
-        
-        // Get current user_id
+        // First get user_id from google_id
         const userQuery = `SELECT user_id FROM "user" WHERE google_id = $1`;
         const userResult = await pgPool.query(userQuery, [googleId]);
         
@@ -101,19 +168,27 @@ router.post('/request', checkJwt, async (req, res) => {
         }
         
         const userId = userResult.rows[0].user_id;
+        const { friend_user_id } = req.body;
         
-        // Get friend user_id
-        const friendQuery = `SELECT user_id FROM "user" WHERE email = $1`;
-        const friendResult = await pgPool.query(friendQuery, [friend_email]);
+        if (!friend_user_id) {
+            return res.status(400).json({
+                error: 'Bad request',
+                message: 'Friend user ID is required'
+            });
+        }
+        
+        // Validate that friend user exists
+        const friendQuery = `SELECT user_id FROM "user" WHERE user_id = $1`;
+        const friendResult = await pgPool.query(friendQuery, [friend_user_id]);
         
         if (friendResult.rows.length === 0) {
             return res.status(404).json({
                 error: 'Friend not found',
-                message: 'User with this email does not exist'
+                message: 'User with this ID does not exist'
             });
         }
         
-        const friendUserId = friendResult.rows[0].user_id;
+        const friendUserId = friend_user_id;
         
         // Check if they're trying to add themselves
         if (userId === friendUserId) {
@@ -138,13 +213,14 @@ router.post('/request', checkJwt, async (req, res) => {
         }
         
         // Create friend request
+        // user1_id = receiver (friendUserId), user2_id = sender (userId)
         const insertQuery = `
             INSERT INTO friend (user1_id, user2_id, status)
             VALUES ($1, $2, 'pending')
             RETURNING *
         `;
         
-        const result = await pgPool.query(insertQuery, [userId, friendUserId]);
+        const result = await pgPool.query(insertQuery, [friendUserId, userId]);
         
         res.status(201).json({
             message: 'Friend request sent successfully',
@@ -170,17 +246,8 @@ router.post('/request', checkJwt, async (req, res) => {
 router.patch('/:friendshipId/status', checkJwt, async (req, res) => {
     try {
         const googleId = req.user.sub || req.user.id;
-        const { friendshipId } = req.params;
-        const { status } = req.body;
         
-        if (!status || !['accepted', 'blocked'].includes(status)) {
-            return res.status(400).json({
-                error: 'Bad request',
-                message: 'Status must be either "accepted" or "blocked"'
-            });
-        }
-        
-        // Get current user_id
+        // First get user_id from google_id
         const userQuery = `SELECT user_id FROM "user" WHERE google_id = $1`;
         const userResult = await pgPool.query(userQuery, [googleId]);
         
@@ -192,16 +259,42 @@ router.patch('/:friendshipId/status', checkJwt, async (req, res) => {
         }
         
         const userId = userResult.rows[0].user_id;
+        const { friendshipId } = req.params;
+        const { status } = req.body;
         
-        // Update friendship status (only if the current user is user2 - the recipient)
-        const updateQuery = `
-            UPDATE friend 
-            SET status = $1, updated_at = NOW()
-            WHERE row_id = $2 AND user2_id = $3 AND status = 'pending'
-            RETURNING *
-        `;
+        if (!status || !['accepted', 'blocked'].includes(status)) {
+            return res.status(400).json({
+                error: 'Bad request',
+                message: 'Status must be either "accepted" or "blocked"'
+            });
+        }
         
-        const result = await pgPool.query(updateQuery, [status, friendshipId, userId]);
+        // Handle different status actions
+        let result;
+        let message;
+        
+        if (status === 'blocked') {
+            // Delete the row completely when rejected/blocked
+            const deleteQuery = `
+                DELETE FROM friend 
+                WHERE row_id = $1 AND user1_id = $2 AND status = 'pending'
+                RETURNING *
+            `;
+            
+            result = await pgPool.query(deleteQuery, [friendshipId, userId]);
+            message = 'Friend request rejected and removed successfully';
+        } else {
+            // Update status to accepted
+            const updateQuery = `
+                UPDATE friend 
+                SET status = $1, updated_at = NOW()
+                WHERE row_id = $2 AND user1_id = $3 AND status = 'pending'
+                RETURNING *
+            `;
+            
+            result = await pgPool.query(updateQuery, [status, friendshipId, userId]);
+            message = `Friend request ${status} successfully`;
+        }
         
         if (result.rows.length === 0) {
             return res.status(404).json({
@@ -211,7 +304,7 @@ router.patch('/:friendshipId/status', checkJwt, async (req, res) => {
         }
         
         res.json({
-            message: `Friend request ${status} successfully`,
+            message: message,
             friendship: result.rows[0]
         });
         
@@ -231,9 +324,8 @@ router.patch('/:friendshipId/status', checkJwt, async (req, res) => {
 router.delete('/:friendshipId', checkJwt, async (req, res) => {
     try {
         const googleId = req.user.sub || req.user.id;
-        const { friendshipId } = req.params;
         
-        // Get current user_id
+        // First get user_id from google_id
         const userQuery = `SELECT user_id FROM "user" WHERE google_id = $1`;
         const userResult = await pgPool.query(userQuery, [googleId]);
         
@@ -245,6 +337,7 @@ router.delete('/:friendshipId', checkJwt, async (req, res) => {
         }
         
         const userId = userResult.rows[0].user_id;
+        const { friendshipId } = req.params;
         
         // Delete friendship (only if the current user is involved)
         const deleteQuery = `

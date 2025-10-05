@@ -351,6 +351,19 @@ export const userAPI = {
     return apiCall(`/api/users/profilebyid?id=${encodeURIComponent(userId)}`);
   },
 
+  // Search users by name, email, or ID
+  async searchUsers(searchTerm: string) {
+    if (!searchTerm || searchTerm.trim().length < 1) {
+      throw new Error('Search term cannot be empty');
+    }
+    return apiCall(`/api/users/search?q=${encodeURIComponent(searchTerm.trim())}`);
+  },
+
+  // Get all users with pagination
+  async getAllUsers(limit: number = 50, offset: number = 0) {
+    return apiCall(`/api/users/all?limit=${limit}&offset=${offset}`);
+  },
+
   // Create or update user profile
   async updateProfile(profileData: {
     name?: string;
@@ -411,30 +424,46 @@ export const userAPI = {
 
 // Friends API functions
 export const friendsAPI = {
-  // Get friends list
+  // Get friends list for the authenticated user
   async getFriends() {
     return apiCall('/api/friends');
   },
 
+  // Get friends list for a specific user by user_id
+  async getFriendsByUserId(userId: string) {
+    return apiCall(`/api/friends/user/${encodeURIComponent(userId)}`);
+  },
+
   // Send friend request
-  async sendFriendRequest(friendEmail: string) {
-    return apiCall('/api/friends', {
+  async sendFriendRequest(friendUserId: string) {
+    return apiCall('/api/friends/request', {
       method: 'POST',
-      body: JSON.stringify({ friend_email: friendEmail }),
+      body: JSON.stringify({ friend_user_id: friendUserId }),
     });
   },
 
-  // Accept friend request
+  // Accept/reject friend request
+  async updateFriendRequestStatus(friendshipId: string, status: 'accepted' | 'blocked') {
+    return apiCall(`/api/friends/${friendshipId}/status`, {
+      method: 'PATCH',
+      body: JSON.stringify({ status }),
+    });
+  },
+
+  // Accept friend request (convenience method)
   async acceptFriendRequest(friendshipId: string) {
-    return apiCall(`/api/friends/${friendshipId}/accept`, {
-      method: 'PATCH',
-    });
+    return this.updateFriendRequestStatus(friendshipId, 'accepted');
   },
 
-  // Reject friend request
-  async rejectFriendRequest(friendshipId: string) {
-    return apiCall(`/api/friends/${friendshipId}/reject`, {
-      method: 'PATCH',
+  // Block friend request (convenience method)
+  async blockFriendRequest(friendshipId: string) {
+    return this.updateFriendRequestStatus(friendshipId, 'blocked');
+  },
+
+  // Remove friend
+  async removeFriend(friendshipId: string) {
+    return apiCall(`/api/friends/${friendshipId}`, {
+      method: 'DELETE',
     });
   },
 };

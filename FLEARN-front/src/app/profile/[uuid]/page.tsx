@@ -5,7 +5,7 @@ import { Nav } from "@/components/nav";
 import { Footer } from "@/components/footer";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
 import { useUserProfile } from '@/hooks/useUserProfile';
-import { userAPI } from '@/lib/api';
+import { userAPI, friendsAPI } from '@/lib/api';
 import Link from "next/link";
 import { UserRound, LogOut, Users, TreePine } from 'lucide-react';
 import { useEffect, useState } from 'react';
@@ -17,6 +17,16 @@ interface ProfilePageProps {
   params: Promise<{
     uuid: string;
   }>;
+}
+
+interface FriendData {
+  friend_user_id: string;
+  friend_name: string;
+  friend_email: string;
+  friend_profile_pic: string;
+  status: string;
+  created_at: string;
+  row_id: string;
 }
 
 export default function ProfilePage({ params }: ProfilePageProps) {
@@ -34,6 +44,9 @@ export default function ProfilePage({ params }: ProfilePageProps) {
   const [leaderboardData, setLeaderboardData] = useState<any[]>([]);
   const [leaderboardLoading, setLeaderboardLoading] = useState<boolean>(false);
   const [leaderboardError, setLeaderboardError] = useState<string | null>(null);
+  const [friendsData, setFriendsData] = useState<FriendData[]>([]);
+  const [friendsLoading, setFriendsLoading] = useState<boolean>(false);
+  const [friendsError, setFriendsError] = useState<string | null>(null);
   const { profile, isLoading, error } = useUserProfile();
   const pathname = usePathname();
   const router = useRouter();
@@ -86,12 +99,48 @@ export default function ProfilePage({ params }: ProfilePageProps) {
     }
   };
 
+  // Fetch friends data for the current profile user
+  const fetchFriends = async (userId: string) => {
+    if (!userId) return;
+
+    setFriendsLoading(true);
+    setFriendsError(null);
+
+    try {
+      // Get friends for the specific user using the new API endpoint
+      const friendsResponse = await friendsAPI.getFriendsByUserId(userId);
+      const friendships = friendsResponse.friends || [];
+      
+      // The backend already filters for accepted status and returns the correct friend data
+      // No additional filtering needed since we're getting friends for a specific user
+      const friendsData = friendships.map((friendship: any) => ({
+        friend_user_id: friendship.friend_user_id,
+        friend_name: friendship.friend_name,
+        friend_email: friendship.friend_email,
+        friend_profile_pic: friendship.friend_profile_pic,
+        status: friendship.status,
+        created_at: friendship.created_at,
+        row_id: friendship.row_id
+      }));
+
+      setFriendsData(friendsData);
+    } catch (err: unknown) {
+      const errorMessage = err instanceof Error ? err.message : "Failed to fetch friends";
+      setFriendsError(errorMessage);
+      setFriendsData([]);
+    } finally {
+      setFriendsLoading(false);
+    }
+  };
+
   useEffect(() => {
     params.then((resolvedParams) => {
       setUuid(resolvedParams.uuid);
       // Fetch profile data when UUID is available
       if (resolvedParams.uuid) {
         fetchProfileByUuid(resolvedParams.uuid);
+        // Fetch friends data for this user
+        fetchFriends(resolvedParams.uuid);
       }
     });
     // Fetch leaderboard data
@@ -310,32 +359,57 @@ export default function ProfilePage({ params }: ProfilePageProps) {
 
                 {/* Friends Section - div2 */}
                 <div className="rounded-lg p-4 flex flex-col h-full" style={{ gridArea: '2 / 1 / 3 / 4', boxShadow: '0px 0px 5px rgba(0, 0, 0, 0.25)' }}>
-                  <div className="flex items-center justify-between mb-4">
-                    <h2 className="text-lg font-semibold text-[#454545]">Friends (NA)</h2>
+                  <div className="flex items-center justify-between">
+                    <h2 className="text-lg font-semibold text-[#454545]">
+                      Friends ({friendsLoading ? '...' : friendsData.length})
+                    </h2>
                     {isOwnProfile && (
-                      <button className="text-purple-600 hover:text-purple-800 text-sm flex items-center gap-1">
-                        Add Friend
-                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
-                        </svg>
-                      </button>
+                      <Link href="/search">
+                        <button className="text-purple-600 hover:text-purple-800 text-sm flex items-center gap-1">
+                          Add Friend
+                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                          </svg>
+                        </button>
+                      </Link>
                     )}
                   </div>
                   <ul className="gap-3 flex flex-row overflow-x-auto overflow-y-hidden h-52 items-center py-4 px-1">
-                    {['Takoyaki', 'Hong', 'Chiriew', 'RoteeBoy', 'NewFriend', "test"].map((name, index) => (
-                      <li key={index} className="text-center h-40 w-32 min-w-32 flex-shrink-0 rounded-lg flex flex-col items-center justify-center" style={{boxShadow: '0px 0px 5px rgba(0, 0, 0, 0.25)'}}>
-                        <div className="w-20 h-20 bg-gray-300 rounded-full mx-auto mb-2 flex items-center justify-center overflow-hidden">
-                          <Image
-                            src="/Chr/cry.png"
-                            alt={name}
-                            width={100}
-                            height={100}
-                            className="rounded-full object-cover"
-                          />
-                        </div>
-                        <p className="text-sm font-medium text-[#454545]">{name}</p>
+                    {friendsLoading ? (
+                      <li className="flex items-center justify-center w-full">
+                        <span className="text-sm text-[#454545]">Loading friends...</span>
                       </li>
-                    ))}
+                    ) : friendsError ? (
+                      <li className="flex items-center justify-center w-full">
+                        <span className="text-sm text-red-500">Failed to load friends</span>
+                      </li>
+                    ) : friendsData.length === 0 ? (
+                      <li className="flex items-center justify-center w-full">
+                        <span className="text-sm text-[#454545]">No friends yet</span>
+                      </li>
+                    ) : (
+                      friendsData.map((friend, index) => (
+                        <li 
+                          key={friend.friend_user_id} 
+                          className="text-center h-40 w-32 min-w-32 flex-shrink-0 rounded-lg flex flex-col items-center justify-center cursor-pointer hover:bg-gray-50 transition-colors" 
+                          style={{boxShadow: '0px 0px 5px rgba(0, 0, 0, 0.25)'}}
+                          onClick={() => router.push(`/profile/${friend.friend_user_id}`)}
+                        >
+                          <div className="w-20 h-20 bg-gray-300 rounded-full mx-auto mb-2 flex items-center justify-center overflow-hidden">
+                            <Image
+                              src={friend.friend_profile_pic || "/Chr/cry.png"}
+                              alt={friend.friend_name}
+                              width={80}
+                              height={80}
+                              className="rounded-full object-cover"
+                            />
+                          </div>
+                          <p className="text-sm font-medium text-[#454545] truncate w-full px-2" title={friend.friend_name}>
+                            {friend.friend_name}
+                          </p>
+                        </li>
+                      ))
+                    )}
                   </ul>
                 </div>
 
@@ -365,7 +439,7 @@ export default function ProfilePage({ params }: ProfilePageProps) {
                     <div className="flex items-center gap-3">
                       <div className="w-auto h-auto items-center justify-center">
                         <Image
-                          src="/Chr/Clap.png"
+                          src="/Chr/Clap.PNG"
                           alt="Rank"
                           width={120}
                           height={120}
@@ -380,7 +454,7 @@ export default function ProfilePage({ params }: ProfilePageProps) {
                     <div className="flex items-center gap-3">
                       <div className="w-auto h-auto items-center justify-center">
                         <Image
-                          src={`/rank/${profileData.rank}.png`}
+                          src={`/rank/${profileData.rank}.PNG`}
                           alt="Rank"
                           width={100}
                           height={100}
@@ -479,7 +553,7 @@ export default function ProfilePage({ params }: ProfilePageProps) {
                     )}
                   </ul>
 
-                  <div className="space-y-3 grap-h-3 flex flex-col">
+                  <div className="space-y-3 flex flex-col gap-3">
                     {isOwnProfile && (
                       <Link href="/search">
                         <button className="w-full bg-purple-50 text-purple-600 py-3 px-4 rounded border border-purple-200 hover:bg-purple-100 transition-colors flex items-center justify-center gap-2 text-sm font-medium">
