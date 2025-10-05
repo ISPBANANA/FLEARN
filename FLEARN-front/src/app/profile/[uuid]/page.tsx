@@ -312,12 +312,14 @@ export default function ProfilePage({ params }: ProfilePageProps) {
                   <div className="flex items-center justify-between mb-4">
                     <h2 className="text-lg font-semibold text-[#454545]">Friends (NA)</h2>
                     {isOwnProfile && (
-                      <button className="text-purple-600 hover:text-purple-800 text-sm flex items-center gap-1">
-                        Add Friend
-                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
-                        </svg>
-                      </button>
+                      <Link href="/search">
+                        <button className="text-purple-600 hover:text-purple-800 text-sm flex items-center gap-1">
+                          Add Friend
+                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                          </svg>
+                        </button>
+                      </Link>
                     )}
                   </div>
                   <ul className="gap-3 flex flex-row overflow-x-auto overflow-y-hidden h-52 items-center py-4 px-1">
@@ -364,7 +366,7 @@ export default function ProfilePage({ params }: ProfilePageProps) {
                     <div className="flex items-center gap-3">
                       <div className="w-auto h-auto items-center justify-center">
                         <Image
-                          src="/Chr/Clap.png"
+                          src="/Chr/Clap.PNG"
                           alt="Rank"
                           width={120}
                           height={120}
@@ -379,7 +381,7 @@ export default function ProfilePage({ params }: ProfilePageProps) {
                     <div className="flex items-center gap-3">
                       <div className="w-auto h-auto items-center justify-center">
                         <Image
-                          src={`/rank/${profileData.rank}.png`}
+                          src={`/rank/${profileData.rank}.PNG`}
                           alt="Rank"
                           width={100}
                           height={100}
@@ -478,21 +480,23 @@ export default function ProfilePage({ params }: ProfilePageProps) {
                     )}
                   </ul>
 
-                  <div className="space-y-3">
+                  <div className="space-y-3 flex flex-col gap-3">
                     {isOwnProfile && (
-                      <button className="w-full bg-purple-50 text-purple-600 py-3 px-4 rounded border border-purple-200 hover:bg-purple-100 transition-colors flex items-center justify-center gap-2 text-sm font-medium">
-                        <Users size={18} />
-                        Find Friend
-                        <svg className="w-4 h-4 ml-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
-                        </svg>
-                      </button>
+                      <Link href="/search">
+                        <button className="w-full bg-purple-50 text-purple-600 py-3 px-4 rounded border border-purple-200 hover:bg-purple-100 transition-colors flex items-center justify-center gap-2 text-sm font-medium">
+                          <Users size={18} />
+                          Find Friend
+                          <svg className="w-4 h-4 ml-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                          </svg>
+                        </button>
+                      </Link>
                     )}
                     <button className="w-full bg-green-50 text-green-600 py-3 px-4 rounded border border-green-200 hover:bg-green-100 transition-colors flex items-center justify-center gap-2 text-sm font-medium">
                       <TreePine size={18} />
                       Garden
                       <svg className="w-4 h-4 ml-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
                       </svg>
                     </button>
                   </div>

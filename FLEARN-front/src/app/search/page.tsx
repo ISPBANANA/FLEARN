@@ -5,6 +5,7 @@ import { Nav } from "@/components/nav";
 import { Footer } from "@/components/footer";
 import SplitText from "@/components/SplitText";
 import React, { useState } from "react";
+import { ProtectedRoute } from "@/components/ProtectedRoute";
 
 interface UserProfile {
   user_id: string;
@@ -170,142 +171,144 @@ export default function Home() {
   };
 
   return (
-    <div className="min-h-screen bg-white">
-      <Nav />
-      <div className="my-2 p-4 h-auto w-full flex items-center z-1 bg-white flex-col min-h-screen">
-        <div className="relative w-full max-w-6xl mt-8">
-          <input
-            type="text"
-            placeholder="UUID / Name"
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            onKeyPress={(e) => e.key === "Enter" && handleSearch()}
-            className="w-full px-6 py-2 text-gray-600 border-1 border-gray-300 rounded-2xl focus:outline-none placeholder-gray-400 shadow-md"
-          />
-          <button
-            onClick={handleSearch}
-            className="absolute right-4 top-1/2 transform -translate-y-1/2 cursor-pointer hover:text-purple-600 transition-colors"
-          >
-            <svg
-              className="w-6 h-6 text-gray-600"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
-              />
-            </svg>
-          </button>
-        </div>
-        <div className="w-full max-w-6xl mt-12 flex justify-start">
-          <div className="flex gap-2">
+    <ProtectedRoute redirectTo="/">
+      <div className="min-h-screen bg-white">
+        <Nav />
+        <div className="my-2 p-4 h-auto w-full flex items-center z-1 bg-white flex-col min-h-screen">
+          <div className="relative w-full max-w-6xl mt-8">
+            <input
+              type="text"
+              placeholder="UUID / Name"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              onKeyPress={(e) => e.key === "Enter" && handleSearch()}
+              className="w-full px-6 py-2 text-gray-600 border-1 border-gray-300 rounded-2xl focus:outline-none placeholder-gray-400 shadow-md"
+            />
             <button
-              onClick={() => { setShowRequests(false); handleSearch(); }}
-              className="px-8 py-1 bg-white text-gray-400 border border-gray-400 rounded-xl hover:border-gray-600 hover:text-gray-600 transition-colors shadow-md"
+              onClick={handleSearch}
+              className="absolute right-4 top-1/2 transform -translate-y-1/2 cursor-pointer hover:text-purple-600 transition-colors"
             >
-              Search
-            </button>
-            <button
-              onClick={handleShowRequests}
-              className="px-8 py-1 bg-white text-gray-400 border border-gray-400 rounded-xl hover:border-gray-600 hover:text-gray-600 transition-colors shadow-md"
-            >
-              Request
+              <svg
+                className="w-6 h-6 text-gray-600"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+                />
+              </svg>
             </button>
           </div>
-        </div>
-        {/* Loading and Error States */}
-        {isLoading && (
-          <div className="w-full max-w-6xl mt-8 text-center">
-            <p className="text-gray-600">Loading...</p>
+          <div className="w-full max-w-6xl mt-12 flex justify-start">
+            <div className="flex gap-2">
+              <button
+                onClick={() => { setShowRequests(false); handleSearch(); }}
+                className="px-8 py-1 bg-white text-gray-400 border border-gray-400 rounded-xl hover:border-gray-600 hover:text-gray-600 transition-colors shadow-md"
+              >
+                Search
+              </button>
+              <button
+                onClick={handleShowRequests}
+                className="px-8 py-1 bg-white text-gray-400 border border-gray-400 rounded-xl hover:border-gray-600 hover:text-gray-600 transition-colors shadow-md"
+              >
+                Request
+              </button>
+            </div>
           </div>
-        )}
-        {error && (
-          <div className="w-full max-w-6xl mt-8 text-center">
-            <p className="text-red-500">{error}</p>
-          </div>
-        )}
+          {/* Loading and Error States */}
+          {isLoading && (
+            <div className="w-full max-w-6xl mt-8 text-center">
+              <p className="text-gray-600">Loading...</p>
+            </div>
+          )}
+          {error && (
+            <div className="w-full max-w-6xl mt-8 text-center">
+              <p className="text-red-500">{error}</p>
+            </div>
+          )}
 
-        {/* Search Results or Requests */}
-        {!isLoading && !showRequests && searchResults.length > 0 && (
-          <div className="w-full max-w-6xl mt-8">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              {searchResults.map((user) => (
-                <div key={user.user_id} className="bg-white rounded-lg p-4 shadow-md border border-gray-200">
-                  <div className="flex items-start space-x-4">
-                    <div className="relative w-16 h-16 rounded-full flex-shrink-0 overflow-hidden">
-                      {user.profile_pic ? (
-                        <Image
-                          src={user.profile_pic}
-                          alt={user.name}
-                          fill
-                          className="object-cover"
-                        />
-                      ) : (
-                        <div className="w-full h-full bg-gray-200" />
-                      )}
+          {/* Search Results or Requests */}
+          {!isLoading && !showRequests && searchResults.length > 0 && (
+            <div className="w-full max-w-6xl mt-8">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                {searchResults.map((user) => (
+                  <div key={user.user_id} className="bg-white rounded-lg p-4 shadow-md border border-gray-200">
+                    <div className="flex items-start space-x-4">
+                      <div className="relative w-16 h-16 rounded-full flex-shrink-0 overflow-hidden">
+                        {user.profile_pic ? (
+                          <Image
+                            src={user.profile_pic}
+                            alt={user.name}
+                            fill
+                            className="object-cover"
+                          />
+                        ) : (
+                          <div className="w-full h-full bg-gray-200" />
+                        )}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-purple-600 font-medium truncate">{user.name}</p>
+                        <p className="text-sm text-gray-500">{user.email}</p>
+                        <p className="text-xs text-gray-400">Joined: {new Date(user.created_at || "").toLocaleDateString()}</p>
+                      </div>
                     </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-purple-600 font-medium truncate">{user.name}</p>
-                      <p className="text-sm text-gray-500">{user.email}</p>
-                      <p className="text-xs text-gray-400">Joined: {new Date(user.created_at || "").toLocaleDateString()}</p>
+                    <div className="mt-4 flex justify-end">
+                      <button
+                        onClick={() => handleFriendRequest(user)}
+                        className={`px-4 py-1 text-sm rounded-full ${
+                          user.status === "pending"
+                            ? "bg-yellow-100 text-yellow-700 border border-yellow-300"
+                            : "bg-white text-gray-600 border border-gray-300 hover:border-purple-400 hover:text-purple-500"
+                        } transition-colors`}
+                      >
+                        {user.status === "pending" ? "Pending" : "Add"}
+                      </button>
                     </div>
                   </div>
-                  <div className="mt-4 flex justify-end">
-                    <button
-                      onClick={() => handleFriendRequest(user)}
-                      className={`px-4 py-1 text-sm rounded-full ${
-                        user.status === "pending"
-                          ? "bg-yellow-100 text-yellow-700 border border-yellow-300"
-                          : "bg-white text-gray-600 border border-gray-300 hover:border-purple-400 hover:text-purple-500"
-                      } transition-colors`}
-                    >
-                      {user.status === "pending" ? "Pending" : "Add"}
-                    </button>
-                  </div>
-                </div>
-              ))}
+                ))}
+              </div>
             </div>
-          </div>
-        )}
-        {!isLoading && showRequests && pendingRequests.length > 0 && (
-          <div className="w-full max-w-6xl mt-8">
-            <h2 className="text-lg font-semibold mb-4">Pending Friend Requests</h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {pendingRequests.map((req) => (
-                <div key={req.friend_user_id} className="bg-white rounded-lg p-4 shadow-md border border-gray-200">
-                  <div className="flex items-start space-x-4">
-                    <div className="relative w-16 h-16 rounded-full flex-shrink-0 overflow-hidden">
-                      {req.friend_profile_pic ? (
-                        <Image
-                          src={req.friend_profile_pic}
-                          alt={req.friend_name}
-                          fill
-                          className="object-cover"
-                        />
-                      ) : (
-                        <div className="w-full h-full bg-gray-200" />
-                      )}
+          )}
+          {!isLoading && showRequests && pendingRequests.length > 0 && (
+            <div className="w-full max-w-6xl mt-8">
+              <h2 className="text-lg font-semibold mb-4">Pending Friend Requests</h2>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {pendingRequests.map((req) => (
+                  <div key={req.friend_user_id} className="bg-white rounded-lg p-4 shadow-md border border-gray-200">
+                    <div className="flex items-start space-x-4">
+                      <div className="relative w-16 h-16 rounded-full flex-shrink-0 overflow-hidden">
+                        {req.friend_profile_pic ? (
+                          <Image
+                            src={req.friend_profile_pic}
+                            alt={req.friend_name}
+                            fill
+                            className="object-cover"
+                          />
+                        ) : (
+                          <div className="w-full h-full bg-gray-200" />
+                        )}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-purple-600 font-medium truncate">{req.friend_name}</p>
+                        <p className="text-sm text-gray-500">{req.friend_email}</p>
+                        <p className="text-xs text-gray-400">Requested: {new Date(req.created_at || "").toLocaleDateString()}</p>
+                      </div>
                     </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-purple-600 font-medium truncate">{req.friend_name}</p>
-                      <p className="text-sm text-gray-500">{req.friend_email}</p>
-                      <p className="text-xs text-gray-400">Requested: {new Date(req.created_at || "").toLocaleDateString()}</p>
+                    <div className="mt-4 flex justify-end">
+                      <span className="px-4 py-1 text-sm rounded-full bg-yellow-100 text-yellow-700 border border-yellow-300">Pending</span>
                     </div>
                   </div>
-                  <div className="mt-4 flex justify-end">
-                    <span className="px-4 py-1 text-sm rounded-full bg-yellow-100 text-yellow-700 border border-yellow-300">Pending</span>
-                  </div>
-                </div>
-              ))}
+                ))}
+              </div>
             </div>
-          </div>
-        )}
+          )}
+        </div>
+        <Footer />
       </div>
-      <Footer />
-    </div>
+    </ProtectedRoute>
   );
 }
