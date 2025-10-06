@@ -2,6 +2,7 @@ const express = require('express');
 const { pgPool } = require('../config/database');
 const { checkJwt, optionalJwt } = require('../middleware/auth');
 const { v4: uuidv4 } = require('uuid');
+const { checkAndResetUserStreak, calculateRank } = require('../middleware/streakHelper');
 
 const router = express.Router();
 
@@ -27,7 +28,9 @@ router.get('/profile', checkJwt, async (req, res) => {
             });
         }
         
-        const user = result.rows[0];
+        // Check and reset streak if needed (if uptime_streak - todayDate >= 2 days)
+        const user = await checkAndResetUserStreak(pgPool, result.rows[0].user_id);
+        
         res.json({
             message: 'User profile retrieved successfully',
             user: user
@@ -68,7 +71,9 @@ router.get('/profilebyid', checkJwt, async (req, res) => {
             });
         }
         
-        const user = result.rows[0];
+        // Check and reset streak if needed (if uptime_streak - todayDate >= 2 days)
+        const user = await checkAndResetUserStreak(pgPool, userId);
+        
         res.json({
             message: 'User profile retrieved successfully',
             user: user
@@ -430,6 +435,28 @@ router.patch('/experience', checkJwt, async (req, res) => {
         const googleId = req.user.sub || req.user.id;
         const { daily_exp, math_exp, phy_exp, bio_exp, chem_exp } = req.body;
         
+        // First, get current user data
+        const getUserQuery = `SELECT * FROM "user" WHERE google_id = $1`;
+        const userResult = await pgPool.query(getUserQuery, [googleId]);
+        
+        if (userResult.rows.length === 0) {
+            return res.status(404).json({
+                error: 'User not found',
+                message: 'Please complete your profile setup first'
+            });
+        }
+        
+        const currentUser = userResult.rows[0];
+        
+        // Calculate new experience values
+        const newMathExp = math_exp !== undefined ? math_exp : currentUser.math_exp;
+        const newPhyExp = phy_exp !== undefined ? phy_exp : currentUser.phy_exp;
+        const newBioExp = bio_exp !== undefined ? bio_exp : currentUser.bio_exp;
+        const newChemExp = chem_exp !== undefined ? chem_exp : currentUser.chem_exp;
+        
+        // Calculate new rank based on total subject experience
+        const newRank = calculateRank(newMathExp, newPhyExp, newBioExp, newChemExp);
+        
         const updateQuery = `
             UPDATE "user" 
             SET daily_exp = COALESCE($1, daily_exp),
@@ -437,24 +464,18 @@ router.patch('/experience', checkJwt, async (req, res) => {
                 phy_exp = COALESCE($3, phy_exp),
                 bio_exp = COALESCE($4, bio_exp),
                 chem_exp = COALESCE($5, chem_exp),
+                rank = $6,
                 updated_at = NOW()
-            WHERE google_id = $6
+            WHERE google_id = $7
             RETURNING *
         `;
         
         const result = await pgPool.query(updateQuery, [
-            daily_exp, math_exp, phy_exp, bio_exp, chem_exp, googleId
+            daily_exp, math_exp, phy_exp, bio_exp, chem_exp, newRank, googleId
         ]);
         
-        if (result.rows.length === 0) {
-            return res.status(404).json({
-                error: 'User not found',
-                message: 'Please complete your profile setup first'
-            });
-        }
-        
         res.json({
-            message: 'Experience points updated successfully',
+            message: 'Experience points and rank updated successfully',
             user: result.rows[0]
         });
         
