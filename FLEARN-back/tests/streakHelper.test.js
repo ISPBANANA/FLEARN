@@ -1,8 +1,8 @@
 /**
- * Unit tests for streak helper functions and rank calculation
+ * Unit tests for streak helper functions, rank calculation, and daily exp reset
  */
 
-const { shouldResetStreak, calculateRank, RANK_NAMES, RANK_EXP_DIVISOR } = require('../middleware/streakHelper');
+const { shouldResetStreak, shouldResetDailyExp, calculateRank, RANK_NAMES, RANK_EXP_DIVISOR } = require('../middleware/streakHelper');
 
 describe('Streak Helper Tests', () => {
     describe('shouldResetStreak', () => {
@@ -64,6 +64,68 @@ describe('Streak Helper Tests', () => {
             // Note: This should still be false because the calculation uses floor,
             // so 1.5 days = floor(1.5) = 1 day
             expect(shouldResetStreak(oneDayHalfAgo)).toBe(false);
+        });
+    });
+
+    describe('Daily Exp Reset Tests', () => {
+        describe('shouldResetDailyExp', () => {
+            test('should return false if updated_at is null', () => {
+                expect(shouldResetDailyExp(null)).toBe(false);
+            });
+
+            test('should return false if updated_at is undefined', () => {
+                expect(shouldResetDailyExp(undefined)).toBe(false);
+            });
+
+            test('should return false if updated_at is today', () => {
+                const today = new Date();
+                expect(shouldResetDailyExp(today)).toBe(false);
+            });
+
+            test('should return true if updated_at is yesterday', () => {
+                const yesterday = new Date();
+                yesterday.setDate(yesterday.getDate() - 1);
+                expect(shouldResetDailyExp(yesterday)).toBe(true);
+            });
+
+            test('should return true if updated_at is 2 days ago', () => {
+                const twoDaysAgo = new Date();
+                twoDaysAgo.setDate(twoDaysAgo.getDate() - 2);
+                expect(shouldResetDailyExp(twoDaysAgo)).toBe(true);
+            });
+
+            test('should return true if updated_at is 10 days ago', () => {
+                const tenDaysAgo = new Date();
+                tenDaysAgo.setDate(tenDaysAgo.getDate() - 10);
+                expect(shouldResetDailyExp(tenDaysAgo)).toBe(true);
+            });
+
+            test('should handle string date format', () => {
+                const yesterday = new Date();
+                yesterday.setDate(yesterday.getDate() - 1);
+                const dateString = yesterday.toISOString().split('T')[0];
+                expect(shouldResetDailyExp(dateString)).toBe(true);
+            });
+
+            test('should handle ISO string date format', () => {
+                const yesterday = new Date();
+                yesterday.setDate(yesterday.getDate() - 1);
+                const isoString = yesterday.toISOString();
+                expect(shouldResetDailyExp(isoString)).toBe(true);
+            });
+
+            test('should handle timestamp from earlier today (should not reset)', () => {
+                const earlierToday = new Date();
+                earlierToday.setHours(0, 0, 0, 0); // Start of today
+                expect(shouldResetDailyExp(earlierToday)).toBe(false);
+            });
+
+            test('edge case: should return false for timestamp a few hours ago', () => {
+                const hoursAgo = new Date();
+                hoursAgo.setHours(hoursAgo.getHours() - 5);
+                // Should still be false because it's the same day
+                expect(shouldResetDailyExp(hoursAgo)).toBe(false);
+            });
         });
     });
 
