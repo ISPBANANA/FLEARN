@@ -1,7 +1,8 @@
 /**
- * Helper functions for managing streaks and ranks
+ * Helper functions for managing streaks, ranks, and daily experience
  * - Resets streak to 0 if uptime_streak - todayDate >= 2 days
  * - Calculates and updates user rank based on total subject experience
+ * - Resets daily_exp to 0 if not updated today (daily reset)
  */
 
 /**
@@ -59,6 +60,26 @@ const shouldResetStreak = (uptimeStreak) => {
     
     // Reset if 2 or more days have passed
     return diffDays >= 2;
+};
+
+/**
+ * Check if daily exp should be reset based on the last update timestamp
+ * @param {Date|string} updatedAt - The last updated_at timestamp
+ * @returns {boolean} - True if daily exp should be reset (not updated today)
+ */
+const shouldResetDailyExp = (updatedAt) => {
+    if (!updatedAt) {
+        return false; // No updated_at means daily_exp is already 0 or never set
+    }
+
+    const today = new Date();
+    today.setHours(0, 0, 0, 0); // Reset to start of day for accurate comparison
+    
+    const lastUpdate = new Date(updatedAt);
+    lastUpdate.setHours(0, 0, 0, 0);
+    
+    // Reset if it's a different day (1 or more days have passed)
+    return today > lastUpdate;
 };
 
 /**
@@ -140,8 +161,31 @@ const updateUserRankIfNeeded = async (pgPool, userId, user) => {
 };
 
 /**
+ * Reset daily exp if needed (if not updated today)
+ * @param {object} pgPool - PostgreSQL connection pool
+ * @param {string} userId - User ID
+ * @param {Date|string} updatedAt - Last updated_at timestamp
+ * @returns {Promise<boolean>} - True if daily_exp was reset
+ */
+const resetDailyExpIfNeeded = async (pgPool, userId, updatedAt) => {
+    if (shouldResetDailyExp(updatedAt)) {
+        const updateQuery = `
+            UPDATE "user" 
+            SET daily_exp = 0,
+                updated_at = NOW()
+            WHERE user_id = $1
+        `;
+        
+        await pgPool.query(updateQuery, [userId]);
+        return true;
+    }
+    return false;
+};
+
+/**
  * Check and reset streak for a user, returning updated user data
  * Also updates rank based on experience
+ * Also resets daily_exp if not updated today
  * @param {object} pgPool - PostgreSQL connection pool
  * @param {string} userId - User ID
  * @returns {Promise<object|null>} - Updated user object or null if not found
@@ -163,8 +207,11 @@ const checkAndResetUserStreak = async (pgPool, userId) => {
     // Check if rank update is needed
     const rankWasUpdated = await updateUserRankIfNeeded(pgPool, userId, user);
     
-    // If either was updated, fetch fresh data
-    if (streakWasReset || rankWasUpdated) {
+    // Check if daily exp reset is needed
+    const dailyExpWasReset = await resetDailyExpIfNeeded(pgPool, userId, user.updated_at);
+    
+    // If any was updated, fetch fresh data
+    if (streakWasReset || rankWasUpdated || dailyExpWasReset) {
         const updatedResult = await pgPool.query(selectQuery, [userId]);
         return updatedResult.rows[0];
     }
@@ -203,8 +250,10 @@ const checkAndResetGardenStreak = async (pgPool, gardenId) => {
 
 module.exports = {
     shouldResetStreak,
+    shouldResetDailyExp,
     resetUserStreakIfNeeded,
     resetGardenStreakIfNeeded,
+    resetDailyExpIfNeeded,
     checkAndResetUserStreak,
     checkAndResetGardenStreak,
     calculateRank,
