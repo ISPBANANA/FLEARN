@@ -111,14 +111,6 @@ docker compose up -d
 - [ ] Handle user pair request
 - [ ] Duo Steak reset daily
 
-## 🤝 Contributing
-
-We welcome contributions! Please see our **[Contributing Guidelines](../../wiki/Contributing-Guidelines)** for:
-- Development workflow and standards
-- Branch naming conventions  
-- Code review process
-- Testing requirements
-
 ## �️ Development
 
 ### Quick Commands
@@ -155,10 +147,10 @@ This project is part of an educational initiative. Please refer to the license f
 ## 👥 Team
 
 **ISPBANANA Development Team**
-- Project management via Jira
-- Weekly sprint meetings
-- Collaborative development workflow
-- Discord integration for team communication
+- 6710545610 Techaphatr Indhavivadhana
+- 6710545504 Chachalit Khanarat
+- 6710545938 Sethtatad Kijkanjanarat
+- 6710545733 Phruek Chantarasittiphon
 
 ---
 
