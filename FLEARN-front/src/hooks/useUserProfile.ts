@@ -18,6 +18,7 @@ interface UserProfile {
   phy_exp?: number;
   bio_exp?: number;
   chem_exp?: number;
+  role?: string;
   created_at?: string;
   updated_at?: string;
 }
@@ -50,7 +51,6 @@ export function useUserProfile(): UseUserProfileReturn {
       const response = await userAPI.getProfile();
       setProfile(response.user);
     } catch (err: any) {
-      console.error('Failed to fetch user profile:', err);
       // If profile doesn't exist (404), that's okay - user might be new
       if (err.message.includes('404') || err.message.includes('User not found')) {
         setProfile(null);
