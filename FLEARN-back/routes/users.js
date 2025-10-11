@@ -299,8 +299,8 @@ router.post('/profile', checkJwt, async (req, res) => {
             const insertQuery = `
                 INSERT INTO "user" (
                     user_id, google_id, profile_pic, name, email, birthdate, edu_level,
-                    rank, streak, completed_task, daily_exp, math_exp, phy_exp, bio_exp, chem_exp
-                ) VALUES ($1, $2, $3, $4, $5, $6, $7, 'Beginner', 0, 0, 0, 0, 0, 0, 0)
+                    rank, streak, completed_task, daily_exp, math_exp, phy_exp, bio_exp, chem_exp, role
+                ) VALUES ($1, $2, $3, $4, $5, $6, $7, 'Beginner', 0, 0, 0, 0, 0, 0, 0, 'user')
                 RETURNING *
             `;
             
