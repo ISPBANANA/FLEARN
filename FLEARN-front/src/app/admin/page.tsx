@@ -20,18 +20,12 @@ export default function AdminPage() {
   const { profile, isLoading: profileLoading, refetchProfile } = useUserProfile();
 
   useEffect(() => {
-    // Refetch profile when entering the admin page
-    if (isAuthenticated && !authLoading) {
-      refetchProfile();
-    }
-  }, [isAuthenticated, authLoading, refetchProfile]);
 
-  useEffect(() => {
     // Wait for both auth and profile to finish loading
     if (!authLoading && !profileLoading) {
-      // Check if user is not authenticated or doesn't have admin/teacher role
       if (!isAuthenticated || !profile || (profile.role !== 'admin' && profile.role !== 'teacher')) {
         notFound();
+      } else {
       }
     }
   }, [isAuthenticated, profile, authLoading, profileLoading]);
@@ -55,7 +49,7 @@ export default function AdminPage() {
       <Nav />
 
       {/* Infomation here */}
-      <div className="p-4 h-auto w-full flex items-center z-1 bg-white flex-col" style={{ boxShadow: '0px -4px 4px rgba(0, 0, 0, 0.25)' }}>
+      <div className="p-4 h-auto w-full flex items-center z-1 bg-white flex-col z-1" style={{ boxShadow: '0px -4px 4px rgba(0, 0, 0, 0.25)' }}>
         
         <h1 className="text-2xl font-bold">Welcome to the Admin Panel</h1>
         <p className="mt-2">Here you can manage your application settings and user accounts.</p>

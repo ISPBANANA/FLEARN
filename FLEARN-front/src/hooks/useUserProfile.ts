@@ -32,11 +32,16 @@ interface UseUserProfileReturn {
 
 export function useUserProfile(): UseUserProfileReturn {
   const [profile, setProfile] = useState<UserProfile | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
+  const [isLoading, setIsLoading] = useState(true); // Start with true
   const [error, setError] = useState<string | null>(null);
-  const { isAuthenticated, user } = useAuth();
+  const { isAuthenticated, user, isLoading: authLoading } = useAuth();
 
   const fetchProfile = async () => {
+    // Don't fetch if auth is still loading
+    if (authLoading) {
+      return;
+    }
+
     if (!isAuthenticated || !user) {
       setProfile(null);
       setIsLoading(false);
@@ -51,6 +56,7 @@ export function useUserProfile(): UseUserProfileReturn {
       const response = await userAPI.getProfile();
       setProfile(response.user);
     } catch (err: any) {
+      console.error('Profile fetch error:', err);
       // If profile doesn't exist (404), that's okay - user might be new
       if (err.message.includes('404') || err.message.includes('User not found')) {
         setProfile(null);
@@ -66,7 +72,7 @@ export function useUserProfile(): UseUserProfileReturn {
 
   useEffect(() => {
     fetchProfile();
-  }, [isAuthenticated, user]);
+  }, [isAuthenticated, user?.sub, authLoading]); // Use user.sub instead of full user object
 
   const refetchProfile = async () => {
     await fetchProfile();
