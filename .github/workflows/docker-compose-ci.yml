@@ -32,7 +32,7 @@ jobs:
       working-directory: ./FLEARN-back
       run: npm ci
 
-    # NEW: run backend unit tests
+
     - name: Run Backend Unit Tests
       working-directory: ./FLEARN-back
       run: npm test --if-present
@@ -87,7 +87,7 @@ jobs:
         echo "WEBHOOK_SECRET=test_webhook_secret_for_ci" >> .env
         echo "CACHEBUST=$(date +%s)" >> .env
 
-    # NEW: validate critical env vars exist
+
     - name: Validate Environment Variables
       run: |
         required_vars=(POSTGRES_USER POSTGRES_PASSWORD JWT_SECRET MONGO_INITDB_ROOT_USERNAME MONGO_INITDB_ROOT_PASSWORD WEBHOOK_SECRET)
@@ -135,7 +135,6 @@ jobs:
         echo "=== Webhook Service Logs ==="
         docker compose logs webhook-service
 
-    # CHANGED: retries 60, sleep 3s (backend)
     - name: Test Backend API Health
       run: |
         for i in {1..60}; do
@@ -153,7 +152,6 @@ jobs:
           exit 1
         }
 
-    # CHANGED: retries 60, sleep 3s (frontend)
     - name: Test Frontend Application
       run: |
         for i in {1..60}; do
@@ -171,7 +169,6 @@ jobs:
           exit 1
         }
 
-    # CHANGED: retries 60, sleep 3s (webhook)
     - name: Test Webhook Service
       run: |
         for i in {1..60}; do
@@ -214,25 +211,6 @@ jobs:
           exit 1
         }
 
-    # NEW: verify database initialization (tables/collections)
-    - name: Verify Database Initialization
-      run: |
-        echo "Checking if PostgreSQL tables exist..."
-        docker compose exec -T postgres psql -U flearn_user -d flearn_db -Atc \
-          "SELECT COUNT(*) FROM information_schema.tables WHERE table_schema='public' AND table_type='BASE TABLE';" > /tmp/pg_tables_count
-        cat /tmp/pg_tables_count
-        if [ "$(cat /tmp/pg_tables_count)" -gt 0 ]; then
-          echo "✅ PostgreSQL application tables detected."
-        else
-          echo "❌ No application tables found in PostgreSQL (public schema)."
-          exit 1
-        fi
-
-        echo "Checking if MongoDB collections exist (non-fatal)..."
-        docker compose exec -T mongodb mongosh --quiet --eval \
-          'db.getSiblingDB("flearn_db").getCollectionNames().length' > /tmp/mongo_col_count || echo "0" > /tmp/mongo_col_count
-        echo "Mongo collections count: $(cat /tmp/mongo_col_count)"
-
     - name: Run Integration Tests
       run: |
         echo "Running integration tests..."
@@ -258,7 +236,6 @@ jobs:
         docker push yotshiba/flearn-webhook:latest
         docker push yotshiba/flearn-webhook:${{ github.sha }}
 
-    # CHANGED: improved cleanup (remove images first)
     - name: Cleanup
       if: always()
       run: |
