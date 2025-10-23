@@ -921,4 +921,194 @@ router.get('/leaderboard', async (req, res) => {
     }
 });
 
+// Get all users for admin dashboard
+// Usage Example:
+// GET /api/users/admin/all?limit=50&offset=0
+// Headers: Authorization: Bearer <JWT_TOKEN>
+router.get('/admin/all', checkJwt, async (req, res) => {
+    try {
+        const googleId = req.user.sub || req.user.id;
+        const limit = parseInt(req.query.limit) || 50;
+        const offset = parseInt(req.query.offset) || 0;
+        
+        // Validate pagination parameters
+        if (limit > 100) {
+            return res.status(400).json({
+                error: 'Bad request',
+                message: 'Limit cannot exceed 100'
+            });
+        }
+        
+        // First get current user info and check if they're admin or teacher
+        const userQuery = `SELECT user_id, role FROM "user" WHERE google_id = $1`;
+        const userResult = await pgPool.query(userQuery, [googleId]);
+        
+        if (userResult.rows.length === 0) {
+            return res.status(404).json({
+                error: 'User not found',
+                message: 'Please complete your profile setup first'
+            });
+        }
+        
+        const currentUser = userResult.rows[0];
+        
+        // Check if user has admin or teacher role
+        if (currentUser.role !== 'admin' && currentUser.role !== 'teacher') {
+            return res.status(403).json({
+                error: 'Forbidden',
+                message: 'Access denied. Admin or teacher role required.'
+            });
+        }
+        
+        const query = `
+            SELECT 
+                u.user_id,
+                u.name,
+                u.email,
+                u.role,
+                u.created_at,
+                u.profile_pic,
+                u.birthdate,
+                u.edu_level,
+                u.rank,
+                u.streak,
+                u.daily_exp,
+                u.math_exp,
+                u.phy_exp,
+                u.bio_exp,
+                u.chem_exp,
+                u.completed_task
+            FROM "user" u
+            ORDER BY u.created_at DESC
+            LIMIT $1 OFFSET $2
+        `;
+        
+        const result = await pgPool.query(query, [limit, offset]);
+        
+        // Get total count for pagination
+        const countQuery = `SELECT COUNT(*) as total FROM "user"`;
+        const countResult = await pgPool.query(countQuery);
+        const totalUsers = parseInt(countResult.rows[0].total);
+        
+        res.json({
+            message: 'All users retrieved successfully',
+            users: result.rows,
+            count: result.rows.length,
+            total: totalUsers,
+            limit: limit,
+            offset: offset
+        });
+        
+    } catch (error) {
+        console.error('Error fetching all users for admin:', error);
+        res.status(500).json({
+            error: 'Internal server error',
+            message: 'Failed to fetch users'
+        });
+    }
+});
+
+// Delete user account (admin only)
+// Usage Example:
+// DELETE /api/users/admin/delete/12345678-1234-1234-1234-123456789012
+// Headers: Authorization: Bearer <JWT_TOKEN>
+router.delete('/admin/delete/:userId', checkJwt, async (req, res) => {
+    try {
+        const requestingUserGoogleId = req.user.sub || req.user.id;
+        const { userId } = req.params;
+        
+        if (!userId) {
+            return res.status(400).json({
+                error: 'Bad request',
+                message: 'User ID is required'
+            });
+        }
+        
+        // First verify that the requesting user is an admin
+        const adminQuery = `SELECT user_id, role FROM "user" WHERE google_id = $1`;
+        const adminResult = await pgPool.query(adminQuery, [requestingUserGoogleId]);
+        
+        if (adminResult.rows.length === 0) {
+            return res.status(404).json({
+                error: 'User not found',
+                message: 'Requesting user not found'
+            });
+        }
+        
+        if (adminResult.rows[0].role !== 'admin') {
+            return res.status(403).json({
+                error: 'Forbidden',
+                message: 'Only admins can delete user accounts'
+            });
+        }
+        
+        // Check if the user to be deleted exists
+        const userToDeleteQuery = `SELECT user_id, name, email FROM "user" WHERE user_id = $1`;
+        const userToDeleteResult = await pgPool.query(userToDeleteQuery, [userId]);
+        
+        if (userToDeleteResult.rows.length === 0) {
+            return res.status(404).json({
+                error: 'User not found',
+                message: 'User to delete does not exist'
+            });
+        }
+        
+        const userToDelete = userToDeleteResult.rows[0];
+        
+        // Prevent admin from deleting themselves
+        if (adminResult.rows[0].user_id === userId) {
+            return res.status(400).json({
+                error: 'Bad request',
+                message: 'You cannot delete your own account'
+            });
+        }
+        
+        // Use transaction to ensure data consistency
+        const client = await pgPool.connect();
+        try {
+            await client.query('BEGIN');
+            
+            // Delete user (CASCADE will automatically delete related records)
+            // This will delete:
+            // - prefered (user preferences)
+            // - friend (friend relationships)
+            // - garden (garden relationships)
+            const deleteQuery = `DELETE FROM "user" WHERE user_id = $1`;
+            const deleteResult = await client.query(deleteQuery, [userId]);
+            
+            if (deleteResult.rowCount === 0) {
+                await client.query('ROLLBACK');
+                return res.status(404).json({
+                    error: 'User not found',
+                    message: 'User could not be deleted'
+                });
+            }
+            
+            await client.query('COMMIT');
+            
+            res.json({
+                message: 'User account deleted successfully',
+                deletedUser: {
+                    user_id: userToDelete.user_id,
+                    name: userToDelete.name,
+                    email: userToDelete.email
+                }
+            });
+            
+        } catch (error) {
+            await client.query('ROLLBACK');
+            throw error;
+        } finally {
+            client.release();
+        }
+        
+    } catch (error) {
+        console.error('Error deleting user account:', error);
+        res.status(500).json({
+            error: 'Internal server error',
+            message: 'Failed to delete user account'
+        });
+    }
+});
+
 module.exports = router;
