@@ -364,6 +364,18 @@ export const userAPI = {
     return apiCall(`/api/users/all?limit=${limit}&offset=${offset}`);
   },
 
+  // Get all users for admin dashboard (admin/teacher only)
+  async getAllUsersAdmin(limit: number = 50, offset: number = 0) {
+    return apiCall(`/api/users/admin/all?limit=${limit}&offset=${offset}`);
+  },
+
+  // Delete user account (admin only)
+  async deleteUserAdmin(userId: string) {
+    return apiCall(`/api/users/admin/delete/${encodeURIComponent(userId)}`, {
+      method: 'DELETE',
+    });
+  },
+
   // Create or update user profile
   async updateProfile(profileData: {
     name?: string;
