@@ -58,11 +58,14 @@ describe('Streak Helper Tests', () => {
         });
 
         test('edge case: should return false for date exactly 1.5 days ago', () => {
+            // Create a date that's exactly 36 hours (1.5 days) ago
+            // Set to noon to avoid midnight boundary issues
             const oneDayHalfAgo = new Date();
-            oneDayHalfAgo.setDate(oneDayHalfAgo.getDate() - 1);
-            oneDayHalfAgo.setHours(oneDayHalfAgo.getHours() - 12);
-            // Note: This should still be false because the calculation uses floor,
-            // so 1.5 days = floor(1.5) = 1 day
+            oneDayHalfAgo.setHours(12, 0, 0, 0); // Set to noon today first
+            oneDayHalfAgo.setTime(oneDayHalfAgo.getTime() - (36 * 60 * 60 * 1000)); // Then subtract 36 hours
+            // This should be yesterday at noon
+            // When normalized to midnight: yesterday midnight vs today midnight = 1 day difference
+            // Note: This should still be false because floor(1.5 days normalized) = 1 day
             expect(shouldResetStreak(oneDayHalfAgo)).toBe(false);
         });
     });
@@ -121,9 +124,11 @@ describe('Streak Helper Tests', () => {
             });
 
             test('edge case: should return false for timestamp a few hours ago', () => {
+                // Set to noon and then go back 5 hours to ensure we stay on the same day
                 const hoursAgo = new Date();
-                hoursAgo.setHours(hoursAgo.getHours() - 5);
-                // Should still be false because it's the same day
+                hoursAgo.setHours(12, 0, 0, 0); // Set to noon today
+                hoursAgo.setTime(hoursAgo.getTime() - (5 * 60 * 60 * 1000)); // Go back 5 hours to 7 AM today
+                // Should still be false because it's the same day (7 AM today vs today = 0 days)
                 expect(shouldResetDailyExp(hoursAgo)).toBe(false);
             });
         });

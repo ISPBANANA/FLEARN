@@ -23,7 +23,7 @@ services:
   flearn-backend:
     build:
       context: ./FLEARN-back
-      dockerfile: Dockerfile
+      dockerfile: Dockerfile.dev
       args:
         - CACHEBUST=${CACHEBUST:-1}
     container_name: flearn_backend
