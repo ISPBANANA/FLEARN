@@ -67,6 +67,63 @@ CREATE TABLE garden (
 );
 
 -- ----------------------------------------------------------------------------
+-- Question System Tables
+-- ----------------------------------------------------------------------------
+
+-- Subject table for organizing questions by subject
+CREATE TABLE subject (
+    subject_id SERIAL PRIMARY KEY,
+    name VARCHAR(100) NOT NULL UNIQUE,
+    category VARCHAR(50),
+    description TEXT,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- Insert default subjects
+INSERT INTO subject (name, category, description) VALUES
+    ('Mathematics', 'STEM', 'Mathematics and problem solving'),
+    ('Physics', 'STEM', 'Physics and mechanics'),
+    ('Biology', 'STEM', 'Life sciences and biology'),
+    ('Chemistry', 'STEM', 'Chemistry and chemical reactions');
+
+-- Question types table
+CREATE TABLE question_type (
+    type_id SERIAL PRIMARY KEY,
+    type_name VARCHAR(50) UNIQUE NOT NULL,
+    description TEXT,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- Insert question types
+INSERT INTO question_type (type_name, description) VALUES
+    ('multiple_choice', 'Single correct answer from 2-10 options'),
+    ('true_false', 'Binary true or false question'),
+    ('multi_select', 'Multiple correct answers'),
+    ('essay', 'Free text answer'),
+    ('fill_blank', 'Fill in the blank(s)'),
+    ('matching', 'Match items from two lists');
+
+-- Main questions table (metadata stored in PostgreSQL, content in MongoDB)
+CREATE TABLE question (
+    question_id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    subject_id INT REFERENCES subject(subject_id) ON DELETE CASCADE,
+    mongo_content_id VARCHAR(24) NOT NULL,  -- Reference to MongoDB document _id
+    type_id INT REFERENCES question_type(type_id),
+    difficulty INT CHECK (difficulty BETWEEN 1 AND 5),
+    points INT DEFAULT 10,
+    time_limit INT,  -- Time limit in seconds
+    created_by UUID REFERENCES "user"(user_id) ON DELETE SET NULL,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    is_active BOOLEAN DEFAULT true
+);
+
+-- Add comment to document the mongo_content_id column
+COMMENT ON COLUMN question.mongo_content_id IS 'MongoDB ObjectId reference to question_contents collection';
+COMMENT ON COLUMN question.difficulty IS 'Question difficulty level from 1 (easiest) to 5 (hardest)';
+COMMENT ON COLUMN question.time_limit IS 'Time limit for answering the question in seconds';
+
+-- ----------------------------------------------------------------------------
 -- Indexes for better query performance
 -- ----------------------------------------------------------------------------
 
@@ -79,6 +136,14 @@ CREATE INDEX idx_friend_user1_id ON friend(user1_id);
 CREATE INDEX idx_friend_user2_id ON friend(user2_id);
 CREATE INDEX idx_garden_user1_id ON garden(user1_id);
 CREATE INDEX idx_garden_user2_id ON garden(user2_id);
+
+-- Question system indexes
+CREATE INDEX idx_question_subject_id ON question(subject_id);
+CREATE INDEX idx_question_type_id ON question(type_id);
+CREATE INDEX idx_question_difficulty ON question(difficulty);
+CREATE INDEX idx_question_is_active ON question(is_active);
+CREATE INDEX idx_question_created_by ON question(created_by);
+CREATE INDEX idx_subject_name ON subject(name);
 
 -- ----------------------------------------------------------------------------
 -- Triggers and Functions
@@ -101,6 +166,9 @@ CREATE TRIGGER update_friend_updated_at BEFORE UPDATE ON friend
     FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
 CREATE TRIGGER update_garden_updated_at BEFORE UPDATE ON garden
+    FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+
+CREATE TRIGGER update_question_updated_at BEFORE UPDATE ON question
     FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
 -- ----------------------------------------------------------------------------

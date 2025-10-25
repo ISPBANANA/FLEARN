@@ -1,0 +1,390 @@
+### FLEARN Questions API Test Suite
+### Use REST Client extension in VS Code to run these tests
+
+@baseUrl = http://localhost:8099
+@token = YOUR_JWT_TOKEN_HERE
+
+### ============================================
+### 1. Health Check
+### ============================================
+GET {{baseUrl}}/health
+
+### ============================================
+### 2. Get All Subjects
+### ============================================
+GET {{baseUrl}}/api/questions/subjects
+
+### ============================================
+### 3. Get All Question Types
+### ============================================
+GET {{baseUrl}}/api/questions/types
+
+### ============================================
+### 4. Get All Questions (No Filter)
+### ============================================
+GET {{baseUrl}}/api/questions
+
+### ============================================
+### 5. Get Questions with Filters
+### ============================================
+GET {{baseUrl}}/api/questions?subject_id=1&difficulty=2&limit=5
+
+### ============================================
+### 6. Get Questions by Type
+### ============================================
+GET {{baseUrl}}/api/questions?type=multiple_choice
+
+### ============================================
+### 7. Create Multiple Choice Question
+### Requires Authentication
+### ============================================
+POST {{baseUrl}}/api/questions
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "subject_id": 1,
+  "type_name": "multiple_choice",
+  "difficulty": 2,
+  "points": 10,
+  "time_limit": 60,
+  "content": {
+    "question_text": "What is the capital of France?",
+    "question_html": "<p>What is the capital of <strong>France</strong>?</p>",
+    "options": [
+      { "id": "a", "text": "London", "is_correct": false },
+      { "id": "b", "text": "Paris", "is_correct": true },
+      { "id": "c", "text": "Berlin", "is_correct": false },
+      { "id": "d", "text": "Madrid", "is_correct": false }
+    ],
+    "explanation": "Paris is the capital and most populous city of France.",
+    "media": []
+  }
+}
+
+### ============================================
+### 8. Create True/False Question
+### Requires Authentication
+### ============================================
+POST {{baseUrl}}/api/questions
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "subject_id": 2,
+  "type_name": "true_false",
+  "difficulty": 1,
+  "points": 5,
+  "time_limit": 30,
+  "content": {
+    "question_text": "The Earth is flat.",
+    "options": [
+      { "id": "true", "text": "True", "is_correct": false },
+      { "id": "false", "text": "False", "is_correct": true }
+    ],
+    "explanation": "The Earth is an oblate spheroid, not flat."
+  }
+}
+
+### ============================================
+### 9. Create Multi-Select Question
+### Requires Authentication
+### ============================================
+POST {{baseUrl}}/api/questions
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "subject_id": 1,
+  "type_name": "multi_select",
+  "difficulty": 3,
+  "points": 15,
+  "time_limit": 90,
+  "content": {
+    "question_text": "Which of the following are even numbers? (Select all that apply)",
+    "options": [
+      { "id": "a", "text": "2", "is_correct": true },
+      { "id": "b", "text": "3", "is_correct": false },
+      { "id": "c", "text": "4", "is_correct": true },
+      { "id": "d", "text": "7", "is_correct": false },
+      { "id": "e", "text": "8", "is_correct": true },
+      { "id": "f", "text": "9", "is_correct": false }
+    ],
+    "partial_credit": true,
+    "correct_count": 3,
+    "explanation": "Even numbers are divisible by 2. The even numbers are 2, 4, and 8."
+  }
+}
+
+### ============================================
+### 10. Create Fill Blank Question
+### Requires Authentication
+### ============================================
+POST {{baseUrl}}/api/questions
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "subject_id": 3,
+  "type_name": "fill_blank",
+  "difficulty": 2,
+  "points": 10,
+  "time_limit": 45,
+  "content": {
+    "question_text": "The process by which plants make their own food is called _____.",
+    "blanks": [
+      {
+        "id": 1,
+        "position": 0,
+        "correct_answers": ["photosynthesis", "Photosynthesis"],
+        "case_sensitive": false
+      }
+    ],
+    "explanation": "Photosynthesis is the process by which plants convert light energy into chemical energy."
+  }
+}
+
+### ============================================
+### 11. Create Essay Question
+### Requires Authentication
+### ============================================
+POST {{baseUrl}}/api/questions
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "subject_id": 2,
+  "type_name": "essay",
+  "difficulty": 4,
+  "points": 20,
+  "time_limit": 600,
+  "content": {
+    "question_text": "Describe the water cycle and explain the role of evaporation, condensation, and precipitation.",
+    "word_limit": { "min": 100, "max": 300 },
+    "grading_rubric": [
+      { "criterion": "Understanding of water cycle", "points": 7 },
+      { "criterion": "Explanation of evaporation", "points": 4 },
+      { "criterion": "Explanation of condensation", "points": 4 },
+      { "criterion": "Explanation of precipitation", "points": 5 }
+    ],
+    "keywords": ["evaporation", "condensation", "precipitation", "water", "cycle"],
+    "sample_answer": "The water cycle is a continuous process...",
+    "requires_manual_grading": true
+  }
+}
+
+### ============================================
+### 12. Create Matching Question
+### Requires Authentication
+### ============================================
+POST {{baseUrl}}/api/questions
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "subject_id": 4,
+  "type_name": "matching",
+  "difficulty": 3,
+  "points": 12,
+  "time_limit": 120,
+  "content": {
+    "question_text": "Match each element with its chemical symbol:",
+    "left_items": [
+      { "id": "1", "text": "Hydrogen" },
+      { "id": "2", "text": "Oxygen" },
+      { "id": "3", "text": "Carbon" },
+      { "id": "4", "text": "Nitrogen" }
+    ],
+    "right_items": [
+      { "id": "a", "text": "C" },
+      { "id": "b", "text": "H" },
+      { "id": "c", "text": "N" },
+      { "id": "d", "text": "O" }
+    ],
+    "correct_matches": [
+      { "left": "1", "right": "b" },
+      { "left": "2", "right": "d" },
+      { "left": "3", "right": "a" },
+      { "left": "4", "right": "c" }
+    ],
+    "explanation": "These are the chemical symbols from the periodic table."
+  }
+}
+
+### ============================================
+### 13. Get Single Question (Replace :id with actual ID)
+### ============================================
+GET {{baseUrl}}/api/questions/REPLACE_WITH_QUESTION_ID
+
+### ============================================
+### 14. Validate Multiple Choice Answer (CORRECT)
+### Replace :id with actual question ID
+### ============================================
+POST {{baseUrl}}/api/questions/REPLACE_WITH_QUESTION_ID/validate
+Content-Type: application/json
+
+{
+  "answer": "b",
+  "time_taken": 25
+}
+
+### ============================================
+### 15. Validate Multiple Choice Answer (WRONG)
+### ============================================
+POST {{baseUrl}}/api/questions/REPLACE_WITH_QUESTION_ID/validate
+Content-Type: application/json
+
+{
+  "answer": "a",
+  "time_taken": 50
+}
+
+### ============================================
+### 16. Validate Multiple Choice Answer (Fast - with bonus)
+### ============================================
+POST {{baseUrl}}/api/questions/REPLACE_WITH_QUESTION_ID/validate
+Content-Type: application/json
+
+{
+  "answer": "b",
+  "time_taken": 15
+}
+
+### ============================================
+### 17. Validate Multi-Select Answer (ALL CORRECT)
+### ============================================
+POST {{baseUrl}}/api/questions/REPLACE_WITH_MULTISELECT_ID/validate
+Content-Type: application/json
+
+{
+  "answer": ["a", "c", "e"],
+  "time_taken": 60
+}
+
+### ============================================
+### 18. Validate Multi-Select Answer (PARTIAL)
+### ============================================
+POST {{baseUrl}}/api/questions/REPLACE_WITH_MULTISELECT_ID/validate
+Content-Type: application/json
+
+{
+  "answer": ["a", "c"],
+  "time_taken": 45
+}
+
+### ============================================
+### 19. Validate Fill Blank Answer (CORRECT)
+### ============================================
+POST {{baseUrl}}/api/questions/REPLACE_WITH_FILLBLANK_ID/validate
+Content-Type: application/json
+
+{
+  "answer": "photosynthesis",
+  "time_taken": 30
+}
+
+### ============================================
+### 20. Validate Matching Answer (ALL CORRECT)
+### ============================================
+POST {{baseUrl}}/api/questions/REPLACE_WITH_MATCHING_ID/validate
+Content-Type: application/json
+
+{
+  "answer": [
+    { "left": "1", "right": "b" },
+    { "left": "2", "right": "d" },
+    { "left": "3", "right": "a" },
+    { "left": "4", "right": "c" }
+  ],
+  "time_taken": 90
+}
+
+### ============================================
+### 21. Validate Essay Answer
+### ============================================
+POST {{baseUrl}}/api/questions/REPLACE_WITH_ESSAY_ID/validate
+Content-Type: application/json
+
+{
+  "answer": "The water cycle is a continuous process where water evaporates from oceans and land, condenses into clouds, and falls back to Earth as precipitation. This cycle is essential for distributing fresh water across the planet.",
+  "time_taken": 300
+}
+
+### ============================================
+### 22. Update Question
+### Requires Authentication
+### ============================================
+PUT {{baseUrl}}/api/questions/REPLACE_WITH_QUESTION_ID
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "difficulty": 3,
+  "points": 15,
+  "time_limit": 90
+}
+
+### ============================================
+### 23. Update Question Content
+### Requires Authentication
+### ============================================
+PUT {{baseUrl}}/api/questions/REPLACE_WITH_QUESTION_ID
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "content": {
+    "question_text": "Updated: What is the capital of France?",
+    "explanation": "Paris is the capital city of France and its most populous city."
+  }
+}
+
+### ============================================
+### 24. Delete Question (Soft Delete)
+### Requires Authentication
+### ============================================
+DELETE {{baseUrl}}/api/questions/REPLACE_WITH_QUESTION_ID
+Authorization: Bearer {{token}}
+
+### ============================================
+### Test Error Cases
+### ============================================
+
+### 25. Create Question with Missing Fields (Should fail)
+POST {{baseUrl}}/api/questions
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "subject_id": 1,
+  "type_name": "multiple_choice"
+}
+
+### 26. Create Multiple Choice with No Correct Answer (Should fail)
+POST {{baseUrl}}/api/questions
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "subject_id": 1,
+  "type_name": "multiple_choice",
+  "difficulty": 2,
+  "content": {
+    "question_text": "Test question?",
+    "options": [
+      { "id": "a", "text": "Option 1", "is_correct": false },
+      { "id": "b", "text": "Option 2", "is_correct": false }
+    ]
+  }
+}
+
+### 27. Get Non-existent Question (Should return 404)
+GET {{baseUrl}}/api/questions/00000000-0000-0000-0000-000000000000
+
+### 28. Validate Answer without Answer Field (Should fail)
+POST {{baseUrl}}/api/questions/REPLACE_WITH_QUESTION_ID/validate
+Content-Type: application/json
+
+{
+  "time_taken": 30
+}

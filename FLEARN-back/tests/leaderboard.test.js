@@ -437,7 +437,7 @@ describe('Leaderboard Daily Exp Reset Logic', () => {
             const user = {
                 name: 'String Date',
                 daily_exp: 175,
-                updated_at: today.toISOString().split('T')[0] // Just date part
+                updated_at: today.toISOString() // Use full ISO string instead of just date part
             };
 
             expect(calculateLeaderboardDailyExp(user)).toBe(175);
