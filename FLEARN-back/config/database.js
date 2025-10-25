@@ -2,6 +2,8 @@ const mongoose = require('mongoose');
 const { Pool } = require('pg');
 require('dotenv').config({ path: '../../.env' });
 
+let mongoDb = null;
+
 // MongoDB connection (optional)
 const connectMongoDB = async () => {
     if (!process.env.MONGO_URL) {
@@ -14,6 +16,8 @@ const connectMongoDB = async () => {
             useNewUrlParser: true,
             useUnifiedTopology: true,
         });
+        // Get the native MongoDB database instance
+        mongoDb = mongoose.connection.db;
         console.log('✅ MongoDB connected successfully');
     } catch (error) {
         console.error('❌ MongoDB connection failed:', error.message);
@@ -65,9 +69,18 @@ const closeDatabases = async () => {
     console.log('✅ PostgreSQL pool closed');
 };
 
+// Get MongoDB database instance
+const getMongoDb = () => {
+    if (!mongoDb) {
+        throw new Error('MongoDB not connected. Call initializeDatabases first.');
+    }
+    return mongoDb;
+};
+
 module.exports = {
     initializeDatabases,
     closeDatabases,
     pgPool,
-    mongoose
+    mongoose,
+    getMongoDb
 };
