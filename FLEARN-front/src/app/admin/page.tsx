@@ -126,6 +126,13 @@ export default function AdminPage() {
   }>({ isOpen: false, topic: null });
   const [isDeletingTopic, setIsDeletingTopic] = useState(false);
 
+  // Delete Question Dialog
+  const [deleteQuestionDialog, setDeleteQuestionDialog] = useState<{
+    isOpen: boolean;
+    question: Question | null;
+  }>({ isOpen: false, question: null });
+  const [isDeletingQuestion, setIsDeletingQuestion] = useState(false);
+
   // Auto-refresh users every 60 seconds
   useEffect(() => {
     const interval = setInterval(() => {
@@ -254,20 +261,33 @@ export default function AdminPage() {
   };
 
   // Handle delete question
-  const handleDeleteQuestion = async (questionId: string) => {
-    if (!confirm('Are you sure you want to delete this question?')) {
-      return;
-    }
+  const handleDeleteQuestion = async (question: Question) => {
+    setDeleteQuestionDialog({ isOpen: true, question });
+  };
+
+  // Cancel delete question
+  const cancelDeleteQuestion = () => {
+    setDeleteQuestionDialog({ isOpen: false, question: null });
+  };
+
+  // Confirm delete question
+  const confirmDeleteQuestion = async () => {
+    if (!deleteQuestionDialog.question) return;
 
     try {
-      await questionsAPI.deleteQuestion(questionId);
+      setIsDeletingQuestion(true);
+      await questionsAPI.deleteQuestion(deleteQuestionDialog.question.question_id);
       
       // Remove question from local state
-      setQuestions(questions.filter(q => q.question_id !== questionId));
+      setQuestions(questions.filter(q => q.question_id !== deleteQuestionDialog.question!.question_id));
+      
+      setDeleteQuestionDialog({ isOpen: false, question: null });
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Failed to delete question';
       alert(`Error deleting question: ${errorMessage}`);
       console.error('Error deleting question:', err);
+    } finally {
+      setIsDeletingQuestion(false);
     }
   };
 
@@ -1143,8 +1163,16 @@ export default function AdminPage() {
                   </div>
                   <div className="flex gap-2 items-center justify-center">
                     <button 
-                      onClick={() => handleDeleteQuestion(question.question_id)}
+                      onClick={() => router.push(`/admin/editproblem?id=${question.question_id}`)}
+                      className="text-blue-500 hover:text-blue-600 p-2 rounded transition-colors flex items-center justify-center"
+                      title="Edit question"
+                    >
+                      <Edit size={20} />
+                    </button>
+                    <button 
+                      onClick={() => handleDeleteQuestion(question)}
                       className="text-red-500 hover:text-red-600 p-2 rounded transition-colors flex items-center justify-center"
+                      title="Delete question"
                     >
                       <Trash2 size={20} />
                     </button>
@@ -1504,6 +1532,70 @@ export default function AdminPage() {
                   </>
                 ) : (
                   'Delete Topic'
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Delete Question Confirmation Dialog */}
+      {deleteQuestionDialog.isOpen && (
+        <div className="fixed inset-0 backdrop-blur-xs flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
+            <h3 className="text-lg font-semibold text-gray-900 mb-4">
+              Confirm Question Deletion
+            </h3>
+            <p className="text-gray-600 mb-6">
+              Are you sure you want to delete this question?
+            </p>
+            {deleteQuestionDialog.question && (
+              <div className="bg-gray-50 border border-gray-200 rounded-md p-4 mb-6">
+                <div className="space-y-2 text-sm">
+                  <div>
+                    <span className="font-semibold text-gray-700">ID:</span>{' '}
+                    <span className="text-gray-600">{deleteQuestionDialog.question.question_id}</span>
+                  </div>
+                  <div>
+                    <span className="font-semibold text-gray-700">Subject:</span>{' '}
+                    <span className="text-gray-600">{deleteQuestionDialog.question.subject_name || 'N/A'}</span>
+                  </div>
+                  <div>
+                    <span className="font-semibold text-gray-700">Topic:</span>{' '}
+                    <span className="text-gray-600">{deleteQuestionDialog.question.topic_name || 'N/A'}</span>
+                  </div>
+                  <div>
+                    <span className="font-semibold text-gray-700">Type:</span>{' '}
+                    <span className="text-gray-600">{deleteQuestionDialog.question.type_name || 'N/A'}</span>
+                  </div>
+                </div>
+              </div>
+            )}
+            <div className="bg-yellow-50 border border-yellow-200 rounded-md p-4 mb-6">
+              <p className="text-yellow-800 text-sm">
+                <strong>Warning:</strong> This action cannot be undone. The question will be permanently deleted from the database.
+              </p>
+            </div>
+            <div className="flex gap-3 justify-end">
+              <button
+                onClick={cancelDeleteQuestion}
+                disabled={isDeletingQuestion}
+                className="px-4 py-2 text-gray-600 bg-gray-100 rounded hover:bg-gray-200 transition-colors disabled:opacity-50"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={confirmDeleteQuestion}
+                disabled={isDeletingQuestion}
+                className="px-4 py-2 bg-red-500 text-white rounded hover:bg-red-600 transition-colors disabled:opacity-50 flex items-center gap-2"
+              >
+                {isDeletingQuestion ? (
+                  <>
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                    Deleting...
+                  </>
+                ) : (
+                  'Delete Question'
                 )}
               </button>
             </div>

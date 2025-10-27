@@ -57,27 +57,36 @@ router.post('/', checkJwt, async (req, res) => {
                 }
             },
             true_false: (c) => {
-                if (!c.options || c.options.length !== 2) {
-                    throw new Error('True/False must have exactly 2 options');
+                // Updated to support simple correct_answer format
+                if (!c.correct_answer) {
+                    throw new Error('True/False must have a correct answer');
                 }
-                if (c.options.filter(opt => opt.is_correct).length !== 1) {
-                    throw new Error('True/False must have exactly 1 correct answer');
+                if (!['true', 'false'].includes(c.correct_answer)) {
+                    throw new Error('True/False correct answer must be either "true" or "false"');
                 }
             },
             fill_blank: (c) => {
-                if (!c.blanks || c.blanks.length === 0) {
-                    throw new Error('Fill blank needs at least one blank');
+                // Updated to support simple correct_answer format
+                if (!c.correct_answer || typeof c.correct_answer !== 'string') {
+                    throw new Error('Fill blank needs a correct answer');
                 }
-                if (!c.blanks[0].correct_answers || c.blanks[0].correct_answers.length === 0) {
-                    throw new Error('Fill blank needs at least one correct answer');
+                if (c.correct_answer.trim().length === 0) {
+                    throw new Error('Fill blank correct answer cannot be empty');
                 }
             },
             matching: (c) => {
-                if (!c.left_items || !c.right_items || !c.correct_matches) {
-                    throw new Error('Matching needs left items, right items, and correct matches');
+                // Updated to support pairs format
+                if (!c.pairs || !Array.isArray(c.pairs)) {
+                    throw new Error('Matching needs pairs array');
                 }
-                if (c.left_items.length === 0 || c.right_items.length === 0) {
-                    throw new Error('Matching needs at least one item on each side');
+                if (c.pairs.length === 0) {
+                    throw new Error('Matching needs at least one pair');
+                }
+                // Validate each pair has left and right
+                for (const pair of c.pairs) {
+                    if (!pair.left || !pair.right) {
+                        throw new Error('Each matching pair must have both left and right values');
+                    }
                 }
             }
         };
@@ -230,9 +239,10 @@ router.get('/types', async (req, res) => {
 // GET /api/questions/:id - Get single question
 // Usage Example:
 // GET /api/questions/123e4567-e89b-12d3-a456-426614174000
-// Note: Correct answers are sanitized (removed) from response
+// Note: Correct answers are sanitized (removed) from response for regular users
+//       Admins/Teachers get full data with correct answers for editing
 // ============================================
-router.get('/:id', async (req, res) => {
+router.get('/:id', optionalJwt, async (req, res) => {
     try {
         const question = await Question.getById(req.params.id);
         
@@ -243,7 +253,29 @@ router.get('/:id', async (req, res) => {
             });
         }
         
-        // Don't send correct answers to frontend (sanitize)
+        // Check if user is authenticated and has admin/teacher role
+        let isAdminOrTeacher = false;
+        if (req.user) {
+            const googleId = req.user.sub || req.user.id;
+            const { pgPool } = require('../config/database');
+            const userQuery = 'SELECT role FROM "user" WHERE google_id = $1';
+            const userResult = await pgPool.query(userQuery, [googleId]);
+            
+            if (userResult.rows.length > 0) {
+                const userRole = userResult.rows[0].role;
+                isAdminOrTeacher = userRole === 'admin' || userRole === 'teacher';
+            }
+        }
+        
+        // If admin/teacher, return full data with answers
+        if (isAdminOrTeacher) {
+            return res.json({
+                success: true,
+                data: question
+            });
+        }
+        
+        // For regular users, sanitize the data
         const sanitizedContent = { ...question.content };
         
         // Remove is_correct flag from options (for multiple choice, true/false, multi-select)
@@ -254,6 +286,16 @@ router.get('/:id', async (req, res) => {
         // Remove correct answers from fill blank
         if (sanitizedContent.blanks) {
             sanitizedContent.blanks = sanitizedContent.blanks.map(({ correct_answers, ...blank }) => blank);
+        }
+        
+        // Remove correct_answer field
+        if (sanitizedContent.correct_answer) {
+            delete sanitizedContent.correct_answer;
+        }
+        
+        // Remove pairs from matching
+        if (sanitizedContent.pairs) {
+            delete sanitizedContent.pairs;
         }
         
         // Remove correct matches from matching

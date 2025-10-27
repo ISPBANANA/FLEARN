@@ -659,6 +659,11 @@ export const questionsAPI = {
     return apiCall(`/api/questions${queryString ? `?${queryString}` : ''}`);
   },
 
+  // Get single question by ID
+  async getQuestion(questionId: string) {
+    return apiCall(`/api/questions/${questionId}`);
+  },
+
   // Update question status (admin/teacher only)
   async updateQuestionStatus(questionId: string, status: 'public' | 'private') {
     return apiCall(`/api/questions/${questionId}`, {
@@ -671,6 +676,38 @@ export const questionsAPI = {
   async deleteQuestion(questionId: string) {
     return apiCall(`/api/questions/${questionId}`, {
       method: 'DELETE',
+    });
+  },
+
+  // Create new question (admin/teacher only)
+  async createQuestion(questionData: {
+    subject_id: number;
+    topic_id?: number;
+    type_name: string;
+    difficulty: number;
+    points: number;
+    status?: 'public' | 'private';
+    content: any;
+  }) {
+    return apiCall('/api/questions', {
+      method: 'POST',
+      body: JSON.stringify(questionData),
+    });
+  },
+
+  // Update question (admin/teacher only)
+  async updateQuestion(questionId: string, questionData: {
+    subject_id?: number;
+    topic_id?: number;
+    type_name?: string;
+    difficulty?: number;
+    points?: number;
+    status?: 'public' | 'private';
+    content?: any;
+  }) {
+    return apiCall(`/api/questions/${questionId}`, {
+      method: 'PUT',
+      body: JSON.stringify(questionData),
     });
   },
 };
