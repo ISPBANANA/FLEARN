@@ -10,10 +10,12 @@ const { checkJwt, optionalJwt } = require('../middleware/auth');
 // Headers: Authorization: Bearer <JWT_TOKEN>
 // Body: {
 //   "subject_id": 1,
+//   "category_id": 5,  // Optional - for additional categorization
 //   "type_name": "multiple_choice",
 //   "difficulty": 2,
 //   "points": 10,
 //   "time_limit": 60,
+//   "status": "public",  // Optional - "private" (default) or "public"
 //   "content": {
 //     "question_text": "What is 2+2?",
 //     "options": [
@@ -27,13 +29,21 @@ const { checkJwt, optionalJwt } = require('../middleware/auth');
 // ============================================
 router.post('/', checkJwt, async (req, res) => {
     try {
-        const { subject_id, type_name, difficulty, points, time_limit, content } = req.body;
+        const { subject_id, category_id, type_name, difficulty, points, time_limit, status, content } = req.body;
         
         // Basic validation
         if (!subject_id || !type_name || !difficulty || !content) {
             return res.status(400).json({
                 success: false,
                 error: 'Missing required fields: subject_id, type_name, difficulty, content'
+            });
+        }
+        
+        // Validate status if provided
+        if (status && !['private', 'public'].includes(status)) {
+            return res.status(400).json({
+                success: false,
+                error: 'Status must be either "private" or "public"'
             });
         }
         
@@ -94,10 +104,12 @@ router.post('/', checkJwt, async (req, res) => {
         
         const question = await Question.create({
             subject_id,
+            category_id,
             type_name,
             difficulty,
             points,
             time_limit,
+            status,
             content,
             created_by: req.user.user_id || req.user.sub
         });
@@ -122,9 +134,11 @@ router.post('/', checkJwt, async (req, res) => {
 // Usage Example:
 // GET /api/questions
 // GET /api/questions?subject_id=1
+// GET /api/questions?category_id=1
 // GET /api/questions?type=multiple_choice
 // GET /api/questions?difficulty=2
-// GET /api/questions?subject_id=1&type=multiple_choice&difficulty=2&limit=5&offset=0
+// GET /api/questions?status=public
+// GET /api/questions?subject_id=1&type=multiple_choice&difficulty=2&status=public&limit=5&offset=0
 // ============================================
 router.get('/', async (req, res) => {
     try {
@@ -161,6 +175,30 @@ router.get('/subjects', async (req, res) => {
         
     } catch (error) {
         console.error('Error getting subjects:', error);
+        res.status(500).json({ 
+            success: false, 
+            error: error.message 
+        });
+    }
+});
+
+// ============================================
+// GET /api/questions/categories - Get all categories
+// Usage Example:
+// GET /api/questions/categories
+// GET /api/questions/categories?parent_only=true
+// ============================================
+router.get('/categories', async (req, res) => {
+    try {
+        const categories = await Question.getCategories(req.query);
+        
+        res.json({
+            success: true,
+            data: categories
+        });
+        
+    } catch (error) {
+        console.error('Error getting categories:', error);
         res.status(500).json({ 
             success: false, 
             error: error.message 
@@ -240,9 +278,11 @@ router.get('/:id', async (req, res) => {
                 question_id: question.question_id,
                 type: question.type_name,
                 subject: question.subject_name,
+                category: question.category_name,
                 difficulty: question.difficulty,
                 points: question.points,
                 time_limit: question.time_limit,
+                status: question.status,
                 ...sanitizedContent
             }
         });
@@ -344,6 +384,8 @@ router.post('/:id/validate', async (req, res) => {
 //   "difficulty": 3,
 //   "points": 15,
 //   "time_limit": 90,
+//   "category_id": 6,  // Optional - update category
+//   "status": "public",  // Optional - change visibility
 //   "content": {
 //     "question_text": "Updated question text",
 //     "options": [...]

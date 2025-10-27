@@ -70,21 +70,45 @@ CREATE TABLE garden (
 -- Question System Tables
 -- ----------------------------------------------------------------------------
 
+-- Category table for organizing questions
+CREATE TABLE category (
+    category_id SERIAL PRIMARY KEY,
+    name VARCHAR(100) NOT NULL UNIQUE,
+    description TEXT,
+    parent_category_id INT REFERENCES category(category_id) ON DELETE SET NULL,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- Insert default categories
+INSERT INTO category (name, description, parent_category_id) VALUES
+    ('STEM', 'Science, Technology, Engineering, Mathematics', NULL),
+    ('Languages', 'Language learning and literature', NULL),
+    ('Arts', 'Creative and performing arts', NULL),
+    ('Social Sciences', 'History, geography, and social studies', NULL);
+
+-- Insert subcategories
+INSERT INTO category (name, description, parent_category_id) VALUES
+    ('Mathematics', 'Mathematics and problem solving', (SELECT category_id FROM category WHERE name = 'STEM')),
+    ('Physics', 'Physics and mechanics', (SELECT category_id FROM category WHERE name = 'STEM')),
+    ('Biology', 'Life sciences and biology', (SELECT category_id FROM category WHERE name = 'STEM')),
+    ('Chemistry', 'Chemistry and chemical reactions', (SELECT category_id FROM category WHERE name = 'STEM'));
+
 -- Subject table for organizing questions by subject
 CREATE TABLE subject (
     subject_id SERIAL PRIMARY KEY,
     name VARCHAR(100) NOT NULL UNIQUE,
-    category VARCHAR(50),
+    category_id INT REFERENCES category(category_id) ON DELETE SET NULL,
     description TEXT,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
 -- Insert default subjects
-INSERT INTO subject (name, category, description) VALUES
-    ('Mathematics', 'STEM', 'Mathematics and problem solving'),
-    ('Physics', 'STEM', 'Physics and mechanics'),
-    ('Biology', 'STEM', 'Life sciences and biology'),
-    ('Chemistry', 'STEM', 'Chemistry and chemical reactions');
+INSERT INTO subject (name, category_id, description) VALUES
+    ('Mathematics', (SELECT category_id FROM category WHERE name = 'Mathematics'), 'Mathematics and problem solving'),
+    ('Physics', (SELECT category_id FROM category WHERE name = 'Physics'), 'Physics and mechanics'),
+    ('Biology', (SELECT category_id FROM category WHERE name = 'Biology'), 'Life sciences and biology'),
+    ('Chemistry', (SELECT category_id FROM category WHERE name = 'Chemistry'), 'Chemistry and chemical reactions');
 
 -- Question types table
 CREATE TABLE question_type (
@@ -107,21 +131,25 @@ INSERT INTO question_type (type_name, description) VALUES
 CREATE TABLE question (
     question_id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     subject_id INT REFERENCES subject(subject_id) ON DELETE CASCADE,
+    category_id INT REFERENCES category(category_id) ON DELETE SET NULL,
     mongo_content_id VARCHAR(24) NOT NULL,  -- Reference to MongoDB document _id
     type_id INT REFERENCES question_type(type_id),
     difficulty INT CHECK (difficulty BETWEEN 1 AND 5),
     points INT DEFAULT 10,
     time_limit INT,  -- Time limit in seconds
+    status TEXT DEFAULT 'private' CHECK (status IN ('private', 'public')),
     created_by UUID REFERENCES "user"(user_id) ON DELETE SET NULL,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
     is_active BOOLEAN DEFAULT true
 );
 
--- Add comment to document the mongo_content_id column
+-- Add comments to document the columns
 COMMENT ON COLUMN question.mongo_content_id IS 'MongoDB ObjectId reference to question_contents collection';
 COMMENT ON COLUMN question.difficulty IS 'Question difficulty level from 1 (easiest) to 5 (hardest)';
 COMMENT ON COLUMN question.time_limit IS 'Time limit for answering the question in seconds';
+COMMENT ON COLUMN question.status IS 'Question visibility: private (only creator can see) or public (visible to all)';
+COMMENT ON COLUMN question.category_id IS 'Category for additional organization and filtering';
 
 -- ----------------------------------------------------------------------------
 -- Indexes for better query performance
@@ -139,11 +167,16 @@ CREATE INDEX idx_garden_user2_id ON garden(user2_id);
 
 -- Question system indexes
 CREATE INDEX idx_question_subject_id ON question(subject_id);
+CREATE INDEX idx_question_category_id ON question(category_id);
 CREATE INDEX idx_question_type_id ON question(type_id);
 CREATE INDEX idx_question_difficulty ON question(difficulty);
+CREATE INDEX idx_question_status ON question(status);
 CREATE INDEX idx_question_is_active ON question(is_active);
 CREATE INDEX idx_question_created_by ON question(created_by);
 CREATE INDEX idx_subject_name ON subject(name);
+CREATE INDEX idx_subject_category_id ON subject(category_id);
+CREATE INDEX idx_category_name ON category(name);
+CREATE INDEX idx_category_parent ON category(parent_category_id);
 
 -- ----------------------------------------------------------------------------
 -- Triggers and Functions
@@ -169,6 +202,9 @@ CREATE TRIGGER update_garden_updated_at BEFORE UPDATE ON garden
     FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
 CREATE TRIGGER update_question_updated_at BEFORE UPDATE ON question
+    FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+
+CREATE TRIGGER update_category_updated_at BEFORE UPDATE ON category
     FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
 -- ----------------------------------------------------------------------------
@@ -278,5 +314,98 @@ BEGIN
         RAISE NOTICE 'Updated garden status constraint to include pending status';
     ELSE
         RAISE NOTICE 'Garden status constraint already up to date';
+    END IF;
+END $$;
+
+-- Migration: Add Category Table and Update Question Table
+DO $$
+BEGIN
+    -- Check if category table already exists
+    IF NOT EXISTS (SELECT 1 FROM information_schema.tables 
+                   WHERE table_name = 'category') THEN
+        
+        -- Create category table if it doesn't exist
+        CREATE TABLE category (
+            category_id SERIAL PRIMARY KEY,
+            name VARCHAR(100) NOT NULL UNIQUE,
+            description TEXT,
+            parent_category_id INT REFERENCES category(category_id) ON DELETE SET NULL,
+            created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+            updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+        );
+        
+        -- Insert default categories
+        INSERT INTO category (name, description, parent_category_id) VALUES
+            ('STEM', 'Science, Technology, Engineering, Mathematics', NULL),
+            ('Languages', 'Language learning and literature', NULL),
+            ('Arts', 'Creative and performing arts', NULL),
+            ('Social Sciences', 'History, geography, and social studies', NULL);
+        
+        -- Insert subcategories
+        INSERT INTO category (name, description, parent_category_id) VALUES
+            ('Mathematics', 'Mathematics and problem solving', (SELECT category_id FROM category WHERE name = 'STEM')),
+            ('Physics', 'Physics and mechanics', (SELECT category_id FROM category WHERE name = 'STEM')),
+            ('Biology', 'Life sciences and biology', (SELECT category_id FROM category WHERE name = 'STEM')),
+            ('Chemistry', 'Chemistry and chemical reactions', (SELECT category_id FROM category WHERE name = 'STEM'));
+        
+        -- Create indexes
+        CREATE INDEX idx_category_name ON category(name);
+        CREATE INDEX idx_category_parent ON category(parent_category_id);
+        
+        -- Create trigger for updated_at
+        CREATE TRIGGER update_category_updated_at BEFORE UPDATE ON category
+            FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+        
+        RAISE NOTICE 'Successfully created category table';
+    ELSE
+        RAISE NOTICE 'Category table already exists';
+    END IF;
+    
+    -- Add category_id to subject table if it doesn't exist
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns 
+                   WHERE table_name = 'subject' AND column_name = 'category_id') THEN
+        
+        -- Add category_id column to subject table
+        ALTER TABLE subject ADD COLUMN category_id INT REFERENCES category(category_id) ON DELETE SET NULL;
+        
+        -- Update existing subjects with category_id based on their names
+        UPDATE subject SET category_id = (SELECT category_id FROM category WHERE category.name = subject.name);
+        
+        -- Create index
+        CREATE INDEX IF NOT EXISTS idx_subject_category_id ON subject(category_id);
+        
+        -- Remove old category column if it exists
+        IF EXISTS (SELECT 1 FROM information_schema.columns 
+                   WHERE table_name = 'subject' AND column_name = 'category') THEN
+            ALTER TABLE subject DROP COLUMN category;
+        END IF;
+        
+        RAISE NOTICE 'Successfully added category_id to subject table';
+    ELSE
+        RAISE NOTICE 'Subject table already has category_id column';
+    END IF;
+    
+    -- Add category_id to question table if it doesn't exist
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns 
+                   WHERE table_name = 'question' AND column_name = 'category_id') THEN
+        
+        ALTER TABLE question ADD COLUMN category_id INT REFERENCES category(category_id) ON DELETE SET NULL;
+        CREATE INDEX IF NOT EXISTS idx_question_category_id ON question(category_id);
+        
+        RAISE NOTICE 'Successfully added category_id to question table';
+    ELSE
+        RAISE NOTICE 'Question table already has category_id column';
+    END IF;
+    
+    -- Add status column to question table if it doesn't exist
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns 
+                   WHERE table_name = 'question' AND column_name = 'status') THEN
+        
+        ALTER TABLE question ADD COLUMN status TEXT DEFAULT 'private' CHECK (status IN ('private', 'public'));
+        CREATE INDEX IF NOT EXISTS idx_question_status ON question(status);
+        
+        RAISE NOTICE 'Successfully added status column to question table';
+    ELSE
+        RAISE NOTICE 'Question table already has status column';
     END IF;
 END $$;

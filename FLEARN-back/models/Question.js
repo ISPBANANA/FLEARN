@@ -7,7 +7,7 @@ class Question {
     // Create a new question
     // ============================================
     static async create(questionData) {
-        const { subject_id, type_name, difficulty, points, time_limit, content, created_by } = questionData;
+        const { subject_id, category_id, type_name, difficulty, points, time_limit, status, content, created_by } = questionData;
         
         try {
             // 1. Insert content into MongoDB
@@ -34,10 +34,10 @@ class Question {
             
             // 3. Insert metadata into PostgreSQL
             const pgResult = await pgPool.query(
-                `INSERT INTO question (subject_id, mongo_content_id, type_id, difficulty, points, time_limit, created_by)
-                 VALUES ($1, $2, $3, $4, $5, $6, $7)
+                `INSERT INTO question (subject_id, category_id, mongo_content_id, type_id, difficulty, points, time_limit, status, created_by)
+                 VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
                  RETURNING *`,
-                [subject_id, mongo_content_id, type_id, difficulty, points || 10, time_limit, created_by]
+                [subject_id, category_id || null, mongo_content_id, type_id, difficulty, points || 10, time_limit, status || 'private', created_by]
             );
             
             return { 
@@ -58,10 +58,11 @@ class Question {
         try {
             // 1. Get metadata from PostgreSQL
             const pgResult = await pgPool.query(
-                `SELECT q.*, qt.type_name, s.name as subject_name
+                `SELECT q.*, qt.type_name, s.name as subject_name, c.name as category_name
                  FROM question q
                  JOIN question_type qt ON q.type_id = qt.type_id
                  JOIN subject s ON q.subject_id = s.subject_id
+                 LEFT JOIN category c ON q.category_id = c.category_id
                  WHERE q.question_id = $1 AND q.is_active = true`,
                 [question_id]
             );
@@ -92,19 +93,20 @@ class Question {
     // Get questions with filters
     // ============================================
     static async getAll(filters = {}) {
-        const { subject_id, type, type_name, difficulty, limit = 10, offset = 0 } = filters;
+        const { subject_id, category_id, type, type_name, difficulty, status, limit = 10, offset = 0 } = filters;
         
         // Accept both 'type' and 'type_name' parameters (type is alias for type_name)
         const questionType = type_name || type;
         
         try {
             let query = `
-                SELECT q.question_id, q.difficulty, q.points, q.time_limit,
-                       qt.type_name, s.name as subject_name,
+                SELECT q.question_id, q.difficulty, q.points, q.time_limit, q.status,
+                       qt.type_name, s.name as subject_name, c.name as category_name,
                        q.created_at
                 FROM question q
                 JOIN question_type qt ON q.type_id = qt.type_id
                 JOIN subject s ON q.subject_id = s.subject_id
+                LEFT JOIN category c ON q.category_id = c.category_id
                 WHERE q.is_active = true
             `;
             const params = [];
@@ -112,6 +114,11 @@ class Question {
             if (subject_id) {
                 params.push(subject_id);
                 query += ` AND q.subject_id = $${params.length}`;
+            }
+            
+            if (category_id) {
+                params.push(category_id);
+                query += ` AND q.category_id = $${params.length}`;
             }
             
             if (questionType) {
@@ -122,6 +129,11 @@ class Question {
             if (difficulty) {
                 params.push(difficulty);
                 query += ` AND q.difficulty = $${params.length}`;
+            }
+            
+            if (status) {
+                params.push(status);
+                query += ` AND q.status = $${params.length}`;
             }
             
             params.push(limit, offset);
@@ -275,9 +287,14 @@ class Question {
     // Update question
     // ============================================
     static async update(question_id, updates) {
-        const { difficulty, points, time_limit, content, is_active } = updates;
+        const { difficulty, points, time_limit, category_id, status, content, is_active } = updates;
         
         try {
+            // Validate status if provided
+            if (status && !['private', 'public'].includes(status)) {
+                throw new Error('Status must be either "private" or "public"');
+            }
+            
             // Update MongoDB content if provided
             if (content) {
                 const question = await this.getById(question_id);
@@ -306,6 +323,14 @@ class Question {
             if (time_limit !== undefined) {
                 fields.push(`time_limit = $${paramCount++}`);
                 values.push(time_limit);
+            }
+            if (category_id !== undefined) {
+                fields.push(`category_id = $${paramCount++}`);
+                values.push(category_id);
+            }
+            if (status !== undefined) {
+                fields.push(`status = $${paramCount++}`);
+                values.push(status);
             }
             if (is_active !== undefined) {
                 fields.push(`is_active = $${paramCount++}`);
@@ -357,11 +382,46 @@ class Question {
     static async getSubjects() {
         try {
             const result = await pgPool.query(
-                'SELECT * FROM subject ORDER BY name'
+                `SELECT s.*, c.name as category_name 
+                 FROM subject s 
+                 LEFT JOIN category c ON s.category_id = c.category_id
+                 ORDER BY s.name`
             );
             return result.rows;
         } catch (error) {
             console.error('Error getting subjects:', error);
+            throw error;
+        }
+    }
+    
+    // ============================================
+    // Get all categories
+    // ============================================
+    static async getCategories(filters = {}) {
+        try {
+            const { parent_only } = filters;
+            
+            let query = `
+                SELECT c.*, 
+                       pc.name as parent_category_name,
+                       COUNT(DISTINCT s.subject_id) as subject_count,
+                       COUNT(DISTINCT q.question_id) as question_count
+                FROM category c
+                LEFT JOIN category pc ON c.parent_category_id = pc.category_id
+                LEFT JOIN subject s ON s.category_id = c.category_id
+                LEFT JOIN question q ON q.category_id = c.category_id
+            `;
+            
+            if (parent_only === 'true') {
+                query += ' WHERE c.parent_category_id IS NULL';
+            }
+            
+            query += ' GROUP BY c.category_id, pc.name ORDER BY c.name';
+            
+            const result = await pgPool.query(query);
+            return result.rows;
+        } catch (error) {
+            console.error('Error getting categories:', error);
             throw error;
         }
     }
