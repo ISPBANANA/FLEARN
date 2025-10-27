@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Fredoka } from "next/font/google";
 import "./globals.css";
+import "katex/dist/katex.min.css";
 import { CORSErrorBoundary } from "@/components/CORSErrorHandler";
 
 const fredoka = Fredoka ({
@@ -20,6 +21,14 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
+      <head>
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
+        <style dangerouslySetInnerHTML={{ __html: `
+          /* Critical CSS to prevent FOUC */
+          html { visibility: visible; opacity: 1; }
+          body { margin: 0; padding: 0; min-height: 100vh; }
+        `}} />
+      </head>
       <body
         className={`${fredoka.variable} font-sans`}
       >

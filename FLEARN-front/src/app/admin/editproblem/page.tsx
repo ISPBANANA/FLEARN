@@ -2,6 +2,7 @@
 
 import { Nav } from "@/components/nav";
 import { Footer } from "@/components/footer";
+import { StylesLoadedWrapper } from "@/components/StylesLoadedWrapper";
 import { useAuth } from '@/hooks/useAuth';
 import { useUserProfile } from '@/hooks/useUserProfile';
 import { useEffect, useState } from 'react';
@@ -75,7 +76,7 @@ function EditProblemContent() {
   const [isSaving, setIsSaving] = useState(false);
   const [isMounted, setIsMounted] = useState(false);
 
-  // Ensure component is mounted to prevent CSS glitches
+  // Ensure component is mounted to prevent hydration issues
   useEffect(() => {
     setIsMounted(true);
   }, []);
@@ -478,22 +479,23 @@ function EditProblemContent() {
   }
 
   return (
-    <div className="min-h-screen bg-white">
-      <Nav />
-      
-      <div className="max-w-4xl mx-auto p-8 my-8">
-        {/* Header */}
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-purple-600">
-            {isEditMode ? 'Edit Problem' : 'Add New Problem'}
-          </h1>
-          <p className="text-[#454545] mt-2">
-            {isEditMode ? 'Update the question details' : 'Create a new question for your students'}
-          </p>
-        </div>
+    <StylesLoadedWrapper>
+      <div className="min-h-screen bg-white" style={{ minHeight: '100vh', backgroundColor: '#ffffff' }}>
+        <Nav />
+        
+        <div className="max-w-4xl mx-auto p-8 my-8" style={{ maxWidth: '56rem', margin: '2rem auto', padding: '2rem' }}>
+          {/* Header */}
+          <div className="mb-8">
+            <h1 className="text-3xl font-bold text-purple-600">
+              {isEditMode ? 'Edit Problem' : 'Add New Problem'}
+            </h1>
+            <p className="text-[#454545] mt-2">
+              {isEditMode ? 'Update the question details' : 'Create a new question for your students'}
+            </p>
+          </div>
 
-        {/* Form */}
-        <div className="bg-white rounded-lg shadow-md p-6 space-y-6">
+          {/* Form */}
+          <div className="bg-white rounded-lg shadow-md p-6 space-y-6" style={{ backgroundColor: '#ffffff', borderRadius: '0.5rem', padding: '1.5rem' }}>
           {/* Row 1: Subject, Sub-Topic */}
           <div className="grid grid-cols-2 gap-4">
             {/* Subject */}
@@ -988,6 +990,7 @@ function EditProblemContent() {
 
       <Footer />
     </div>
+    </StylesLoadedWrapper>
   );
 }
 

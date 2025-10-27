@@ -26,6 +26,20 @@ body {
   font-family: 'Fredoka', Arial, Helvetica, sans-serif;
 }
 
+/* Critical animations - always available */
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.animate-spin {
+  animation: spin 1s linear infinite;
+}
+
 /* Override KaTeX default colors to match theme */
 .katex,
 .katex * {
