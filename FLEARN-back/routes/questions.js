@@ -10,7 +10,6 @@ const { checkJwt, optionalJwt } = require('../middleware/auth');
 // Headers: Authorization: Bearer <JWT_TOKEN>
 // Body: {
 //   "subject_id": 1,
-//   "category_id": 5,  // Optional - for additional categorization
 //   "topic_id": 1,  // Optional - assign to a topic
 //   "type_name": "multiple_choice",
 //   "difficulty": 2,
@@ -30,7 +29,7 @@ const { checkJwt, optionalJwt } = require('../middleware/auth');
 // ============================================
 router.post('/', checkJwt, async (req, res) => {
     try {
-        const { subject_id, category_id, topic_id, type_name, difficulty, points, time_limit, status, content } = req.body;
+        const { subject_id, topic_id, type_name, difficulty, points, time_limit, status, content } = req.body;
         
         // Basic validation
         if (!subject_id || !type_name || !difficulty || !content) {
@@ -91,7 +90,6 @@ router.post('/', checkJwt, async (req, res) => {
         
         const question = await Question.create({
             subject_id,
-            category_id,
             topic_id,
             type_name,
             difficulty,
@@ -122,7 +120,6 @@ router.post('/', checkJwt, async (req, res) => {
 // Usage Example:
 // GET /api/questions
 // GET /api/questions?subject_id=1
-// GET /api/questions?category_id=1
 // GET /api/questions?topic_id=1
 // GET /api/questions?type=multiple_choice
 // GET /api/questions?difficulty=2
@@ -164,30 +161,6 @@ router.get('/subjects', async (req, res) => {
         
     } catch (error) {
         console.error('Error getting subjects:', error);
-        res.status(500).json({ 
-            success: false, 
-            error: error.message 
-        });
-    }
-});
-
-// ============================================
-// GET /api/questions/categories - Get all categories
-// Usage Example:
-// GET /api/questions/categories
-// GET /api/questions/categories?parent_only=true
-// ============================================
-router.get('/categories', async (req, res) => {
-    try {
-        const categories = await Question.getCategories(req.query);
-        
-        res.json({
-            success: true,
-            data: categories
-        });
-        
-    } catch (error) {
-        console.error('Error getting categories:', error);
         res.status(500).json({ 
             success: false, 
             error: error.message 
@@ -267,7 +240,6 @@ router.get('/:id', async (req, res) => {
                 question_id: question.question_id,
                 type: question.type_name,
                 subject: question.subject_name,
-                category: question.category_name,
                 topic: question.topic_name,
                 difficulty: question.difficulty,
                 points: question.points,
@@ -366,7 +338,7 @@ router.post('/:id/validate', async (req, res) => {
 //   "difficulty": 3,
 //   "points": 15,
 //   "time_limit": 90,
-//   "category_id": 6,  // Optional - update category
+//   "topic_id": 2,  // Optional - update topic
 //   "status": "public",  // Optional - change visibility
 //   "content": {
 //     "question_text": "Updated question text",
