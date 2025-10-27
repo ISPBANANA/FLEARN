@@ -1,0 +1,254 @@
+### FLEARN Backlog API Test Suite
+### Use REST Client extension in VS Code to run these tests
+
+@baseUrl = http://localhost:8099
+@token = YOUR_JWT_TOKEN_HERE
+@userId = YOUR_USER_UUID_HERE
+@subjectId = 1
+@topicId = 1
+
+### ============================================
+### 1. Health Check
+### ============================================
+GET {{baseUrl}}/health
+
+### ============================================
+### 2. Create Backlog Entry (Correct Answer)
+### Requires Authentication
+### ============================================
+POST {{baseUrl}}/api/backlog
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "user_id": "{{userId}}",
+  "subject_id": 1,
+  "topic_id": 1,
+  "correctness": true
+}
+
+### ============================================
+### 3. Create Backlog Entry (Incorrect Answer)
+### Requires Authentication
+### ============================================
+POST {{baseUrl}}/api/backlog
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "user_id": "{{userId}}",
+  "subject_id": 1,
+  "topic_id": 2,
+  "correctness": false
+}
+
+### ============================================
+### 4. Create Backlog Entry Without Topic
+### Requires Authentication
+### ============================================
+POST {{baseUrl}}/api/backlog
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "user_id": "{{userId}}",
+  "subject_id": 2,
+  "correctness": true
+}
+
+### ============================================
+### 5. Create Backlog Entry - Missing Required Fields
+### Should return 400 error
+### ============================================
+POST {{baseUrl}}/api/backlog
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "user_id": "{{userId}}",
+  "correctness": true
+}
+
+### ============================================
+### 6. Create Backlog Entry - Invalid Correctness Type
+### Should return 400 error
+### ============================================
+POST {{baseUrl}}/api/backlog
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "user_id": "{{userId}}",
+  "subject_id": 1,
+  "correctness": "yes"
+}
+
+### ============================================
+### 7. Get All Backlog Entries for User
+### Requires Authentication
+### ============================================
+GET {{baseUrl}}/api/backlog/user/{{userId}}
+Authorization: Bearer {{token}}
+
+### ============================================
+### 8. Get Backlog Entries with Limit and Offset
+### Requires Authentication
+### ============================================
+GET {{baseUrl}}/api/backlog/user/{{userId}}?limit=10&offset=0
+Authorization: Bearer {{token}}
+
+### ============================================
+### 9. Get Backlog Entries Filtered by Subject
+### Requires Authentication
+### ============================================
+GET {{baseUrl}}/api/backlog/user/{{userId}}?subject_id={{subjectId}}
+Authorization: Bearer {{token}}
+
+### ============================================
+### 10. Get Backlog Entries Filtered by Topic
+### Requires Authentication
+### ============================================
+GET {{baseUrl}}/api/backlog/user/{{userId}}?topic_id={{topicId}}
+Authorization: Bearer {{token}}
+
+### ============================================
+### 11. Get Only Correct Answers
+### Requires Authentication
+### ============================================
+GET {{baseUrl}}/api/backlog/user/{{userId}}?correctness=true
+Authorization: Bearer {{token}}
+
+### ============================================
+### 12. Get Only Incorrect Answers
+### Requires Authentication
+### ============================================
+GET {{baseUrl}}/api/backlog/user/{{userId}}?correctness=false
+Authorization: Bearer {{token}}
+
+### ============================================
+### 13. Get Backlog Entry by ID
+### Replace 1 with actual row_id from previous responses
+### ============================================
+GET {{baseUrl}}/api/backlog/1
+Authorization: Bearer {{token}}
+
+### ============================================
+### 14. Get Overall Statistics for User
+### Requires Authentication
+### ============================================
+GET {{baseUrl}}/api/backlog/stats/{{userId}}
+Authorization: Bearer {{token}}
+
+### ============================================
+### 15. Get Statistics Filtered by Subject
+### Requires Authentication
+### ============================================
+GET {{baseUrl}}/api/backlog/stats/{{userId}}?subject_id={{subjectId}}
+Authorization: Bearer {{token}}
+
+### ============================================
+### 16. Get Statistics Filtered by Topic
+### Requires Authentication
+### ============================================
+GET {{baseUrl}}/api/backlog/stats/{{userId}}?topic_id={{topicId}}
+Authorization: Bearer {{token}}
+
+### ============================================
+### 17. Get Statistics with Date Range
+### Requires Authentication
+### ============================================
+GET {{baseUrl}}/api/backlog/stats/{{userId}}?start_date=2025-10-01&end_date=2025-10-27
+Authorization: Bearer {{token}}
+
+### ============================================
+### 18. Get Statistics by Subject
+### Requires Authentication
+### ============================================
+GET {{baseUrl}}/api/backlog/stats/subject/{{userId}}
+Authorization: Bearer {{token}}
+
+### ============================================
+### 19. Get Statistics by Topic
+### Requires Authentication
+### ============================================
+GET {{baseUrl}}/api/backlog/stats/topic/{{userId}}
+Authorization: Bearer {{token}}
+
+### ============================================
+### 20. Get Statistics by Topic for Specific Subject
+### Requires Authentication
+### ============================================
+GET {{baseUrl}}/api/backlog/stats/topic/{{userId}}?subject_id={{subjectId}}
+Authorization: Bearer {{token}}
+
+### ============================================
+### 21. Delete Specific Backlog Entry
+### Replace 1 with actual row_id
+### Requires Authentication
+### ============================================
+DELETE {{baseUrl}}/api/backlog/1
+Authorization: Bearer {{token}}
+
+### ============================================
+### 22. Delete All Backlog Entries for User
+### USE WITH CAUTION - This deletes all entries
+### Requires Authentication
+### ============================================
+# DELETE {{baseUrl}}/api/backlog/user/{{userId}}
+# Authorization: Bearer {{token}}
+
+### ============================================
+### EXAMPLE TEST FLOW
+### ============================================
+
+### Step 1: Create some test entries
+POST {{baseUrl}}/api/backlog
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "user_id": "{{userId}}",
+  "subject_id": 1,
+  "topic_id": 1,
+  "correctness": true
+}
+
+###
+POST {{baseUrl}}/api/backlog
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "user_id": "{{userId}}",
+  "subject_id": 1,
+  "topic_id": 1,
+  "correctness": false
+}
+
+###
+POST {{baseUrl}}/api/backlog
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "user_id": "{{userId}}",
+  "subject_id": 1,
+  "topic_id": 2,
+  "correctness": true
+}
+
+### Step 2: View all entries
+GET {{baseUrl}}/api/backlog/user/{{userId}}
+Authorization: Bearer {{token}}
+
+### Step 3: Check statistics
+GET {{baseUrl}}/api/backlog/stats/{{userId}}
+Authorization: Bearer {{token}}
+
+### Step 4: Check subject breakdown
+GET {{baseUrl}}/api/backlog/stats/subject/{{userId}}
+Authorization: Bearer {{token}}
+
+### Step 5: Check topic breakdown
+GET {{baseUrl}}/api/backlog/stats/topic/{{userId}}
+Authorization: Bearer {{token}}

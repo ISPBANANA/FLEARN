@@ -10,10 +10,12 @@ const { checkJwt, optionalJwt } = require('../middleware/auth');
 // Headers: Authorization: Bearer <JWT_TOKEN>
 // Body: {
 //   "subject_id": 1,
+//   "topic_id": 1,  // Optional - assign to a topic
 //   "type_name": "multiple_choice",
 //   "difficulty": 2,
 //   "points": 10,
 //   "time_limit": 60,
+//   "status": "public",  // Optional - "private" (default) or "public"
 //   "content": {
 //     "question_text": "What is 2+2?",
 //     "options": [
@@ -27,13 +29,21 @@ const { checkJwt, optionalJwt } = require('../middleware/auth');
 // ============================================
 router.post('/', checkJwt, async (req, res) => {
     try {
-        const { subject_id, type_name, difficulty, points, time_limit, content } = req.body;
+        const { subject_id, topic_id, type_name, difficulty, points, time_limit, status, content } = req.body;
         
         // Basic validation
         if (!subject_id || !type_name || !difficulty || !content) {
             return res.status(400).json({
                 success: false,
                 error: 'Missing required fields: subject_id, type_name, difficulty, content'
+            });
+        }
+        
+        // Validate status if provided
+        if (status && !['private', 'public'].includes(status)) {
+            return res.status(400).json({
+                success: false,
+                error: 'Status must be either "private" or "public"'
             });
         }
         
@@ -55,26 +65,12 @@ router.post('/', checkJwt, async (req, res) => {
                     throw new Error('True/False must have exactly 1 correct answer');
                 }
             },
-            multi_select: (c) => {
-                if (!c.options || c.options.length < 2) {
-                    throw new Error('Multi-select needs at least 2 options');
-                }
-                const correctCount = c.options.filter(opt => opt.is_correct).length;
-                if (correctCount < 2) {
-                    throw new Error('Multi-select needs at least 2 correct answers');
-                }
-            },
             fill_blank: (c) => {
                 if (!c.blanks || c.blanks.length === 0) {
                     throw new Error('Fill blank needs at least one blank');
                 }
                 if (!c.blanks[0].correct_answers || c.blanks[0].correct_answers.length === 0) {
                     throw new Error('Fill blank needs at least one correct answer');
-                }
-            },
-            essay: (c) => {
-                if (!c.word_limit) {
-                    throw new Error('Essay needs word limit');
                 }
             },
             matching: (c) => {
@@ -94,10 +90,12 @@ router.post('/', checkJwt, async (req, res) => {
         
         const question = await Question.create({
             subject_id,
+            topic_id,
             type_name,
             difficulty,
             points,
             time_limit,
+            status,
             content,
             created_by: req.user.user_id || req.user.sub
         });
@@ -122,9 +120,11 @@ router.post('/', checkJwt, async (req, res) => {
 // Usage Example:
 // GET /api/questions
 // GET /api/questions?subject_id=1
+// GET /api/questions?topic_id=1
 // GET /api/questions?type=multiple_choice
 // GET /api/questions?difficulty=2
-// GET /api/questions?subject_id=1&type=multiple_choice&difficulty=2&limit=5&offset=0
+// GET /api/questions?status=public
+// GET /api/questions?subject_id=1&topic_id=1&type=multiple_choice&difficulty=2&status=public&limit=5&offset=0
 // ============================================
 router.get('/', async (req, res) => {
     try {
@@ -240,9 +240,11 @@ router.get('/:id', async (req, res) => {
                 question_id: question.question_id,
                 type: question.type_name,
                 subject: question.subject_name,
+                topic: question.topic_name,
                 difficulty: question.difficulty,
                 points: question.points,
                 time_limit: question.time_limit,
+                status: question.status,
                 ...sanitizedContent
             }
         });
@@ -264,9 +266,6 @@ router.get('/:id', async (req, res) => {
 // POST /api/questions/:id/validate
 // Body: { "answer": "b", "time_taken": 30 }
 // 
-// Multi-Select:
-// Body: { "answer": ["a", "c", "e"], "time_taken": 45 }
-// 
 // Fill Blank:
 // Body: { "answer": "mitochondria", "time_taken": 25 }
 // 
@@ -278,9 +277,6 @@ router.get('/:id', async (req, res) => {
 //   ],
 //   "time_taken": 60
 // }
-// 
-// Essay:
-// Body: { "answer": "Newton's First Law states...", "time_taken": 300 }
 // ============================================
 router.post('/:id/validate', async (req, res) => {
     try {
@@ -297,17 +293,15 @@ router.post('/:id/validate', async (req, res) => {
         let normalizedAnswer = {};
         
         if (typeof answer === 'string') {
-            // Single selection (multiple choice, true/false) or text (fill blank, essay)
+            // Single selection (multiple choice, true/false) or text (fill blank)
             normalizedAnswer = { 
                 selected_option: answer,
                 text_answer: answer
             };
         } else if (Array.isArray(answer)) {
-            // Multi-select or matching
+            // Matching
             if (answer.length > 0 && typeof answer[0] === 'object' && answer[0].left && answer[0].right) {
                 normalizedAnswer = { matches: answer };
-            } else {
-                normalizedAnswer = { selected_options: answer };
             }
         } else if (typeof answer === 'object') {
             // Already normalized
@@ -344,6 +338,8 @@ router.post('/:id/validate', async (req, res) => {
 //   "difficulty": 3,
 //   "points": 15,
 //   "time_limit": 90,
+//   "topic_id": 2,  // Optional - update topic
+//   "status": "public",  // Optional - change visibility
 //   "content": {
 //     "question_text": "Updated question text",
 //     "options": [...]

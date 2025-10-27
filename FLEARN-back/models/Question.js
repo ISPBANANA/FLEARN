@@ -7,7 +7,7 @@ class Question {
     // Create a new question
     // ============================================
     static async create(questionData) {
-        const { subject_id, type_name, difficulty, points, time_limit, content, created_by } = questionData;
+        const { subject_id, topic_id, type_name, difficulty, points, time_limit, status, content, created_by } = questionData;
         
         try {
             // 1. Insert content into MongoDB
@@ -34,10 +34,10 @@ class Question {
             
             // 3. Insert metadata into PostgreSQL
             const pgResult = await pgPool.query(
-                `INSERT INTO question (subject_id, mongo_content_id, type_id, difficulty, points, time_limit, created_by)
-                 VALUES ($1, $2, $3, $4, $5, $6, $7)
+                `INSERT INTO question (subject_id, topic_id, mongo_content_id, type_id, difficulty, points, time_limit, status, created_by)
+                 VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
                  RETURNING *`,
-                [subject_id, mongo_content_id, type_id, difficulty, points || 10, time_limit, created_by]
+                [subject_id, topic_id || null, mongo_content_id, type_id, difficulty, points || 10, time_limit, status || 'private', created_by]
             );
             
             return { 
@@ -58,10 +58,11 @@ class Question {
         try {
             // 1. Get metadata from PostgreSQL
             const pgResult = await pgPool.query(
-                `SELECT q.*, qt.type_name, s.name as subject_name
+                `SELECT q.*, qt.type_name, s.name as subject_name, t.name as topic_name
                  FROM question q
                  JOIN question_type qt ON q.type_id = qt.type_id
                  JOIN subject s ON q.subject_id = s.subject_id
+                 LEFT JOIN topic t ON q.topic_id = t.topic_id
                  WHERE q.question_id = $1 AND q.is_active = true`,
                 [question_id]
             );
@@ -92,19 +93,20 @@ class Question {
     // Get questions with filters
     // ============================================
     static async getAll(filters = {}) {
-        const { subject_id, type, type_name, difficulty, limit = 10, offset = 0 } = filters;
+        const { subject_id, topic_id, type, type_name, difficulty, status, limit = 10, offset = 0 } = filters;
         
         // Accept both 'type' and 'type_name' parameters (type is alias for type_name)
         const questionType = type_name || type;
         
         try {
             let query = `
-                SELECT q.question_id, q.difficulty, q.points, q.time_limit,
-                       qt.type_name, s.name as subject_name,
+                SELECT q.question_id, q.difficulty, q.points, q.time_limit, q.status,
+                       qt.type_name, s.name as subject_name, t.name as topic_name,
                        q.created_at
                 FROM question q
                 JOIN question_type qt ON q.type_id = qt.type_id
                 JOIN subject s ON q.subject_id = s.subject_id
+                LEFT JOIN topic t ON q.topic_id = t.topic_id
                 WHERE q.is_active = true
             `;
             const params = [];
@@ -112,6 +114,11 @@ class Question {
             if (subject_id) {
                 params.push(subject_id);
                 query += ` AND q.subject_id = $${params.length}`;
+            }
+            
+            if (topic_id) {
+                params.push(topic_id);
+                query += ` AND q.topic_id = $${params.length}`;
             }
             
             if (questionType) {
@@ -122,6 +129,11 @@ class Question {
             if (difficulty) {
                 params.push(difficulty);
                 query += ` AND q.difficulty = $${params.length}`;
+            }
+            
+            if (status) {
+                params.push(status);
+                query += ` AND q.status = $${params.length}`;
             }
             
             params.push(limit, offset);
@@ -159,36 +171,6 @@ class Question {
                     partialScore = isCorrect ? question.points : 0;
                     break;
                 
-                // Multi-Select
-                case 'multi_select':
-                    correctAnswers = question.content.options
-                        .filter(opt => opt.is_correct)
-                        .map(opt => opt.id);
-                    
-                    const selectedSet = new Set(userAnswer.selected_options || []);
-                    const correctSet = new Set(correctAnswers);
-                    
-                    // Perfect match
-                    isCorrect = selectedSet.size === correctSet.size && 
-                               [...selectedSet].every(x => correctSet.has(x));
-                    
-                    // Partial credit calculation
-                    if (question.content.partial_credit) {
-                        const correctSelected = [...selectedSet].filter(x => correctSet.has(x)).length;
-                        const incorrectSelected = selectedSet.size - correctSelected;
-                        const totalCorrect = correctSet.size;
-                        
-                        // Score = (correct selections / total correct) * points
-                        // Penalty for wrong selections
-                        partialScore = Math.max(0, 
-                            ((correctSelected / totalCorrect) - (incorrectSelected * 0.2)) * question.points
-                        );
-                        partialScore = Math.floor(partialScore);
-                    } else {
-                        partialScore = isCorrect ? question.points : 0;
-                    }
-                    break;
-                
                 // Fill in the Blank
                 case 'fill_blank':
                     const blank = question.content.blanks[0];
@@ -202,29 +184,6 @@ class Question {
                     
                     partialScore = isCorrect ? question.points : 0;
                     break;
-                
-                // Essay (Cannot auto-validate)
-                case 'essay':
-                    isCorrect = null;
-                    partialScore = 0;
-                    
-                    // Check word count
-                    const wordCount = userAnswer.text_answer?.split(/\s+/).length || 0;
-                    const meetsWordLimit = wordCount >= (question.content.word_limit?.min || 0) &&
-                                          wordCount <= (question.content.word_limit?.max || Infinity);
-                    
-                    return {
-                        isCorrect: null,
-                        correctAnswers: null,
-                        explanation: question.content.explanation,
-                        pointsEarned: 0,
-                        pointsPossible: question.points,
-                        requiresManualGrading: true,
-                        wordCount,
-                        meetsWordLimit,
-                        keywords: question.content.keywords,
-                        sampleAnswer: question.content.sample_answer
-                    };
                 
                 // Matching
                 case 'matching':
@@ -275,9 +234,14 @@ class Question {
     // Update question
     // ============================================
     static async update(question_id, updates) {
-        const { difficulty, points, time_limit, content, is_active } = updates;
+        const { difficulty, points, time_limit, topic_id, status, content, is_active } = updates;
         
         try {
+            // Validate status if provided
+            if (status && !['private', 'public'].includes(status)) {
+                throw new Error('Status must be either "private" or "public"');
+            }
+            
             // Update MongoDB content if provided
             if (content) {
                 const question = await this.getById(question_id);
@@ -306,6 +270,14 @@ class Question {
             if (time_limit !== undefined) {
                 fields.push(`time_limit = $${paramCount++}`);
                 values.push(time_limit);
+            }
+            if (topic_id !== undefined) {
+                fields.push(`topic_id = $${paramCount++}`);
+                values.push(topic_id);
+            }
+            if (status !== undefined) {
+                fields.push(`status = $${paramCount++}`);
+                values.push(status);
             }
             if (is_active !== undefined) {
                 fields.push(`is_active = $${paramCount++}`);
