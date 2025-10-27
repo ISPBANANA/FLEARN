@@ -31,6 +31,11 @@ jobs:
     - name: Install Backend Dependencies
       working-directory: ./FLEARN-back
       run: npm ci
+
+
+    - name: Run Backend Unit Tests
+      working-directory: ./FLEARN-back
+      run: npm test --if-present
     
     - name: Install Frontend Dependencies
       working-directory: ./FLEARN-front
@@ -81,6 +86,23 @@ jobs:
         echo "WEBHOOK_PORT=3001" >> .env
         echo "WEBHOOK_SECRET=test_webhook_secret_for_ci" >> .env
         echo "CACHEBUST=$(date +%s)" >> .env
+
+
+    - name: Validate Environment Variables
+      run: |
+        required_vars=(POSTGRES_USER POSTGRES_PASSWORD JWT_SECRET MONGO_INITDB_ROOT_USERNAME MONGO_INITDB_ROOT_PASSWORD WEBHOOK_SECRET)
+        missing=0
+        for var in "${required_vars[@]}"; do
+          if ! grep -q "^$var=" .env; then
+            echo "❌ Missing environment variable: $var"
+            missing=1
+          fi
+        done
+        if [ "$missing" -eq 1 ]; then
+          echo "Environment variable validation failed!"
+          exit 1
+        fi
+        echo "All required environment variables are present."
     
     - name: Login to Docker Hub
       if: github.event_name == 'push' && github.ref == 'refs/heads/main'
@@ -100,7 +122,7 @@ jobs:
     - name: Wait for services to be ready
       run: |
         echo "Waiting for services to start..."
-        sleep 60
+        sleep 10
         
         # Check if containers are running
         docker compose ps
@@ -115,17 +137,15 @@ jobs:
 
     - name: Test Backend API Health
       run: |
-        # Wait for backend to be fully ready
-        for i in {1..30}; do
+        for i in {1..60}; do
           if curl -f http://localhost:8099/health 2>/dev/null; then
             echo "Backend API is healthy!"
             break
           fi
-          echo "Waiting for backend API... ($i/30)"
-          sleep 2
+          echo "Waiting for backend API... ($i/60)"
+          sleep 3
         done
         
-        # Test basic API endpoint
         curl -f http://localhost:8099/health || {
           echo "Backend health check failed"
           docker compose logs flearn-backend
@@ -134,17 +154,15 @@ jobs:
 
     - name: Test Frontend Application
       run: |
-        # Wait for frontend to be ready
-        for i in {1..30}; do
+        for i in {1..60}; do
           if curl -f http://localhost:3000 2>/dev/null; then
             echo "Frontend is accessible!"
             break
           fi
-          echo "Waiting for frontend... ($i/30)"
-          sleep 2
+          echo "Waiting for frontend... ($i/60)"
+          sleep 3
         done
         
-        # Test frontend accessibility
         curl -f http://localhost:3000 || {
           echo "Frontend accessibility test failed"
           docker compose logs flearn-frontend
@@ -153,17 +171,15 @@ jobs:
 
     - name: Test Webhook Service
       run: |
-        # Wait for webhook service to be ready
-        for i in {1..30}; do
+        for i in {1..60}; do
           if curl -f http://localhost:3001/health 2>/dev/null; then
             echo "Webhook service is healthy!"
             break
           fi
-          echo "Waiting for webhook service... ($i/30)"
-          sleep 2
+          echo "Waiting for webhook service... ($i/60)"
+          sleep 3
         done
         
-        # Test webhook health endpoint
         curl -f http://localhost:3001/health || {
           echo "Webhook service health check failed"
           docker compose logs webhook-service
@@ -195,17 +211,29 @@ jobs:
           exit 1
         }
 
+    - name: Verify Database Initialization
+      run: |
+        echo "Checking if PostgreSQL tables exist..."
+        docker compose exec -T postgres psql -U flearn_user -d flearn_db -Atc \
+          "SELECT COUNT(*) FROM information_schema.tables WHERE table_schema='public' AND table_type='BASE TABLE';" > /tmp/pg_tables_count
+        cat /tmp/pg_tables_count
+        if [ "$(cat /tmp/pg_tables_count)" -gt 0 ]; then
+          echo "✅ PostgreSQL application tables detected."
+        else
+          echo "❌ No application tables found in PostgreSQL (public schema)."
+          exit 1
+        fi
+
+        echo "Checking if MongoDB collections exist (non-fatal)..."
+        docker compose exec -T mongodb mongosh --quiet --eval \
+          'db.getSiblingDB("flearn_db").getCollectionNames().length' > /tmp/mongo_col_count || echo "0" > /tmp/mongo_col_count
+        echo "Mongo collections count: $(cat /tmp/mongo_col_count)"
+
     - name: Run Integration Tests
       run: |
         echo "Running integration tests..."
-        
-        # Test API endpoints
         echo "Testing API endpoints..."
-        
-        # Add more specific tests based on your API endpoints
-        # Example: curl -X GET http://localhost:8099/api/users
-        # Example: curl -X POST http://localhost:8099/api/auth/login -d '{"email":"test@test.com","password":"test"}'
-        
+        # (Add your concrete endpoint tests here)
         echo "Integration tests completed successfully!"
 
     - name: Tag and push images (only on main branch)
@@ -229,5 +257,7 @@ jobs:
     - name: Cleanup
       if: always()
       run: |
-        docker compose down -v
+        echo "🧹 Removing temporary test images..."
+        docker rmi -f flearn-flearn-backend flearn-flearn-frontend flearn-webhook-service || true
+        docker compose down -v --remove-orphans
         docker system prune -f
