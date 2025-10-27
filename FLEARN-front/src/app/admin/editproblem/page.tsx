@@ -24,15 +24,16 @@ function EditProblemContent() {
   const { isAuthenticated, isLoading: authLoading } = useAuth();
   const { profile, isLoading: profileLoading } = useUserProfile();
   
-  // Check if user came from add button
+  // Check if user came from add button or editing existing question
   const fromAdd = searchParams.get('from') === 'add';
+  const questionId = searchParams.get('id');
+  const isEditMode = !!questionId;
   
   // Form states
-  const [name, setName] = useState('');
   const [subjectId, setSubjectId] = useState('');
   const [topicId, setTopicId] = useState('');
   const [questionType, setQuestionType] = useState('');
-  const [status, setStatus] = useState<'public' | 'private'>('public');
+  const [status, setStatus] = useState<'public' | 'private'>('private');
   const [difficulty, setDifficulty] = useState(1);
   const [questionText, setQuestionText] = useState('');
   const [previewMode, setPreviewMode] = useState(false);
@@ -72,6 +73,12 @@ function EditProblemContent() {
   
   const [isLoading, setIsLoading] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const [isMounted, setIsMounted] = useState(false);
+
+  // Ensure component is mounted to prevent CSS glitches
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
 
   // Markdown helper functions
   const insertMarkdown = (before: string, after: string = '', placeholder: string = '') => {
@@ -179,12 +186,79 @@ function EditProblemContent() {
         notFound();
       }
       
-      // Check if user came from add button
-      if (!fromAdd) {
+      // Check if user came from add button or has question ID for edit
+      if (!fromAdd && !questionId) {
         router.push('/admin');
       }
     }
-  }, [isAuthenticated, profile, authLoading, profileLoading, fromAdd, router]);
+  }, [isAuthenticated, profile, authLoading, profileLoading, fromAdd, questionId, router]);
+
+  // Load question data in edit mode
+  useEffect(() => {
+    const loadQuestion = async () => {
+      if (!isEditMode || !questionId) return;
+      
+      setIsLoading(true);
+      try {
+        const response = await questionsAPI.getQuestion(questionId);
+        
+        if (response.success && response.data) {
+          const question = response.data;
+          
+          // Set form values
+          setSubjectId(question.subject_id?.toString() || '');
+          setTopicId(question.topic_id?.toString() || '');
+          setQuestionType(question.type_name);
+          setStatus(question.status);
+          setDifficulty(question.difficulty);
+          setQuestionText(question.content.question_text || '');
+          
+          // Set answers based on question type
+          if (question.type_name === 'multiple_choice' && question.content.options) {
+            const formattedOptions = question.content.options.map((opt: any, idx: number) => ({
+              id: String.fromCharCode(65 + idx), // A, B, C, D
+              text: opt.text,
+              isCorrect: opt.is_correct
+            }));
+            // Fill remaining slots if less than 4 options
+            while (formattedOptions.length < 4) {
+              formattedOptions.push({
+                id: String.fromCharCode(65 + formattedOptions.length),
+                text: '',
+                isCorrect: false
+              });
+            }
+            setOptions(formattedOptions);
+          }
+          
+          if (question.type_name === 'true_false' && question.content.correct_answer) {
+            setTrueFalseAnswer(question.content.correct_answer);
+          }
+          
+          if (question.type_name === 'fill_blank' && question.content.correct_answer) {
+            setFillBlankAnswer(question.content.correct_answer);
+          }
+          
+          if (question.type_name === 'matching' && question.content.pairs) {
+            const formattedPairs = question.content.pairs.map((pair: any, idx: number) => ({
+              id: idx + 1,
+              left: pair.left,
+              right: pair.right
+            }));
+            setMatchingPairs(formattedPairs);
+          }
+        }
+      } catch (error) {
+        console.error('Error loading question:', error);
+        alert('Failed to load question data');
+        router.push('/admin');
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    
+    loadQuestion();
+  }, [isEditMode, questionId, router]);
 
   // Toggle correct answer for options
   const toggleCorrectAnswer = (index: number) => {
@@ -213,11 +287,6 @@ function EditProblemContent() {
   // Handle save
   const handleSave = async (exitAfter: boolean = false) => {
     // Validation
-    if (!name.trim()) {
-      alert('Please enter a problem name');
-      return;
-    }
-    
     if (!subjectId) {
       alert('Please select a subject');
       return;
@@ -233,8 +302,8 @@ function EditProblemContent() {
       return;
     }
 
-    // Validate options for choice-based questions
-    if (['multiple_choice', 'true_false'].includes(questionType)) {
+    // Validate based on question type
+    if (questionType === 'multiple_choice') {
       const hasCorrectAnswer = options.some(opt => opt.isCorrect);
       if (!hasCorrectAnswer) {
         alert('Please mark at least one correct answer');
@@ -248,6 +317,28 @@ function EditProblemContent() {
       }
     }
 
+    if (questionType === 'true_false') {
+      if (!trueFalseAnswer) {
+        alert('Please select True or False as the correct answer');
+        return;
+      }
+    }
+
+    if (questionType === 'fill_blank') {
+      if (!fillBlankAnswer.trim()) {
+        alert('Please enter the correct answer for the fill in the blank');
+        return;
+      }
+    }
+
+    if (questionType === 'matching') {
+      const hasEmptyPair = matchingPairs.some(pair => !pair.left.trim() || !pair.right.trim());
+      if (hasEmptyPair) {
+        alert('Please fill in all matching pairs (both left and right sides)');
+        return;
+      }
+    }
+
     try {
       setIsSaving(true);
       
@@ -256,7 +347,7 @@ function EditProblemContent() {
         question_text: questionText,
       };
 
-      if (['multiple_choice', 'true_false'].includes(questionType)) {
+      if (questionType === 'multiple_choice') {
         content.options = options.map(opt => ({
           id: opt.id.toLowerCase(),
           text: opt.text,
@@ -264,7 +355,20 @@ function EditProblemContent() {
         }));
       }
 
-      // TODO: Add handlers for other question types (fill_blank, matching, essay)
+      if (questionType === 'true_false') {
+        content.correct_answer = trueFalseAnswer;
+      }
+
+      if (questionType === 'fill_blank') {
+        content.correct_answer = fillBlankAnswer;
+      }
+
+      if (questionType === 'matching') {
+        content.pairs = matchingPairs.map(pair => ({
+          left: pair.left,
+          right: pair.right
+        }));
+      }
 
       const questionData = {
         subject_id: parseInt(subjectId),
@@ -276,27 +380,45 @@ function EditProblemContent() {
         content: content
       };
 
-      // TODO: Call API to create question
-      console.log('Creating question:', questionData);
-      
-      alert('Question saved successfully!');
-      
-      if (exitAfter) {
-        router.push('/admin');
+      // Call API to create or update question
+      let response;
+      if (isEditMode && questionId) {
+        response = await questionsAPI.updateQuestion(questionId, questionData);
       } else {
-        // Reset form
-        setName('');
-        setQuestionText('');
-        setOptions([
-          { id: 'A', text: '', isCorrect: false },
-          { id: 'B', text: '', isCorrect: false },
-          { id: 'C', text: '', isCorrect: false },
-          { id: 'D', text: '', isCorrect: false },
-        ]);
+        response = await questionsAPI.createQuestion(questionData);
+      }
+      
+      if (response.success) {
+        alert(`Question ${isEditMode ? 'updated' : 'saved'} successfully!`);
+        
+        if (exitAfter) {
+          router.push('/admin');
+        } else {
+          // Reset form
+          setQuestionText('');
+          setQuestionType('');
+          setDifficulty(1);
+          setOptions([
+            { id: 'A', text: '', isCorrect: false },
+            { id: 'B', text: '', isCorrect: false },
+            { id: 'C', text: '', isCorrect: false },
+            { id: 'D', text: '', isCorrect: false },
+          ]);
+          setTrueFalseAnswer(null);
+          setFillBlankAnswer('');
+          setMatchingPairs([
+            { id: 1, left: '', right: '' },
+            { id: 2, left: '', right: '' },
+            { id: 3, left: '', right: '' },
+            { id: 4, left: '', right: '' },
+          ]);
+        }
+      } else {
+        throw new Error(response.error || 'Failed to save question');
       }
     } catch (error) {
       console.error('Error saving question:', error);
-      alert('Failed to save question. Please try again.');
+      alert(`Failed to save question: ${error instanceof Error ? error.message : 'Please try again.'}`);
     } finally {
       setIsSaving(false);
     }
@@ -309,7 +431,7 @@ function EditProblemContent() {
     }
   };
 
-  if (authLoading || profileLoading) {
+  if (authLoading || profileLoading || !isMounted || isLoading) {
     return (
       <div className="min-h-screen bg-white flex items-center justify-center">
         <div className="text-center">
@@ -327,28 +449,18 @@ function EditProblemContent() {
       <div className="max-w-4xl mx-auto p-8 my-8">
         {/* Header */}
         <div className="mb-8">
-          <h1 className="text-3xl font-bold text-purple-600">Add New Problem</h1>
-          <p className="text-[#454545] mt-2">Create a new question for your students</p>
+          <h1 className="text-3xl font-bold text-purple-600">
+            {isEditMode ? 'Edit Problem' : 'Add New Problem'}
+          </h1>
+          <p className="text-[#454545] mt-2">
+            {isEditMode ? 'Update the question details' : 'Create a new question for your students'}
+          </p>
         </div>
 
         {/* Form */}
         <div className="bg-white rounded-lg shadow-md p-6 space-y-6">
-          {/* Row 1: Name, Subject, Sub-Topic */}
-          <div className="grid grid-cols-3 gap-4">
-            {/* Name */}
-            <div>
-              <label className="block text-sm font-medium text-[#454545] mb-2">
-                <span className="text-red-500">*</span> Name :
-              </label>
-              <input
-                type="text"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                placeholder="Ex: FunLearn"
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500 text-[#454545]"
-              />
-            </div>
-
+          {/* Row 1: Subject, Sub-Topic */}
+          <div className="grid grid-cols-2 gap-4">
             {/* Subject */}
             <div>
               <label className="block text-sm font-medium text-[#454545] mb-2">
@@ -420,7 +532,7 @@ function EditProblemContent() {
               </label>
               <select
                 value={status}
-                onChange={(e) => setStatus(e.target.value as 'public' | 'private')}
+                onChange={(e) => setStatus(e.target.value as 'private' | 'public')}
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500 text-gray-900 bg-white"
               >
                 <option value="public">Public</option>
