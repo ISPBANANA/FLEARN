@@ -87,6 +87,21 @@ router.post('/', checkJwt, async (req, res) => {
             validationRules[type_name](content);
         }
         
+        // Get user_id from google_id
+        const googleId = req.user.sub || req.user.id;
+        const { pgPool } = require('../config/database');
+        const userQuery = 'SELECT user_id FROM "user" WHERE google_id = $1';
+        const userResult = await pgPool.query(userQuery, [googleId]);
+        
+        if (userResult.rows.length === 0) {
+            return res.status(404).json({
+                success: false,
+                error: 'User not found'
+            });
+        }
+        
+        const userId = userResult.rows[0].user_id;
+        
         const question = await Question.create({
             subject_id,
             topic_id,
@@ -95,7 +110,7 @@ router.post('/', checkJwt, async (req, res) => {
             points,
             status,
             content,
-            created_by: req.user.user_id || req.user.sub
+            created_by: userId
         });
         
         res.status(201).json({
