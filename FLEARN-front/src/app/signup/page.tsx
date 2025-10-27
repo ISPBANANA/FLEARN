@@ -423,6 +423,7 @@ export default function Home() {
                     style={{ boxShadow: '0px 0px 5px rgba(0, 0, 0, 0.25)' }}
                     value={formData.dateOfBirth}
                     onChange={handleDateOfBirthChange}
+                    max={new Date().toISOString().split('T')[0]}
                   />
                   {showValidationErrors && formData.dateOfBirth === '' && (
                     <p className="text-red-500 text-sm mb-3">Date of birth is required</p>
