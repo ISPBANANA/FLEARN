@@ -64,6 +64,7 @@ interface Question {
 }
 
 export default function AdminPage() {
+  const router = useRouter();
   const { isAuthenticated, isLoading: authLoading } = useAuth();
   const { profile, isLoading: profileLoading, refetchProfile } = useUserProfile();
   const [users, setUsers] = useState<AdminUser[]>([]);
@@ -1041,6 +1042,7 @@ export default function AdminPage() {
               <div className="flex flex-row gap-4 items-center">
                 {/* Add Problems Button */}
                 <button 
+                  onClick={() => router.push('/admin/editproblem?from=add')}
                   className="bg-purple-500 text-white py-1 px-4 rounded hover:bg-purple-600 transition flex items-center gap-2"
                 >
                   <Edit size={16} />

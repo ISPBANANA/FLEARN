@@ -24,3 +24,15 @@ body {
   color: var(--foreground);
   font-family: 'Fredoka', Arial, Helvetica, sans-serif;
 }
+
+/* Override KaTeX default colors to match theme */
+.katex,
+.katex * {
+  color: #454545 !important;
+}
+
+/* Ensure KaTeX elements inherit the custom color in preview mode */
+.prose .katex,
+.prose .katex * {
+  color: #454545 !important;
+}
