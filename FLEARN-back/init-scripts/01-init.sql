@@ -336,3 +336,27 @@ BEGIN
         RAISE NOTICE 'Added topic_id to question table';
     END IF;
 END $$;
+
+-- Migration: Backlog Table
+DO $$
+BEGIN
+    IF NOT EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = 'backlog') THEN
+        CREATE TABLE backlog (
+            row_id SERIAL PRIMARY KEY,
+            do_date TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+            user_id UUID REFERENCES "user"(user_id) ON DELETE CASCADE,
+            subject_id INT REFERENCES subject(subject_id) ON DELETE SET NULL,
+            topic_id INT REFERENCES topic(topic_id) ON DELETE SET NULL,
+            correctness BOOLEAN NOT NULL,
+            created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+        );
+        
+        CREATE INDEX idx_backlog_user_id ON backlog(user_id);
+        CREATE INDEX idx_backlog_subject_id ON backlog(subject_id);
+        CREATE INDEX idx_backlog_topic_id ON backlog(topic_id);
+        CREATE INDEX idx_backlog_do_date ON backlog(do_date);
+        CREATE INDEX idx_backlog_correctness ON backlog(correctness);
+        
+        RAISE NOTICE 'Created backlog table';
+    END IF;
+END $$;
