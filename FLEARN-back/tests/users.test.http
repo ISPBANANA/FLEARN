@@ -1,0 +1,306 @@
+### FLEARN Users API Test Suite
+### Use REST Client extension in VS Code to run these tests
+
+@baseUrl = http://localhost:8099
+@token = YOUR_JWT_TOKEN_HERE
+@userId = YOUR_USER_UUID_HERE
+@adminToken = ADMIN_JWT_TOKEN_HERE
+@subjectId = 1
+
+### ============================================
+### 1. Health Check
+### ============================================
+GET {{baseUrl}}/health
+
+### ============================================
+### PROFILE MANAGEMENT
+### ============================================
+
+### 2. Get Current User Profile
+### Requires Authentication
+### ============================================
+GET {{baseUrl}}/api/users/profile
+Authorization: Bearer {{token}}
+
+### 3. Get User Profile by ID
+### Requires Authentication
+### ============================================
+GET {{baseUrl}}/api/users/profilebyid?id={{userId}}
+Authorization: Bearer {{token}}
+
+### 4. Get Username by User ID (Public)
+### ============================================
+GET {{baseUrl}}/api/users/username/{{userId}}
+
+### 5. Create/Update User Profile
+### Requires Authentication
+### ============================================
+POST {{baseUrl}}/api/users/profile
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "name": "John Doe",
+  "email": "john.doe@example.com",
+  "birthdate": "1995-05-15",
+  "edu_level": "University",
+  "profile_pic": "https://example.com/profile.jpg"
+}
+
+### 6. Update Profile Basic Info
+### Requires Authentication
+### ============================================
+PATCH {{baseUrl}}/api/users/profile-basic
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "name": "Updated Name",
+  "email": "updated.email@example.com",
+  "profile_pic": "https://example.com/new-profile.jpg"
+}
+
+### ============================================
+### USER LISTING & SEARCH
+### ============================================
+
+### 7. Get All Users with Pagination
+### Requires Authentication
+### ============================================
+GET {{baseUrl}}/api/users/all?limit=20&offset=0
+Authorization: Bearer {{token}}
+
+### 8. Search Users by Name or Email
+### Requires Authentication
+### ============================================
+GET {{baseUrl}}/api/users/search?q=john
+Authorization: Bearer {{token}}
+
+### 9. Search Users - Empty Query
+### Should return 400 error
+### ============================================
+GET {{baseUrl}}/api/users/search?q=
+Authorization: Bearer {{token}}
+
+### ============================================
+### EXPERIENCE & PROGRESSION
+### ============================================
+
+### 10. Update User Experience
+### Requires Authentication
+### ============================================
+PATCH {{baseUrl}}/api/users/experience
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "subject": "Mathematics",
+  "exp": 50,
+  "completed_task": true
+}
+
+### 11. Update Experience - Invalid Subject
+### Should return 400 error
+### ============================================
+PATCH {{baseUrl}}/api/users/experience
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "subject": "InvalidSubject",
+  "exp": 50
+}
+
+### 12. Update Experience - Missing Fields
+### Should return 400 error
+### ============================================
+PATCH {{baseUrl}}/api/users/experience
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "exp": 50
+}
+
+### ============================================
+### LEADERBOARD
+### ============================================
+
+### 13. Get Leaderboard - All Subjects
+### ============================================
+GET {{baseUrl}}/api/users/leaderboard
+
+### 14. Get Leaderboard - Mathematics
+### ============================================
+GET {{baseUrl}}/api/users/leaderboard?subject=Mathematics
+
+### 15. Get Leaderboard - Physics
+### ============================================
+GET {{baseUrl}}/api/users/leaderboard?subject=Physics
+
+### 16. Get Leaderboard - Biology
+### ============================================
+GET {{baseUrl}}/api/users/leaderboard?subject=Biology
+
+### 17. Get Leaderboard - Chemistry
+### ============================================
+GET {{baseUrl}}/api/users/leaderboard?subject=Chemistry
+
+### ============================================
+### PREFERENCES (DEPRECATED - Use Preferred Subjects)
+### ============================================
+
+### 18. Get User Preferences
+### Requires Authentication
+### ============================================
+GET {{baseUrl}}/api/users/preferences
+Authorization: Bearer {{token}}
+
+### 19. Create User Preference
+### Requires Authentication
+### ============================================
+POST {{baseUrl}}/api/users/preferences
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "subject": "Mathematics"
+}
+
+### ============================================
+### PREFERRED SUBJECTS
+### ============================================
+
+### 20. Get Preferred Subjects
+### Requires Authentication
+### ============================================
+GET {{baseUrl}}/api/users/preferred-subjects
+Authorization: Bearer {{token}}
+
+### 21. Add Preferred Subject
+### Requires Authentication
+### ============================================
+POST {{baseUrl}}/api/users/preferred-subjects
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "subject": "Mathematics"
+}
+
+### 22. Add Multiple Preferred Subjects
+### Requires Authentication
+### ============================================
+PUT {{baseUrl}}/api/users/preferred-subjects
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "subjects": ["Mathematics", "Physics"]
+}
+
+### 23. Delete Preferred Subject
+### Requires Authentication
+### Replace with actual preferenceId
+### ============================================
+DELETE {{baseUrl}}/api/users/preferred-subjects/1
+Authorization: Bearer {{token}}
+
+### ============================================
+### ADMIN OPERATIONS
+### ============================================
+
+### 24. Get All Users (Admin)
+### Requires Admin Authentication
+### ============================================
+GET {{baseUrl}}/api/users/admin/all?limit=50&offset=0
+Authorization: Bearer {{adminToken}}
+
+### 25. Get All Users (Admin) - Filter by Role
+### Requires Admin Authentication
+### ============================================
+GET {{baseUrl}}/api/users/admin/all?role=teacher
+Authorization: Bearer {{adminToken}}
+
+### 26. Update User (Admin)
+### Requires Admin Authentication
+### ============================================
+PATCH {{baseUrl}}/api/users/admin/update/{{userId}}
+Content-Type: application/json
+Authorization: Bearer {{adminToken}}
+
+{
+  "name": "Admin Updated Name",
+  "role": "teacher",
+  "streak": 10,
+  "math_exp": 500
+}
+
+### 27. Update User Role (Admin)
+### Requires Admin Authentication
+### ============================================
+PATCH {{baseUrl}}/api/users/admin/update/{{userId}}
+Content-Type: application/json
+Authorization: Bearer {{adminToken}}
+
+{
+  "role": "admin"
+}
+
+### 28. Delete User (Admin)
+### Requires Admin Authentication
+### USE WITH CAUTION
+### ============================================
+# DELETE {{baseUrl}}/api/users/admin/delete/{{userId}}
+# Authorization: Bearer {{adminToken}}
+
+### ============================================
+### EXAMPLE TEST FLOW
+### ============================================
+
+### Step 1: Get current user profile
+GET {{baseUrl}}/api/users/profile
+Authorization: Bearer {{token}}
+
+### Step 2: Update profile
+POST {{baseUrl}}/api/users/profile
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "name": "Test User",
+  "email": "test@example.com",
+  "birthdate": "2000-01-01",
+  "edu_level": "High School"
+}
+
+### Step 3: Add preferred subjects
+POST {{baseUrl}}/api/users/preferred-subjects
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "subject": "Mathematics"
+}
+
+### Step 4: Get preferred subjects
+GET {{baseUrl}}/api/users/preferred-subjects
+Authorization: Bearer {{token}}
+
+### Step 5: Update experience
+PATCH {{baseUrl}}/api/users/experience
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "subject": "Mathematics",
+  "exp": 100,
+  "completed_task": true
+}
+
+### Step 6: Check leaderboard
+GET {{baseUrl}}/api/users/leaderboard?subject=Mathematics
+
+### Step 7: Search for users
+GET {{baseUrl}}/api/users/search?q=test
+Authorization: Bearer {{token}}
