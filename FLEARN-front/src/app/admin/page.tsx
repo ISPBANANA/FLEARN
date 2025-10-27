@@ -11,7 +11,7 @@ import { useUserProfile } from '@/hooks/useUserProfile';
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { notFound } from 'next/navigation';
-import { Edit, Trash2, RefreshCw } from 'lucide-react';
+import { Edit, Trash2, RefreshCw, ChevronDown, ChevronRight, Search } from 'lucide-react';
 import { userAPI } from '@/lib/api';
 
 // Force dynamic rendering to avoid build-time issues with useSearchParams
@@ -34,6 +34,20 @@ interface AdminUser {
   bio_exp: number;
   chem_exp: number;
   completed_task: number;
+}
+
+interface Topic {
+  id: string;
+  name: string;
+  totalQuestions: number;
+  status: 'Public' | 'Private';
+}
+
+interface Subject {
+  id: string;
+  name: string;
+  topics: Topic[];
+  isExpanded: boolean;
 }
 
 export default function AdminPage() {
@@ -60,6 +74,55 @@ export default function AdminPage() {
     role: string;
     profile_pic: string;
   }>({ name: '', role: '', profile_pic: '' });
+
+  // Subject Management States
+  const [subjects, setSubjects] = useState<Subject[]>([
+    {
+      id: '1',
+      name: 'Mathematics',
+      isExpanded: false,
+      topics: [
+        { id: 'm1', name: 'Calculus - Lopital', totalQuestions: 100, status: 'Public' },
+        { id: 'm2', name: 'Linear Algebra', totalQuestions: 85, status: 'Public' },
+        { id: 'm3', name: 'Differential Equations', totalQuestions: 120, status: 'Private' },
+        { id: 'm4', name: 'asd', totalQuestions: 120, status: 'Private' },
+        { id: 'm5', name: 'lhjhs', totalQuestions: 100, status: 'Private' },
+        { id: 'm6', name: 'kjhg', totalQuestions: 100, status: 'Private' },
+        { id: 'm7', name: 'qwerty', totalQuestions: 100, status: 'Private' },
+      ]
+    },
+    {
+      id: '2',
+      name: 'Physics',
+      isExpanded: false,
+      topics: [
+        { id: 'p1', name: 'Mechanics', totalQuestions: 95, status: 'Public' },
+        { id: 'p2', name: 'Thermodynamics', totalQuestions: 75, status: 'Public' },
+        { id: 'p3', name: 'Electromagnetism', totalQuestions: 110, status: 'Private' },
+      ]
+    },
+    {
+      id: '3',
+      name: 'Chemistry',
+      isExpanded: false,
+      topics: [
+        { id: 'c1', name: 'Organic Chemistry', totalQuestions: 90, status: 'Public' },
+        { id: 'c2', name: 'Inorganic Chemistry', totalQuestions: 80, status: 'Public' },
+        { id: 'c3', name: 'Physical Chemistry', totalQuestions: 105, status: 'Private' },
+      ]
+    },
+    {
+      id: '4',
+      name: 'Biology',
+      isExpanded: false,
+      topics: [
+        { id: 'b1', name: 'Cell Biology', totalQuestions: 88, status: 'Public' },
+        { id: 'b2', name: 'Genetics', totalQuestions: 92, status: 'Public' },
+        { id: 'b3', name: 'Ecology', totalQuestions: 70, status: 'Private' },
+      ]
+    },
+  ]);
+  const [topicSearchTerms, setTopicSearchTerms] = useState<{[key: string]: string}>({});
 
   // Auto-refresh every 10 seconds
   useEffect(() => {
@@ -229,6 +292,34 @@ export default function AdminPage() {
     }
   }, [users, searchTerm]);
 
+  // Toggle subject expansion
+  const toggleSubject = (subjectId: string) => {
+    setSubjects(subjects.map(subject => 
+      subject.id === subjectId 
+        ? { ...subject, isExpanded: !subject.isExpanded }
+        : subject
+    ));
+  };
+
+  // Get filtered topics for a subject
+  const getFilteredTopics = (subject: Subject) => {
+    const searchTerm = topicSearchTerms[subject.id] || '';
+    if (!searchTerm.trim()) {
+      return subject.topics;
+    }
+    return subject.topics.filter(topic => 
+      topic.name?.toLowerCase().includes(searchTerm.toLowerCase())
+    );
+  };
+
+  // Update topic search term for a specific subject
+  const updateTopicSearchTerm = (subjectId: string, value: string) => {
+    setTopicSearchTerms(prev => ({
+      ...prev,
+      [subjectId]: value
+    }));
+  };
+
   // Manual refresh function
   const handleManualRefresh = () => {
     fetchUsers();
@@ -384,6 +475,186 @@ export default function AdminPage() {
                   </div>
                 </div>
               ))}
+            </div>
+          </div>
+        )}
+        
+        {/* Subject Management */}
+        {(profile?.role === 'admin' || profile?.role === 'teacher') && (
+          <div className="w-full max-w-[1320px] min-h-[500px] items-center flex flex-col px-25 py-2 rounded-lg mt-8" style={{boxShadow: '0px 0px 5px rgba(0, 0, 0, 0.25)' }}>
+            {/* header */}
+            <div className="w-full flex flex-row justify-between items-center mb-4 my-4">
+              <div className="flex flex-col">
+                <h2 className="text-2xl font-bold text-[#454545]">Subject Topic Management</h2>
+              </div>
+            </div>
+
+            {/* Subject List */}
+            <div className="flex flex-col overflow-y-auto w-full h-full gap-2 pb-4">
+              {/* Subject Header */}
+              <div className="grid gap-4 py-2 px-4 bg-gray-50 border-b border-gray-200 font-semibold text-gray-700 rounded-lg m-1" style={{gridTemplateColumns: '40px 1fr', boxShadow: '0px 0px 3px rgba(0, 0, 0, 0.15)' }}>
+                <div></div>
+                <div className="text-left">Subject</div>
+              </div>
+
+              {/* Subjects Data */}
+              {subjects.length === 0 && (
+                <div className="text-center py-8 text-gray-500">
+                  No subjects found.
+                </div>
+              )}
+
+              {subjects.map((subject) => {
+                const filteredTopics = getFilteredTopics(subject);
+                return (
+                  <div key={subject.id} className="flex flex-col">
+                    {/* Subject Row */}
+                    <div 
+                      className="m-1 py-2 px-4 border-b border-gray-100 hover:bg-gray-50 rounded-lg transition-colors flex items-center gap-4" 
+                      style={{boxShadow: '0px 0px 3px rgba(0, 0, 0, 0.15)' }}
+                    >
+                      <div 
+                        className="flex items-center gap-4 flex-1 cursor-pointer"
+                        onClick={() => toggleSubject(subject.id)}
+                      >
+                        <div className="flex items-center justify-center w-[40px]">
+                          {subject.isExpanded ? (
+                            <ChevronDown size={20} className="text-gray-600" />
+                          ) : (
+                            <ChevronRight size={20} className="text-gray-600" />
+                          )}
+                        </div>
+                        <div className="text-gray-900 flex items-center font-medium">
+                          {subject.name}
+                        </div>
+                      </div>
+                      
+                      {/* Search and Add New for this subject - always visible */}
+                      {subject.isExpanded && (
+                        <div className="flex flex-row gap-4 items-center">
+                          {/* Add New Button - Only for Admin */}
+                          {profile?.role === 'admin' && (
+                            <button 
+                              className="bg-purple-500 text-white py-1 px-4 rounded hover:bg-purple-600 transition flex items-center gap-2"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                // Add new topic handler (static for now)
+                              }}
+                            >
+                              <Edit size={16} />
+                              Add New
+                            </button>
+                          )}
+                          {/* Search bar for topics */}
+                          <div className="relative">
+                            <input
+                              type="text"
+                              placeholder="Name"
+                              value={topicSearchTerms[subject.id] || ''}
+                              onChange={(e) => {
+                                e.stopPropagation();
+                                updateTopicSearchTerm(subject.id, e.target.value);
+                              }}
+                              onClick={(e) => e.stopPropagation()}
+                              className="border border-gray-300 rounded px-4 py-1 w-60 focus:outline-none focus:ring-2 focus:ring-purple-500 text-[#454545]"
+                            />
+                            <Search size={18} className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 pointer-events-none" />
+                          </div>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Topics (shown when expanded) */}
+                    {subject.isExpanded && (
+                      <div className="ml-12 mt-2 mb-2 border-l-2 border-purple-200 pl-4">
+
+                        {/* Topics Header */}
+                        <div className={`grid gap-4 py-2 px-4 bg-purple-50 border border-purple-200 rounded-lg font-semibold text-gray-700 text-sm mb-2`} style={{gridTemplateColumns: profile?.role === 'admin' ? '2fr 1fr 1fr 100px' : '2fr 1fr 1fr' }}>
+                          <div className="text-left">Topic Name</div>
+                          <div className="text-center">Total Question</div>
+                          <div className="text-center">Status</div>
+                          {profile?.role === 'admin' && (
+                            <div className="text-center">Actions</div>
+                          )}
+                        </div>
+
+                        {/* Topics List - with scrollbar when more than 3 items */}
+                        <div className={filteredTopics.length > 3 ? 'overflow-y-auto' : ''} style={filteredTopics.length > 3 ? { maxHeight: '240px' } : {}}>
+                          {filteredTopics.length === 0 && (
+                            <div className="text-center py-2 text-gray-500 text-sm">
+                              {topicSearchTerms[subject.id] ? 'No topics found matching your search.' : 'No topics available.'}
+                            </div>
+                          )}
+
+                          {filteredTopics.map((topic) => (
+                          <div 
+                            key={topic.id} 
+                            className={`grid gap-4 py-2 px-4 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors mb-2`}
+                            style={{gridTemplateColumns: profile?.role === 'admin' ? '2fr 1fr 1fr 100px' : '2fr 1fr 1fr', boxShadow: '0px 0px 2px rgba(0, 0, 0, 0.1)' }}
+                          >
+                            <div className="text-gray-900 flex items-center">
+                              {topic.name}
+                            </div>
+                            <div className="text-gray-700 flex items-center justify-center">
+                              {topic.totalQuestions}
+                            </div>
+                            <div className="flex items-center justify-center">
+                              {profile?.role === 'admin' ? (
+                                <button
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    // Toggle status handler (static for now)
+                                  }}
+                                  className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium cursor-pointer transition-colors ${
+                                    topic.status === 'Public' 
+                                      ? 'bg-green-100 text-green-800 hover:bg-green-200' 
+                                      : 'bg-gray-100 text-gray-800 hover:bg-gray-200'
+                                  }`}
+                                >
+                                  {topic.status}
+                                </button>
+                              ) : (
+                                <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium ${
+                                  topic.status === 'Public' 
+                                    ? 'bg-green-100 text-green-800' 
+                                    : 'bg-gray-100 text-gray-800'
+                                }`}>
+                                  {topic.status}
+                                </span>
+                              )}
+                            </div>
+                            {profile?.role === 'admin' && (
+                              <div className="flex gap-2 items-center justify-center">
+                                <button 
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    // Edit topic handler (static for now)
+                                  }}
+                                  className="text-blue-500 hover:text-blue-600 p-1 rounded transition-colors"
+                                  title="Edit topic"
+                                >
+                                  <Edit size={18} />
+                                </button>
+                                <button 
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    // Delete topic handler (static for now)
+                                  }}
+                                  className="text-red-500 hover:text-red-600 p-1 rounded transition-colors"
+                                  title="Delete topic"
+                                >
+                                  <Trash2 size={18} />
+                                </button>
+                              </div>
+                            )}
+                          </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
             </div>
           </div>
         )}
