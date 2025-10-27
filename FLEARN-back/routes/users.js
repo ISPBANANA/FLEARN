@@ -1010,6 +1010,120 @@ router.get('/admin/all', checkJwt, async (req, res) => {
 
 // Delete user account (admin only)
 // Usage Example:
+// PATCH /api/users/admin/update/:userId
+// Headers: Authorization: Bearer <JWT_TOKEN>
+// Body: { name?: string, role?: string, profile_pic?: string }
+router.patch('/admin/update/:userId', checkJwt, async (req, res) => {
+    try {
+        const requestingUserGoogleId = req.user.sub || req.user.id;
+        const { userId } = req.params;
+        const { name, role, profile_pic } = req.body;
+        
+        if (!userId) {
+            return res.status(400).json({
+                error: 'Bad request',
+                message: 'User ID is required'
+            });
+        }
+        
+        // First verify that the requesting user is an admin
+        const adminQuery = `SELECT user_id, role FROM "user" WHERE google_id = $1`;
+        const adminResult = await pgPool.query(adminQuery, [requestingUserGoogleId]);
+        
+        if (adminResult.rows.length === 0) {
+            return res.status(404).json({
+                error: 'User not found',
+                message: 'Requesting user not found'
+            });
+        }
+        
+        if (adminResult.rows[0].role !== 'admin') {
+            return res.status(403).json({
+                error: 'Forbidden',
+                message: 'Only admins can update user accounts'
+            });
+        }
+        
+        // Check if the user to be updated exists
+        const userToUpdateQuery = `SELECT * FROM "user" WHERE user_id = $1`;
+        const userToUpdateResult = await pgPool.query(userToUpdateQuery, [userId]);
+        
+        if (userToUpdateResult.rows.length === 0) {
+            return res.status(404).json({
+                error: 'User not found',
+                message: 'User to update does not exist'
+            });
+        }
+        
+        const currentUser = userToUpdateResult.rows[0];
+        
+        // Build update query dynamically based on provided fields
+        const updates = [];
+        const values = [];
+        let paramIndex = 1;
+        
+        if (name !== undefined) {
+            updates.push(`name = $${paramIndex}`);
+            values.push(name);
+            paramIndex++;
+        }
+        
+        if (role !== undefined) {
+            // Validate role
+            const validRoles = ['admin', 'teacher', 'user'];
+            if (!validRoles.includes(role)) {
+                return res.status(400).json({
+                    error: 'Bad request',
+                    message: 'Invalid role. Must be one of: admin, teacher, user'
+                });
+            }
+            updates.push(`role = $${paramIndex}`);
+            values.push(role);
+            paramIndex++;
+        }
+        
+        if (profile_pic !== undefined) {
+            // If profile_pic is provided, update it
+            updates.push(`profile_pic = $${paramIndex}`);
+            values.push(profile_pic);
+            paramIndex++;
+        }
+        
+        // If no fields to update, return current user data
+        if (updates.length === 0) {
+            return res.json({
+                message: 'No changes made',
+                user: currentUser
+            });
+        }
+        
+        // Add user_id to values
+        values.push(userId);
+        
+        // Update user
+        const updateQuery = `
+            UPDATE "user" 
+            SET ${updates.join(', ')}
+            WHERE user_id = $${paramIndex}
+            RETURNING *
+        `;
+        
+        const updateResult = await pgPool.query(updateQuery, values);
+        
+        res.json({
+            message: 'User updated successfully',
+            user: updateResult.rows[0]
+        });
+        
+    } catch (error) {
+        console.error('Error updating user account:', error);
+        res.status(500).json({
+            error: 'Internal server error',
+            message: 'Failed to update user account'
+        });
+    }
+});
+
 // DELETE /api/users/admin/delete/12345678-1234-1234-1234-123456789012
 // Headers: Authorization: Bearer <JWT_TOKEN>
 router.delete('/admin/delete/:userId', checkJwt, async (req, res) => {

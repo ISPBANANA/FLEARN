@@ -61,6 +61,36 @@ export default function Home() {
   // CORS error handling
   const { executeAPI, corsError, clearErrors } = useAPIWithCORSHandling();
 
+  const convertImageToBase64 = async (imagePath: string): Promise<string> => {
+    try {
+      const response = await fetch(imagePath);
+      const blob = await response.blob();
+      
+      return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onloadend = () => resolve(reader.result as string);
+        reader.onerror = reject;
+        reader.readAsDataURL(blob);
+      });
+    } catch (error) {
+      console.error('Error converting image to base64:', error);
+      return '';
+    }
+  };
+
+  // Load default profile picture on component mount
+  useEffect(() => {
+    const loadDefaultProfilePicture = async () => {
+      const defaultBase64 = await convertImageToBase64("/Chr/defaultpfp.jpg");
+      if (defaultBase64) {
+        setFormData(prev => ({ ...prev, profilePicture: defaultBase64 }));
+        setImagePreview(defaultBase64);
+      }
+    };
+
+    loadDefaultProfilePicture();
+  }, []);
+
   const handleDataLoaded = useCallback((encodedData: string) => {
     try {
       // Decode the data from base64

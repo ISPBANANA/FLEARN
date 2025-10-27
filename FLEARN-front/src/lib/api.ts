@@ -376,6 +376,18 @@ export const userAPI = {
     });
   },
 
+  // Update user account (admin only)
+  async updateUserAdmin(userId: string, userData: {
+    name?: string;
+    role?: string;
+    profile_pic?: string;
+  }) {
+    return apiCall(`/api/users/admin/update/${encodeURIComponent(userId)}`, {
+      method: 'PATCH',
+      body: JSON.stringify(userData),
+    });
+  },
+
   // Create or update user profile
   async updateProfile(profileData: {
     name?: string;

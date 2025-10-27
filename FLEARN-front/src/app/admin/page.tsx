@@ -50,6 +50,16 @@ export default function AdminPage() {
     user: AdminUser | null;
   }>({ isOpen: false, user: null });
   const [isDeleting, setIsDeleting] = useState(false);
+  const [editDialog, setEditDialog] = useState<{
+    isOpen: boolean;
+    user: AdminUser | null;
+  }>({ isOpen: false, user: null });
+  const [isUpdating, setIsUpdating] = useState(false);
+  const [editForm, setEditForm] = useState<{
+    name: string;
+    role: string;
+    profile_pic: string;
+  }>({ name: '', role: '', profile_pic: '' });
 
   // Auto-refresh every 10 seconds
   useEffect(() => {
@@ -82,6 +92,86 @@ export default function AdminPage() {
   // Handle delete user
   const handleDeleteUser = (user: AdminUser) => {
     setDeleteConfirmDialog({ isOpen: true, user });
+  };
+
+  // Handle edit user
+  const handleEditUser = (user: AdminUser) => {
+    setEditDialog({ isOpen: true, user });
+    setEditForm({
+      name: user.name || '',
+      role: user.role || 'user',
+      profile_pic: user.profile_pic || '',
+    });
+  };
+
+  // Confirm update user
+  const confirmUpdateUser = async () => {
+    if (!editDialog.user) return;
+
+    try {
+      setIsUpdating(true);
+      
+      // Prepare update data - only include changed fields
+      const updateData: { name?: string; role?: string; profile_pic?: string } = {};
+      
+      if (editForm.name !== editDialog.user.name) {
+        updateData.name = editForm.name;
+      }
+      
+      if (editForm.role !== editDialog.user.role) {
+        updateData.role = editForm.role;
+      }
+      
+      if (editForm.profile_pic !== editDialog.user.profile_pic) {
+        updateData.profile_pic = editForm.profile_pic;
+      }
+      
+      // Call API to update user
+      const response = await userAPI.updateUserAdmin(editDialog.user.user_id, updateData);
+      
+      // Update user in local state
+      setUsers(users.map(u => 
+        u.user_id === editDialog.user!.user_id ? response.user : u
+      ));
+      
+      setEditDialog({ isOpen: false, user: null });
+      
+      // Show success message (you can add a toast notification here)
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'Failed to update user';
+      alert(`Error updating user: ${errorMessage}`);
+      console.error('Error updating user:', err);
+    } finally {
+      setIsUpdating(false);
+    }
+  };
+
+  // Cancel edit
+  const cancelEdit = () => {
+    setEditDialog({ isOpen: false, user: null });
+  };
+
+  const convertImageToBase64 = async (imagePath: string): Promise<string> => {
+    try {
+      const response = await fetch(imagePath);
+      const blob = await response.blob();
+      
+      return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onloadend = () => resolve(reader.result as string);
+        reader.onerror = reject;
+        reader.readAsDataURL(blob);
+      });
+    } catch (error) {
+      console.error('Error converting image to base64:', error);
+      return '';
+    }
+  };
+
+  // Delete profile picture (set to default)
+  const deleteProfilePicture = async () => {
+    const defaultBase64 = await convertImageToBase64("/Chr/defaultpfp.jpg");
+    setEditForm({ ...editForm, profile_pic: defaultBase64 });
   };
 
   // Confirm delete user
@@ -279,7 +369,10 @@ export default function AdminPage() {
                     </span>
                   </div>
                   <div className="flex gap-2 items-center justify-center">
-                    <button className="text-blue-500 hover:text-blue-600 p-2 rounded transition-colors flex items-center justify-center">
+                    <button 
+                      onClick={() => handleEditUser(user)}
+                      className="text-blue-500 hover:text-blue-600 p-2 rounded transition-colors flex items-center justify-center"
+                    >
                       <Edit size={20} />
                     </button>
                     <button 
@@ -343,6 +436,120 @@ export default function AdminPage() {
                   </>
                 ) : (
                   'Delete Account'
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Edit User Dialog */}
+      {editDialog.isOpen && (
+        <div className="fixed inset-0 backdrop-blur-xs flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
+            <h3 className="text-lg font-semibold text-gray-900 mb-4">
+              Edit User Account
+            </h3>
+            <p className="text-gray-600 mb-4">
+              Editing account for{' '}
+              <strong>{editDialog.user?.email}</strong>
+            </p>
+            
+            {/* Edit Form */}
+            <div className="space-y-4 mb-6">
+              {/* Username Field */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Username
+                </label>
+                <input
+                  type="text"
+                  value={editForm.name}
+                  onChange={(e) => setEditForm({ ...editForm, name: e.target.value })}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900"
+                  placeholder="Enter username"
+                />
+              </div>
+
+              {/* Role Field */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Role
+                </label>
+                <select
+                  value={editForm.role}
+                  onChange={(e) => setEditForm({ ...editForm, role: e.target.value })}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900"
+                >
+                  <option value="user">User</option>
+                  <option value="teacher">Teacher</option>
+                  <option value="admin">Admin</option>
+                </select>
+              </div>
+
+              {/* Profile Picture */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Profile Picture
+                </label>
+                <div className="flex items-center gap-3">
+                  <div className="flex-shrink-0">
+                    <img
+                      src={editForm.profile_pic || editDialog.user?.profile_pic || '/Chr/defualtpfp.jpg'}
+                      alt="Profile"
+                      className="w-12 h-12 rounded-full object-cover"
+                      onError={(e) => {
+                        const target = e.target as HTMLImageElement;
+                        target.src = '/Chr/defualtpfp.jpg';
+                      }}
+                    />
+                  </div>
+                  <button
+                    type="button"
+                    onClick={deleteProfilePicture}
+                    className="px-3 py-1.5 text-sm text-red-600 bg-red-50 border border-red-200 rounded hover:bg-red-100 transition-colors"
+                  >
+                    Reset to Default
+                  </button>
+                </div>
+                <input
+                  type="text"
+                  value={editForm.profile_pic}
+                  onChange={(e) => setEditForm({ ...editForm, profile_pic: e.target.value })}
+                  className="w-full mt-2 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900 text-sm"
+                  placeholder="Profile picture URL (optional)"
+                />
+              </div>
+            </div>
+
+            {/* Info Box */}
+            <div className="bg-blue-50 border border-blue-200 rounded-md p-4 mb-6">
+              <p className="text-blue-800 text-sm">
+                <strong>Note:</strong> Only modified fields will be updated. If no changes are made, the user data will remain the same.
+              </p>
+            </div>
+
+            {/* Action Buttons */}
+            <div className="flex gap-3 justify-end">
+              <button
+                onClick={cancelEdit}
+                disabled={isUpdating}
+                className="px-4 py-2 text-gray-600 bg-gray-100 rounded hover:bg-gray-200 transition-colors disabled:opacity-50"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={confirmUpdateUser}
+                disabled={isUpdating}
+                className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 transition-colors disabled:opacity-50 flex items-center gap-2"
+              >
+                {isUpdating ? (
+                  <>
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                    Updating...
+                  </>
+                ) : (
+                  'Save Changes'
                 )}
               </button>
             </div>
