@@ -389,8 +389,6 @@ function EditProblemContent() {
       }
       
       if (response.success) {
-        alert(`Question ${isEditMode ? 'updated' : 'saved'} successfully!`);
-        
         if (exitAfter) {
           router.push('/admin');
         } else {
@@ -939,25 +937,14 @@ function EditProblemContent() {
               Cancel
             </button>
             
-            <div className="flex gap-3">
-              <button
-                type="button"
-                onClick={() => handleSave(false)}
-                disabled={isSaving}
-                className="px-6 py-2 border-2 border-purple-500 text-purple-500 rounded-md hover:bg-purple-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                {isSaving ? 'Saving...' : 'Save'}
-              </button>
-              
-              <button
-                type="button"
-                onClick={() => handleSave(true)}
-                disabled={isSaving}
-                className="px-6 py-2 bg-purple-500 text-white rounded-md hover:bg-purple-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                {isSaving ? 'Saving...' : 'Save & Exit'}
-              </button>
-            </div>
+            <button
+              type="button"
+              onClick={() => handleSave(true)}
+              disabled={isSaving}
+              className="px-6 py-2 bg-purple-500 text-white rounded-md hover:bg-purple-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {isSaving ? 'Saving...' : 'Save & Exit'}
+            </button>
           </div>
         </div>
       </div>
