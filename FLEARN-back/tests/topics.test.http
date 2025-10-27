@@ -1,0 +1,213 @@
+### FLEARN Topics API Test Suite
+### Use REST Client extension in VS Code to run these tests
+
+@baseUrl = http://localhost:8099
+@token = YOUR_JWT_TOKEN_HERE
+@subjectId = 1
+@topicId = 1
+
+### ============================================
+### 1. Health Check
+### ============================================
+GET {{baseUrl}}/health
+
+### ============================================
+### 2. Get All Topics
+### ============================================
+GET {{baseUrl}}/api/topics
+
+### ============================================
+### 3. Get Topics with Filters
+### ============================================
+GET {{baseUrl}}/api/topics?subject_id={{subjectId}}&status=public
+
+### ============================================
+### 4. Get Topics with Pagination
+### ============================================
+GET {{baseUrl}}/api/topics?limit=10&offset=0
+
+### ============================================
+### 5. Get Topics by Subject ID
+### ============================================
+GET {{baseUrl}}/api/topics/subject/{{subjectId}}
+
+### ============================================
+### 6. Get Topic by ID
+### ============================================
+GET {{baseUrl}}/api/topics/{{topicId}}
+
+### ============================================
+### 7. Get Topic by Non-existent ID
+### Should return 404 error
+### ============================================
+GET {{baseUrl}}/api/topics/99999
+
+### ============================================
+### 8. Get Topic Statistics
+### ============================================
+GET {{baseUrl}}/api/topics/{{topicId}}/statistics
+
+### ============================================
+### 9. Create New Topic
+### Requires Authentication
+### ============================================
+POST {{baseUrl}}/api/topics
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "subject_id": 1,
+  "name": "Test Topic - Calculus Advanced",
+  "description": "Advanced calculus concepts and applications",
+  "status": "public"
+}
+
+### ============================================
+### 10. Create Topic - Missing Required Fields
+### Should return 400 error
+### ============================================
+POST {{baseUrl}}/api/topics
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "description": "Missing subject_id and name"
+}
+
+### ============================================
+### 11. Create Topic - Invalid Status
+### Should return 400 error
+### ============================================
+POST {{baseUrl}}/api/topics
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "subject_id": 1,
+  "name": "Invalid Status Topic",
+  "status": "invalid_status"
+}
+
+### ============================================
+### 12. Create Topic - Duplicate Name for Subject
+### Should return 400 error (unique constraint)
+### ============================================
+POST {{baseUrl}}/api/topics
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "subject_id": 1,
+  "name": "Calculus - L'Hôpital",
+  "description": "Duplicate topic name"
+}
+
+### ============================================
+### 13. Create Private Topic
+### Requires Authentication
+### ============================================
+POST {{baseUrl}}/api/topics
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "subject_id": 2,
+  "name": "Private Physics Topic",
+  "description": "This is a private topic for testing",
+  "status": "private"
+}
+
+### ============================================
+### 14. Update Topic
+### Requires Authentication
+### Replace topicId with actual ID
+### ============================================
+PUT {{baseUrl}}/api/topics/{{topicId}}
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "name": "Updated Topic Name",
+  "description": "Updated description for this topic",
+  "status": "public"
+}
+
+### ============================================
+### 15. Update Topic - Partial Update
+### Requires Authentication
+### ============================================
+PUT {{baseUrl}}/api/topics/{{topicId}}
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "description": "Only updating description"
+}
+
+### ============================================
+### 16. Update Non-existent Topic
+### Should return 404 error
+### ============================================
+PUT {{baseUrl}}/api/topics/99999
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "name": "Does not exist"
+}
+
+### ============================================
+### 17. Delete Topic
+### Requires Authentication
+### USE WITH CAUTION
+### ============================================
+# DELETE {{baseUrl}}/api/topics/{{topicId}}
+# Authorization: Bearer {{token}}
+
+### ============================================
+### 18. Delete Non-existent Topic
+### Should return 404 error
+### ============================================
+# DELETE {{baseUrl}}/api/topics/99999
+# Authorization: Bearer {{token}}
+
+### ============================================
+### EXAMPLE TEST FLOW
+### ============================================
+
+### Step 1: Get all subjects to choose from
+GET {{baseUrl}}/api/questions/subjects
+
+### Step 2: Create a new topic
+POST {{baseUrl}}/api/topics
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "subject_id": 1,
+  "name": "Test Topic - Integration",
+  "description": "Integration techniques and applications",
+  "status": "public"
+}
+
+### Step 3: Get the newly created topic (use ID from response)
+GET {{baseUrl}}/api/topics/1
+
+### Step 4: Get all topics for the subject
+GET {{baseUrl}}/api/topics/subject/1
+
+### Step 5: Update the topic
+# PUT {{baseUrl}}/api/topics/1
+# Content-Type: application/json
+# Authorization: Bearer {{token}}
+#
+# {
+#   "description": "Updated integration description"
+# }
+
+### Step 6: Get topic statistics
+GET {{baseUrl}}/api/topics/1/statistics
+
+### Step 7: Delete the topic (if needed)
+# DELETE {{baseUrl}}/api/topics/1
+# Authorization: Bearer {{token}}
