@@ -1,0 +1,159 @@
+### FLEARN Friends API Test Suite
+### Use REST Client extension in VS Code to run these tests
+
+@baseUrl = http://localhost:8099
+@token = YOUR_JWT_TOKEN_HERE
+@userId = YOUR_USER_UUID_HERE
+@friendUserId = FRIEND_USER_UUID_HERE
+@friendshipId = 1
+
+### ============================================
+### 1. Health Check
+### ============================================
+GET {{baseUrl}}/health
+
+### ============================================
+### 2. Get All Friends (Current User)
+### Requires Authentication
+### ============================================
+GET {{baseUrl}}/api/friends
+Authorization: Bearer {{token}}
+
+### ============================================
+### 3. Get Friends for Specific User
+### Requires Authentication
+### ============================================
+GET {{baseUrl}}/api/friends/user/{{userId}}
+Authorization: Bearer {{token}}
+
+### ============================================
+### 4. Send Friend Request
+### Requires Authentication
+### ============================================
+POST {{baseUrl}}/api/friends/request
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "friend_user_id": "{{friendUserId}}"
+}
+
+### ============================================
+### 5. Send Friend Request - Missing Friend ID
+### Should return 400 error
+### ============================================
+POST {{baseUrl}}/api/friends/request
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+}
+
+### ============================================
+### 6. Send Friend Request - Add Self
+### Should return 400 error
+### ============================================
+POST {{baseUrl}}/api/friends/request
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "friend_user_id": "{{userId}}"
+}
+
+### ============================================
+### 7. Send Duplicate Friend Request
+### Should return 409 error
+### ============================================
+POST {{baseUrl}}/api/friends/request
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "friend_user_id": "{{friendUserId}}"
+}
+
+### ============================================
+### 8. Accept Friend Request
+### Requires Authentication
+### Replace friendshipId with actual row_id
+### ============================================
+PATCH {{baseUrl}}/api/friends/{{friendshipId}}/status
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "status": "accepted"
+}
+
+### ============================================
+### 9. Reject Friend Request
+### Requires Authentication
+### ============================================
+PATCH {{baseUrl}}/api/friends/{{friendshipId}}/status
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "status": "blocked"
+}
+
+### ============================================
+### 10. Update Friend Request - Invalid Status
+### Should return 400 error
+### ============================================
+PATCH {{baseUrl}}/api/friends/{{friendshipId}}/status
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "status": "invalid"
+}
+
+### ============================================
+### 11. Remove Friend
+### Requires Authentication
+### ============================================
+DELETE {{baseUrl}}/api/friends/{{friendshipId}}
+Authorization: Bearer {{token}}
+
+### ============================================
+### 12. Remove Non-existent Friend
+### Should return 404 error
+### ============================================
+DELETE {{baseUrl}}/api/friends/99999
+Authorization: Bearer {{token}}
+
+### ============================================
+### EXAMPLE TEST FLOW
+### ============================================
+
+### Step 1: Send a friend request
+POST {{baseUrl}}/api/friends/request
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "friend_user_id": "{{friendUserId}}"
+}
+
+### Step 2: View all friends/requests
+GET {{baseUrl}}/api/friends
+Authorization: Bearer {{token}}
+
+### Step 3: Accept the request (use row_id from response)
+# PATCH {{baseUrl}}/api/friends/1/status
+# Content-Type: application/json
+# Authorization: Bearer {{token}}
+#
+# {
+#   "status": "accepted"
+# }
+
+### Step 4: View updated friends list
+GET {{baseUrl}}/api/friends
+Authorization: Bearer {{token}}
+
+### Step 5: Remove friend
+# DELETE {{baseUrl}}/api/friends/1
+# Authorization: Bearer {{token}}
