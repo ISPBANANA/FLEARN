@@ -171,36 +171,6 @@ class Question {
                     partialScore = isCorrect ? question.points : 0;
                     break;
                 
-                // Multi-Select
-                case 'multi_select':
-                    correctAnswers = question.content.options
-                        .filter(opt => opt.is_correct)
-                        .map(opt => opt.id);
-                    
-                    const selectedSet = new Set(userAnswer.selected_options || []);
-                    const correctSet = new Set(correctAnswers);
-                    
-                    // Perfect match
-                    isCorrect = selectedSet.size === correctSet.size && 
-                               [...selectedSet].every(x => correctSet.has(x));
-                    
-                    // Partial credit calculation
-                    if (question.content.partial_credit) {
-                        const correctSelected = [...selectedSet].filter(x => correctSet.has(x)).length;
-                        const incorrectSelected = selectedSet.size - correctSelected;
-                        const totalCorrect = correctSet.size;
-                        
-                        // Score = (correct selections / total correct) * points
-                        // Penalty for wrong selections
-                        partialScore = Math.max(0, 
-                            ((correctSelected / totalCorrect) - (incorrectSelected * 0.2)) * question.points
-                        );
-                        partialScore = Math.floor(partialScore);
-                    } else {
-                        partialScore = isCorrect ? question.points : 0;
-                    }
-                    break;
-                
                 // Fill in the Blank
                 case 'fill_blank':
                     const blank = question.content.blanks[0];
@@ -214,29 +184,6 @@ class Question {
                     
                     partialScore = isCorrect ? question.points : 0;
                     break;
-                
-                // Essay (Cannot auto-validate)
-                case 'essay':
-                    isCorrect = null;
-                    partialScore = 0;
-                    
-                    // Check word count
-                    const wordCount = userAnswer.text_answer?.split(/\s+/).length || 0;
-                    const meetsWordLimit = wordCount >= (question.content.word_limit?.min || 0) &&
-                                          wordCount <= (question.content.word_limit?.max || Infinity);
-                    
-                    return {
-                        isCorrect: null,
-                        correctAnswers: null,
-                        explanation: question.content.explanation,
-                        pointsEarned: 0,
-                        pointsPossible: question.points,
-                        requiresManualGrading: true,
-                        wordCount,
-                        meetsWordLimit,
-                        keywords: question.content.keywords,
-                        sampleAnswer: question.content.sample_answer
-                    };
                 
                 // Matching
                 case 'matching':
