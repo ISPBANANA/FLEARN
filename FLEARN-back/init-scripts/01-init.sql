@@ -114,7 +114,6 @@ CREATE TABLE question (
 
 COMMENT ON COLUMN question.mongo_content_id IS 'MongoDB ObjectId reference to question_contents collection';
 COMMENT ON COLUMN question.difficulty IS 'Question difficulty level from 1 (easiest) to 5 (hardest)';
-COMMENT ON COLUMN question.time_limit IS 'Time limit for answering the question in seconds';
 COMMENT ON COLUMN question.status IS 'Question visibility: private (only creator can see) or public (visible to all)';
 
 -- ----------------------------------------------------------------------------
@@ -127,18 +126,6 @@ INSERT INTO subject (name, description) VALUES
     ('Physics', 'Physics and mechanics'),
     ('Biology', 'Life sciences and biology'),
     ('Chemistry', 'Chemistry and chemical reactions');
-
--- Insert topics
-INSERT INTO topic (subject_id, name, description, status) VALUES
-    ((SELECT subject_id FROM subject WHERE name = 'Mathematics'), 'Calculus - L''Hôpital', 'L''Hôpital''s rule and applications', 'public'),
-    ((SELECT subject_id FROM subject WHERE name = 'Mathematics'), 'Algebra - Linear Equations', 'Linear equations and systems', 'public'),
-    ((SELECT subject_id FROM subject WHERE name = 'Mathematics'), 'Geometry - Triangles', 'Triangle properties and theorems', 'public'),
-    ((SELECT subject_id FROM subject WHERE name = 'Physics'), 'Mechanics - Newton''s Laws', 'Newton''s laws of motion', 'public'),
-    ((SELECT subject_id FROM subject WHERE name = 'Physics'), 'Thermodynamics - Heat Transfer', 'Heat transfer and thermodynamic processes', 'public'),
-    ((SELECT subject_id FROM subject WHERE name = 'Biology'), 'Cell Biology - Organelles', 'Cell structure and organelles', 'public'),
-    ((SELECT subject_id FROM subject WHERE name = 'Biology'), 'Genetics - DNA', 'DNA structure and function', 'public'),
-    ((SELECT subject_id FROM subject WHERE name = 'Chemistry'), 'Organic Chemistry - Hydrocarbons', 'Hydrocarbon compounds and reactions', 'public'),
-    ((SELECT subject_id FROM subject WHERE name = 'Chemistry'), 'Inorganic Chemistry - Periodic Table', 'Periodic table and element properties', 'public');
 
 -- Insert question types
 INSERT INTO question_type (type_name, description) VALUES
