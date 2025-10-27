@@ -7,7 +7,7 @@ class Question {
     // Create a new question
     // ============================================
     static async create(questionData) {
-        const { subject_id, topic_id, type_name, difficulty, points, time_limit, status, content, created_by } = questionData;
+        const { subject_id, topic_id, type_name, difficulty, points, status, content, created_by } = questionData;
         
         try {
             // 1. Insert content into MongoDB
@@ -34,10 +34,10 @@ class Question {
             
             // 3. Insert metadata into PostgreSQL
             const pgResult = await pgPool.query(
-                `INSERT INTO question (subject_id, topic_id, mongo_content_id, type_id, difficulty, points, time_limit, status, created_by)
-                 VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+                `INSERT INTO question (subject_id, topic_id, mongo_content_id, type_id, difficulty, points, status, created_by)
+                 VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
                  RETURNING *`,
-                [subject_id, topic_id || null, mongo_content_id, type_id, difficulty, points || 10, time_limit, status || 'private', created_by]
+                [subject_id, topic_id || null, mongo_content_id, type_id, difficulty, points || 10, status || 'private', created_by]
             );
             
             return { 
@@ -93,16 +93,16 @@ class Question {
     // Get questions with filters
     // ============================================
     static async getAll(filters = {}) {
-        const { subject_id, topic_id, type, type_name, difficulty, status, limit = 10, offset = 0 } = filters;
+        const { subject_id, topic_id, type, type_name, difficulty, status, created_by, limit = 10, offset = 0 } = filters;
         
         // Accept both 'type' and 'type_name' parameters (type is alias for type_name)
         const questionType = type_name || type;
         
         try {
             let query = `
-                SELECT q.question_id, q.difficulty, q.points, q.time_limit, q.status,
+                SELECT q.question_id, q.difficulty, q.points, q.status,
                        qt.type_name, s.name as subject_name, t.name as topic_name,
-                       q.created_at
+                       q.created_at, q.created_by
                 FROM question q
                 JOIN question_type qt ON q.type_id = qt.type_id
                 JOIN subject s ON q.subject_id = s.subject_id
@@ -134,6 +134,11 @@ class Question {
             if (status) {
                 params.push(status);
                 query += ` AND q.status = $${params.length}`;
+            }
+            
+            if (created_by) {
+                params.push(created_by);
+                query += ` AND q.created_by = $${params.length}`;
             }
             
             params.push(limit, offset);
@@ -204,24 +209,12 @@ class Question {
                     break;
             }
             
-            // Calculate time bonus (if answered quickly)
-            let timeBonus = 0;
-            if (isCorrect && userAnswer.time_taken && question.time_limit) {
-                const timeRatio = userAnswer.time_taken / question.time_limit;
-                if (timeRatio < 0.5) {
-                    timeBonus = Math.floor(partialScore * 0.5); // 50% bonus for fast answers
-                } else if (timeRatio < 0.75) {
-                    timeBonus = Math.floor(partialScore * 0.25); // 25% bonus
-                }
-            }
-            
             return {
                 isCorrect,
                 correctAnswers,
                 explanation: question.content.explanation,
-                pointsEarned: partialScore + timeBonus,
+                pointsEarned: partialScore,
                 pointsPossible: question.points,
-                timeBonus,
                 media: question.content.media || []
             };
         } catch (error) {
@@ -234,7 +227,7 @@ class Question {
     // Update question
     // ============================================
     static async update(question_id, updates) {
-        const { difficulty, points, time_limit, topic_id, status, content, is_active } = updates;
+        const { difficulty, points, topic_id, status, content, is_active } = updates;
         
         try {
             // Validate status if provided
@@ -266,10 +259,6 @@ class Question {
             if (points !== undefined) {
                 fields.push(`points = $${paramCount++}`);
                 values.push(points);
-            }
-            if (time_limit !== undefined) {
-                fields.push(`time_limit = $${paramCount++}`);
-                values.push(time_limit);
             }
             if (topic_id !== undefined) {
                 fields.push(`topic_id = $${paramCount++}`);

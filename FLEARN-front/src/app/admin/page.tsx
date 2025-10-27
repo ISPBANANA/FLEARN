@@ -51,6 +51,18 @@ interface Subject {
   isExpanded: boolean;
 }
 
+interface Question {
+  question_id: string;
+  type_name: string;
+  subject_name: string;
+  topic_name: string;
+  difficulty: number;
+  points: number;
+  status: 'public' | 'private';
+  user_id: string;
+  created_by_name?: string;
+}
+
 export default function AdminPage() {
   const { isAuthenticated, isLoading: authLoading } = useAuth();
   const { profile, isLoading: profileLoading, refetchProfile } = useUserProfile();
@@ -82,6 +94,14 @@ export default function AdminPage() {
   const [isLoadingSubjects, setIsLoadingSubjects] = useState(false);
   const [subjectsError, setSubjectsError] = useState<string | null>(null);
   const [lastSubjectsRefresh, setLastSubjectsRefresh] = useState<Date | null>(null);
+
+  // Questions Management States
+  const [questions, setQuestions] = useState<Question[]>([]);
+  const [isLoadingQuestions, setIsLoadingQuestions] = useState(false);
+  const [questionsError, setQuestionsError] = useState<string | null>(null);
+  const [lastQuestionsRefresh, setLastQuestionsRefresh] = useState<Date | null>(null);
+  const [questionsSearchTerm, setQuestionsSearchTerm] = useState('');
+  const [filteredQuestions, setFilteredQuestions] = useState<Question[]>([]);
   const [newTopicDialog, setNewTopicDialog] = useState<{
     isOpen: boolean;
     subjectId: number | null;
@@ -121,6 +141,17 @@ export default function AdminPage() {
     const interval = setInterval(() => {
       if (isAuthenticated && profile && (profile.role === 'admin' || profile.role === 'teacher')) {
         fetchSubjects();
+      }
+    }, 60000); // 60 seconds
+
+    return () => clearInterval(interval);
+  }, [isAuthenticated, profile]);
+
+  // Auto-refresh questions every 60 seconds
+  useEffect(() => {
+    const interval = setInterval(() => {
+      if (isAuthenticated && profile && (profile.role === 'admin' || profile.role === 'teacher')) {
+        fetchQuestions();
       }
     }, 60000); // 60 seconds
 
@@ -178,9 +209,65 @@ export default function AdminPage() {
     }
   };
 
+  // Fetch questions function
+  const fetchQuestions = async () => {
+    try {
+      setIsLoadingQuestions(true);
+      setQuestionsError(null);
+      const response = await questionsAPI.getQuestions();
+      setQuestions(response.data || []);
+      setLastQuestionsRefresh(new Date());
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'Failed to fetch questions';
+      setQuestionsError(errorMessage);
+      console.error('Error fetching questions:', err);
+    } finally {
+      setIsLoadingQuestions(false);
+    }
+  };
+
   // Manual refresh subjects
   const handleManualSubjectsRefresh = () => {
     fetchSubjects();
+  };
+
+  // Manual refresh questions
+  const handleManualQuestionsRefresh = () => {
+    fetchQuestions();
+  };
+
+  // Handle question status change
+  const handleQuestionStatusChange = async (questionId: string, newStatus: 'public' | 'private') => {
+    try {
+      await questionsAPI.updateQuestionStatus(questionId, newStatus);
+      
+      // Update local state
+      setQuestions(questions.map(question =>
+        question.question_id === questionId ? { ...question, status: newStatus } : question
+      ));
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'Failed to update question status';
+      alert(`Error: ${errorMessage}`);
+      console.error('Error updating question status:', err);
+    }
+  };
+
+  // Handle delete question
+  const handleDeleteQuestion = async (questionId: string) => {
+    if (!confirm('Are you sure you want to delete this question?')) {
+      return;
+    }
+
+    try {
+      await questionsAPI.deleteQuestion(questionId);
+      
+      // Remove question from local state
+      setQuestions(questions.filter(q => q.question_id !== questionId));
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'Failed to delete question';
+      alert(`Error deleting question: ${errorMessage}`);
+      console.error('Error deleting question:', err);
+    }
   };
 
   // Handle topic status change
@@ -503,6 +590,7 @@ export default function AdminPage() {
         // Fetch data on initial load
         fetchUsers();
         fetchSubjects();
+        fetchQuestions();
       }
     }
   }, [isAuthenticated, profile, authLoading, profileLoading]);
@@ -521,6 +609,22 @@ export default function AdminPage() {
       setFilteredUsers(filtered);
     }
   }, [users, searchTerm]);
+
+  // Filter questions based on search term
+  useEffect(() => {
+    if (!questionsSearchTerm.trim()) {
+      setFilteredQuestions(questions);
+    } else {
+      const filtered = questions.filter(question => 
+        question.question_id?.toLowerCase().includes(questionsSearchTerm.toLowerCase()) ||
+        question.subject_name?.toLowerCase().includes(questionsSearchTerm.toLowerCase()) ||
+        question.topic_name?.toLowerCase().includes(questionsSearchTerm.toLowerCase()) ||
+        question.type_name?.toLowerCase().includes(questionsSearchTerm.toLowerCase()) ||
+        question.created_by_name?.toLowerCase().includes(questionsSearchTerm.toLowerCase())
+      );
+      setFilteredQuestions(filtered);
+    }
+  }, [questions, questionsSearchTerm]);
 
   // Toggle subject expansion
   const toggleSubject = (subjectId: number) => {
@@ -917,6 +1021,134 @@ export default function AdminPage() {
                   </div>
                 );
               })}
+            </div>
+          </div>
+        )}
+
+        {/* Questions Management */}
+        {(profile?.role === 'admin' || profile?.role === 'teacher') && (
+          <div className="w-full max-w-[1320px] h-[500px] items-center flex flex-col px-25 py-2 rounded-lg mt-8" style={{boxShadow: '0px 0px 5px rgba(0, 0, 0, 0.25)' }}>
+            {/* header */}
+            <div className="w-full flex flex-row justify-between items-center mb-4 my-4 w-full">
+              <div className="flex flex-col">
+                <h2 className="text-2xl font-bold text-[#454545]">Problems Management</h2>
+                {lastQuestionsRefresh && (
+                  <p className="text-sm text-gray-500">
+                    Last updated: {lastQuestionsRefresh.toLocaleTimeString()}
+                  </p>
+                )}
+              </div>
+              <div className="flex flex-row gap-4 items-center">
+                {/* Add Problems Button */}
+                <button 
+                  className="bg-purple-500 text-white py-1 px-4 rounded hover:bg-purple-600 transition flex items-center gap-2"
+                >
+                  <Edit size={16} />
+                  Add Problems
+                </button>
+                {/* Manual Refresh Button */}
+                <button 
+                  onClick={handleManualQuestionsRefresh}
+                  disabled={isLoadingQuestions}
+                  className="bg-white border border-blue-400 text-blue-800 py-1 px-4 rounded hover:border-blue-500 transition disabled:opacity-50 flex items-center gap-2"
+                >
+                  <RefreshCw size={16} className={isLoadingQuestions ? 'animate-spin' : ''} />
+                  Refresh
+                </button>
+                {/* Search bar */}
+                <input
+                  type="text"
+                  placeholder="Search questions..."
+                  value={questionsSearchTerm}
+                  onChange={(e) => setQuestionsSearchTerm(e.target.value)}
+                  className="border border-gray-300 rounded px-4 py-1 w-60 focus:outline-none focus:ring-2 focus:ring-purple-500 text-[#454545]"
+                />
+              </div>
+            </div>
+
+            {/* Error Display */}
+            {questionsError && (
+              <div className="w-full mb-4 p-3 bg-red-100 border border-red-400 text-red-700 rounded">
+                Error: {questionsError}
+              </div>
+            )}
+
+            {/* Show */}
+            <div className="flex flex-col overflow-y-auto w-full h-max-[400px] gap-1">
+              {/* Table Header */}
+              <div className="grid gap-4 py-1 px-4 m-1 bg-gray-50 border-b border-gray-200 font-semibold text-gray-700 rounded-lg" style={{gridTemplateColumns: '2fr 1.5fr 1.5fr 1fr 1fr 1fr 1fr', boxShadow: '0px 0px 5px rgba(0, 0, 0, 0.25)' }}>
+                <div className="text-left">UUID</div>
+                <div className="text-left">Subject</div>
+                <div className="text-left">Topic</div>
+                <div className="text-left">Type</div>
+                <div className="text-center">Difficulty</div>
+                <div className="text-center">Status</div>
+                <div className="text-center">Actions</div>
+              </div>
+
+              {/* Loading State */}
+              {isLoadingQuestions && (
+                <div className="flex justify-center items-center py-8">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-purple-500"></div>
+                  <span className="ml-2 text-gray-600">Loading questions...</span>
+                </div>
+              )}
+
+              {/* Questions Data */}
+              {!isLoadingQuestions && filteredQuestions.length === 0 && !questionsError && (
+                <div className="text-center py-8 text-gray-500">
+                  {questionsSearchTerm ? 'No questions found matching your search.' : 'No questions found.'}
+                </div>
+              )}
+
+              {!isLoadingQuestions && filteredQuestions.map((question) => (
+                <div key={question.question_id} className="grid gap-4 py-1 px-4 m-1 border-b border-gray-100 hover:bg-gray-50 rounded-lg" style={{gridTemplateColumns: '2fr 1.5fr 1.5fr 1fr 1fr 1fr 1fr', boxShadow: '0px 0px 5px rgba(0, 0, 0, 0.25)' }}>
+                  <div
+                    className="text-gray-900 flex items-center relative overflow-hidden whitespace-nowrap"
+                    title={question.question_id}
+                    style={{
+                      background: 'linear-gradient(to right, currentColor 0%, currentColor 70%, transparent 100%)',
+                      WebkitBackgroundClip: 'text',
+                      backgroundClip: 'text',
+                      WebkitTextFillColor: 'transparent'
+                    }}
+                  >
+                    <span className="text-gray-900">{question.question_id}</span>
+                    <div className="absolute right-0 top-0 bottom-0 w-8 bg-gradient-to-l from-white to-transparent pointer-events-none"></div>
+                  </div>
+                  <div className="text-gray-900 flex items-center">{question.subject_name || 'N/A'}</div>
+                  <div className="text-gray-900 flex items-center">{question.topic_name || 'N/A'}</div>
+                  <div className="text-gray-900 flex items-center">{question.type_name || 'N/A'}</div>
+                  <div className="text-gray-900 flex items-center justify-center">
+                    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                      {question.difficulty}
+                    </span>
+                  </div>
+                  <div className="flex items-center justify-center">
+                    <button
+                      onClick={() => {
+                        const newStatus = question.status === 'public' ? 'private' : 'public';
+                        handleQuestionStatusChange(question.question_id, newStatus);
+                      }}
+                      className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium cursor-pointer transition-colors ${
+                        question.status === 'public' 
+                          ? 'bg-green-100 text-green-800 hover:bg-green-200' 
+                          : 'bg-gray-100 text-gray-800 hover:bg-gray-200'
+                      }`}
+                    >
+                      {question.status === 'public' ? 'Public' : 'Private'}
+                    </button>
+                  </div>
+                  <div className="flex gap-2 items-center justify-center">
+                    <button 
+                      onClick={() => handleDeleteQuestion(question.question_id)}
+                      className="text-red-500 hover:text-red-600 p-2 rounded transition-colors flex items-center justify-center"
+                    >
+                      <Trash2 size={20} />
+                    </button>
+                  </div>
+                </div>
+              ))}
             </div>
           </div>
         )}

@@ -635,6 +635,44 @@ export const questionsAPI = {
       method: 'DELETE',
     });
   },
+
+  // Get all questions (with optional filters)
+  async getQuestions(filters?: {
+    subject_id?: number;
+    topic_id?: number;
+    type?: string;
+    difficulty?: number;
+    status?: 'public' | 'private';
+    limit?: number;
+    offset?: number;
+  }) {
+    const params = new URLSearchParams();
+    if (filters?.subject_id) params.append('subject_id', filters.subject_id.toString());
+    if (filters?.topic_id) params.append('topic_id', filters.topic_id.toString());
+    if (filters?.type) params.append('type', filters.type);
+    if (filters?.difficulty) params.append('difficulty', filters.difficulty.toString());
+    if (filters?.status) params.append('status', filters.status);
+    if (filters?.limit) params.append('limit', filters.limit.toString());
+    if (filters?.offset) params.append('offset', filters.offset.toString());
+    
+    const queryString = params.toString();
+    return apiCall(`/api/questions${queryString ? `?${queryString}` : ''}`);
+  },
+
+  // Update question status (admin/teacher only)
+  async updateQuestionStatus(questionId: string, status: 'public' | 'private') {
+    return apiCall(`/api/questions/${questionId}`, {
+      method: 'PUT',
+      body: JSON.stringify({ status }),
+    });
+  },
+
+  // Delete question (admin/teacher only)
+  async deleteQuestion(questionId: string) {
+    return apiCall(`/api/questions/${questionId}`, {
+      method: 'DELETE',
+    });
+  },
 };
 
 // Enhanced health check with CORS detection
