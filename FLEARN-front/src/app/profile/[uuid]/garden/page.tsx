@@ -361,7 +361,7 @@ export default function garden({ params }: ProfilePageProps) {
                   <p className="text-2xl font-semibold mb-4 text-center text-[#454545]">{garden.partner_name}</p>
                   <div className="flex flex-col items-center gap-2">
                     <Image
-                      src="/garden/plant1.png"
+                      src={`/garden/tree${Math.min(Math.floor(garden.streak / 30) + 1, 6)}.png`}
                       alt="Garden Plant"
                       width={140}
                       height={140}
