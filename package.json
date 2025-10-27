@@ -21,6 +21,10 @@
   "dependencies": {
     "@types/node": "^24.5.1",
     "@types/react": "^19.1.13",
+    "katex": "^0.16.25",
+    "react-markdown": "^10.1.0",
+    "rehype-katex": "^7.0.1",
+    "remark-math": "^6.0.0",
     "typescript": "^5.9.2"
   }
 }
