@@ -30,8 +30,8 @@ router.post('/', checkJwt, async (req, res) => {
     try {
         const { subject_id, topic_id, type_name, difficulty, points, status, content } = req.body;
         
-        // Basic validation
-        if (!subject_id || !type_name || !difficulty || !content) {
+        // Basic validation - use explicit undefined/null checks for numeric fields
+        if (!subject_id || !type_name || difficulty === undefined || difficulty === null || !content) {
             return res.status(400).json({
                 success: false,
                 error: 'Missing required fields: subject_id, type_name, difficulty, content'

@@ -302,6 +302,19 @@ function EditProblemContent() {
       return;
     }
 
+    // Debug: Log current state before validation
+    console.log('Current form state:', {
+      subjectId,
+      topicId,
+      questionType,
+      difficulty,
+      status,
+      questionText: questionText.substring(0, 50) + '...',
+      hasOptions: options.length > 0,
+      trueFalseAnswer,
+      fillBlankAnswer
+    });
+
     // Validate based on question type
     if (questionType === 'multiple_choice') {
       const hasCorrectAnswer = options.some(opt => opt.isCorrect);
@@ -379,6 +392,30 @@ function EditProblemContent() {
         status: status,
         content: content
       };
+
+      // Validate parsed values
+      if (isNaN(questionData.subject_id)) {
+        alert('Invalid subject ID. Please select a subject again.');
+        return;
+      }
+
+      if (questionData.topic_id !== undefined && isNaN(questionData.topic_id)) {
+        console.warn('Invalid topic_id, setting to undefined');
+        questionData.topic_id = undefined;
+      }
+
+      // Debug: Log the data being sent
+      console.log('Saving question with data:', {
+        subject_id: questionData.subject_id,
+        topic_id: questionData.topic_id,
+        type_name: questionData.type_name,
+        difficulty: questionData.difficulty,
+        points: questionData.points,
+        status: questionData.status,
+        content: questionData.content,
+        isEditMode,
+        questionId
+      });
 
       // Call API to create or update question
       let response;
@@ -541,16 +578,16 @@ function EditProblemContent() {
             {/* Difficulty */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                <span className="text-red-500">*</span> Difficulty (0-10) :
+                <span className="text-red-500">*</span> Difficulty (1-10) :
               </label>
               <input
                 type="number"
-                min="0"
+                min="1"
                 max="10"
                 value={difficulty}
                 onChange={(e) => {
                   const val = parseInt(e.target.value);
-                  if (val >= 0 && val <= 10) {
+                  if (val >= 1 && val <= 10) {
                     setDifficulty(val);
                   }
                 }}
