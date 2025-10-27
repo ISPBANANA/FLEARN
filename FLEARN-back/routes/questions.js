@@ -14,7 +14,6 @@ const { checkJwt, optionalJwt } = require('../middleware/auth');
 //   "type_name": "multiple_choice",
 //   "difficulty": 2,
 //   "points": 10,
-//   "time_limit": 60,
 //   "status": "public",  // Optional - "private" (default) or "public"
 //   "content": {
 //     "question_text": "What is 2+2?",
@@ -29,7 +28,7 @@ const { checkJwt, optionalJwt } = require('../middleware/auth');
 // ============================================
 router.post('/', checkJwt, async (req, res) => {
     try {
-        const { subject_id, topic_id, type_name, difficulty, points, time_limit, status, content } = req.body;
+        const { subject_id, topic_id, type_name, difficulty, points, status, content } = req.body;
         
         // Basic validation
         if (!subject_id || !type_name || !difficulty || !content) {
@@ -94,7 +93,6 @@ router.post('/', checkJwt, async (req, res) => {
             type_name,
             difficulty,
             points,
-            time_limit,
             status,
             content,
             created_by: req.user.user_id || req.user.sub
@@ -243,7 +241,6 @@ router.get('/:id', async (req, res) => {
                 topic: question.topic_name,
                 difficulty: question.difficulty,
                 points: question.points,
-                time_limit: question.time_limit,
                 status: question.status,
                 ...sanitizedContent
             }
@@ -337,7 +334,6 @@ router.post('/:id/validate', async (req, res) => {
 // Body: {
 //   "difficulty": 3,
 //   "points": 15,
-//   "time_limit": 90,
 //   "topic_id": 2,  // Optional - update topic
 //   "status": "public",  // Optional - change visibility
 //   "content": {

@@ -105,7 +105,6 @@ CREATE TABLE question (
     type_id INT REFERENCES question_type(type_id),
     difficulty INT CHECK (difficulty BETWEEN 1 AND 5),
     points INT DEFAULT 10,
-    time_limit INT,
     status TEXT DEFAULT 'private' CHECK (status IN ('private', 'public')),
     created_by UUID REFERENCES "user"(user_id) ON DELETE SET NULL,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
