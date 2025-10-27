@@ -122,8 +122,6 @@ CREATE TABLE question_type (
 INSERT INTO question_type (type_name, description) VALUES
     ('multiple_choice', 'Single correct answer from 2-10 options'),
     ('true_false', 'Binary true or false question'),
-    ('multi_select', 'Multiple correct answers'),
-    ('essay', 'Free text answer'),
     ('fill_blank', 'Fill in the blank(s)'),
     ('matching', 'Match items from two lists');
 

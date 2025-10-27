@@ -17,7 +17,7 @@ db.createCollection('question_contents', {
             required: ["question_type", "question_text"],
             properties: {
                 question_type: {
-                    enum: ["multiple_choice", "true_false", "multi_select", "essay", "fill_blank", "matching"],
+                    enum: ["multiple_choice", "true_false", "fill_blank", "matching"],
                     description: "must be a valid question type"
                 },
                 question_text: {
