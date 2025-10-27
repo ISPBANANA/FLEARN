@@ -11,6 +11,7 @@ const { checkJwt, optionalJwt } = require('../middleware/auth');
 // Body: {
 //   "subject_id": 1,
 //   "category_id": 5,  // Optional - for additional categorization
+//   "topic_id": 1,  // Optional - assign to a topic
 //   "type_name": "multiple_choice",
 //   "difficulty": 2,
 //   "points": 10,
@@ -29,7 +30,7 @@ const { checkJwt, optionalJwt } = require('../middleware/auth');
 // ============================================
 router.post('/', checkJwt, async (req, res) => {
     try {
-        const { subject_id, category_id, type_name, difficulty, points, time_limit, status, content } = req.body;
+        const { subject_id, category_id, topic_id, type_name, difficulty, points, time_limit, status, content } = req.body;
         
         // Basic validation
         if (!subject_id || !type_name || !difficulty || !content) {
@@ -91,6 +92,7 @@ router.post('/', checkJwt, async (req, res) => {
         const question = await Question.create({
             subject_id,
             category_id,
+            topic_id,
             type_name,
             difficulty,
             points,
@@ -121,10 +123,11 @@ router.post('/', checkJwt, async (req, res) => {
 // GET /api/questions
 // GET /api/questions?subject_id=1
 // GET /api/questions?category_id=1
+// GET /api/questions?topic_id=1
 // GET /api/questions?type=multiple_choice
 // GET /api/questions?difficulty=2
 // GET /api/questions?status=public
-// GET /api/questions?subject_id=1&type=multiple_choice&difficulty=2&status=public&limit=5&offset=0
+// GET /api/questions?subject_id=1&topic_id=1&type=multiple_choice&difficulty=2&status=public&limit=5&offset=0
 // ============================================
 router.get('/', async (req, res) => {
     try {
@@ -265,6 +268,7 @@ router.get('/:id', async (req, res) => {
                 type: question.type_name,
                 subject: question.subject_name,
                 category: question.category_name,
+                topic: question.topic_name,
                 difficulty: question.difficulty,
                 points: question.points,
                 time_limit: question.time_limit,
