@@ -126,11 +126,17 @@ app.use((error, req, res, next) => {
 const userRoutes = require('./routes/users');
 const friendRoutes = require('./routes/friends');
 const gardenRoutes = require('./routes/gardens');
+const questionRoutes = require('./routes/questions');
+const topicRoutes = require('./routes/topics');
+const backlogRoutes = require('./routes/backlog');
 
 // Use routes
 app.use('/api/users', userRoutes);
 app.use('/api/friends', friendRoutes);
 app.use('/api/gardens', gardenRoutes);
+app.use('/api/questions', questionRoutes);
+app.use('/api/topics', topicRoutes);
+app.use('/api/backlog', backlogRoutes);
 
 // Basic route for testing
 app.get('/', (req, res) => {

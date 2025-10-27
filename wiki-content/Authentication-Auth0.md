@@ -580,24 +580,16 @@ The project includes comprehensive Auth0 testing scripts:
 
 #### Start Test Environment
 ```bash
-# Start complete Auth0 test environment
-./scripts/start-auth0-test.sh
+# Start the backend and database services with Docker
+docker compose up -d
 ```
 
 #### Test Auth0 Integration
 ```bash
-# Test Auth0 domain and JWT validation
-node ./scripts/test-auth0.js
-
-# Test token generation and API calls
-node ./scripts/test-auth0-token.js
-```
-
-#### Interactive Browser Testing
-```bash
-# Serve the interactive test page
-python3 -m http.server 8080 --directory scripts/
-# Then visit: http://localhost:[TEST_PORT]/auth0-test.html
+# Test the API with authentication
+# Use your frontend application or API testing tools like Postman/Insomnia
+curl -X GET http://localhost:8099/api/users/profile \
+  -H "Authorization: Bearer YOUR_AUTH0_TOKEN"
 ```
 
 ### Manual Testing Checklist

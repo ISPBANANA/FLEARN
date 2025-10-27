@@ -2,6 +2,7 @@ const express = require('express');
 const { pgPool } = require('../config/database');
 const { checkJwt, optionalJwt } = require('../middleware/auth');
 const { v4: uuidv4 } = require('uuid');
+const { checkAndResetUserStreak, calculateRank } = require('../middleware/streakHelper');
 
 const router = express.Router();
 
@@ -27,7 +28,9 @@ router.get('/profile', checkJwt, async (req, res) => {
             });
         }
         
-        const user = result.rows[0];
+        // Check and reset streak if needed (if uptime_streak - todayDate >= 2 days)
+        const user = await checkAndResetUserStreak(pgPool, result.rows[0].user_id);
+        
         res.json({
             message: 'User profile retrieved successfully',
             user: user
@@ -68,7 +71,9 @@ router.get('/profilebyid', checkJwt, async (req, res) => {
             });
         }
         
-        const user = result.rows[0];
+        // Check and reset streak if needed (if uptime_streak - todayDate >= 2 days)
+        const user = await checkAndResetUserStreak(pgPool, userId);
+        
         res.json({
             message: 'User profile retrieved successfully',
             user: user
@@ -294,8 +299,8 @@ router.post('/profile', checkJwt, async (req, res) => {
             const insertQuery = `
                 INSERT INTO "user" (
                     user_id, google_id, profile_pic, name, email, birthdate, edu_level,
-                    rank, streak, completed_task, daily_exp, math_exp, phy_exp, bio_exp, chem_exp
-                ) VALUES ($1, $2, $3, $4, $5, $6, $7, 'Beginner', 0, 0, 0, 0, 0, 0, 0)
+                    rank, streak, completed_task, daily_exp, math_exp, phy_exp, bio_exp, chem_exp, role
+                ) VALUES ($1, $2, $3, $4, $5, $6, $7, 'Beginner', 0, 0, 0, 0, 0, 0, 0, 'user')
                 RETURNING *
             `;
             
@@ -430,6 +435,28 @@ router.patch('/experience', checkJwt, async (req, res) => {
         const googleId = req.user.sub || req.user.id;
         const { daily_exp, math_exp, phy_exp, bio_exp, chem_exp } = req.body;
         
+        // First, get current user data
+        const getUserQuery = `SELECT * FROM "user" WHERE google_id = $1`;
+        const userResult = await pgPool.query(getUserQuery, [googleId]);
+        
+        if (userResult.rows.length === 0) {
+            return res.status(404).json({
+                error: 'User not found',
+                message: 'Please complete your profile setup first'
+            });
+        }
+        
+        const currentUser = userResult.rows[0];
+        
+        // Calculate new experience values
+        const newMathExp = math_exp !== undefined ? math_exp : currentUser.math_exp;
+        const newPhyExp = phy_exp !== undefined ? phy_exp : currentUser.phy_exp;
+        const newBioExp = bio_exp !== undefined ? bio_exp : currentUser.bio_exp;
+        const newChemExp = chem_exp !== undefined ? chem_exp : currentUser.chem_exp;
+        
+        // Calculate new rank based on total subject experience
+        const newRank = calculateRank(newMathExp, newPhyExp, newBioExp, newChemExp);
+        
         const updateQuery = `
             UPDATE "user" 
             SET daily_exp = COALESCE($1, daily_exp),
@@ -437,24 +464,18 @@ router.patch('/experience', checkJwt, async (req, res) => {
                 phy_exp = COALESCE($3, phy_exp),
                 bio_exp = COALESCE($4, bio_exp),
                 chem_exp = COALESCE($5, chem_exp),
+                rank = $6,
                 updated_at = NOW()
-            WHERE google_id = $6
+            WHERE google_id = $7
             RETURNING *
         `;
         
         const result = await pgPool.query(updateQuery, [
-            daily_exp, math_exp, phy_exp, bio_exp, chem_exp, googleId
+            daily_exp, math_exp, phy_exp, bio_exp, chem_exp, newRank, googleId
         ]);
         
-        if (result.rows.length === 0) {
-            return res.status(404).json({
-                error: 'User not found',
-                message: 'Please complete your profile setup first'
-            });
-        }
-        
         res.json({
-            message: 'Experience points updated successfully',
+            message: 'Experience points and rank updated successfully',
             user: result.rows[0]
         });
         
@@ -863,13 +884,23 @@ router.get('/username/:userId', async (req, res) => {
 // Get top 50 users with highest daily_exp (public route)
 // Usage Example:
 // GET /api/users/leaderboard
+// Note: Automatically shows 0 for daily_exp if user hasn't been updated today
 router.get('/leaderboard', async (req, res) => {
     try {
         const query = `
-            SELECT name, daily_exp 
+            SELECT 
+                name,
+                CASE 
+                    WHEN DATE(updated_at) = CURRENT_DATE THEN daily_exp
+                    ELSE 0
+                END as daily_exp
             FROM "user" 
             WHERE name IS NOT NULL 
-            ORDER BY daily_exp DESC 
+            ORDER BY 
+                CASE 
+                    WHEN DATE(updated_at) = CURRENT_DATE THEN daily_exp
+                    ELSE 0
+                END DESC
             LIMIT 50
         `;
         
@@ -886,6 +917,310 @@ router.get('/leaderboard', async (req, res) => {
         res.status(500).json({
             error: 'Internal server error',
             message: 'Failed to fetch leaderboard'
+        });
+    }
+});
+
+// Get all users for admin dashboard
+// Usage Example:
+// GET /api/users/admin/all?limit=50&offset=0
+// Headers: Authorization: Bearer <JWT_TOKEN>
+router.get('/admin/all', checkJwt, async (req, res) => {
+    try {
+        const googleId = req.user.sub || req.user.id;
+        const limit = parseInt(req.query.limit) || 50;
+        const offset = parseInt(req.query.offset) || 0;
+        
+        // Validate pagination parameters
+        if (limit > 100) {
+            return res.status(400).json({
+                error: 'Bad request',
+                message: 'Limit cannot exceed 100'
+            });
+        }
+        
+        // First get current user info and check if they're admin or teacher
+        const userQuery = `SELECT user_id, role FROM "user" WHERE google_id = $1`;
+        const userResult = await pgPool.query(userQuery, [googleId]);
+        
+        if (userResult.rows.length === 0) {
+            return res.status(404).json({
+                error: 'User not found',
+                message: 'Please complete your profile setup first'
+            });
+        }
+        
+        const currentUser = userResult.rows[0];
+        
+        // Check if user has admin or teacher role
+        if (currentUser.role !== 'admin' && currentUser.role !== 'teacher') {
+            return res.status(403).json({
+                error: 'Forbidden',
+                message: 'Access denied. Admin or teacher role required.'
+            });
+        }
+        
+        const query = `
+            SELECT 
+                u.user_id,
+                u.name,
+                u.email,
+                u.role,
+                u.created_at,
+                u.profile_pic,
+                u.birthdate,
+                u.edu_level,
+                u.rank,
+                u.streak,
+                u.daily_exp,
+                u.math_exp,
+                u.phy_exp,
+                u.bio_exp,
+                u.chem_exp,
+                u.completed_task
+            FROM "user" u
+            ORDER BY u.created_at DESC
+            LIMIT $1 OFFSET $2
+        `;
+        
+        const result = await pgPool.query(query, [limit, offset]);
+        
+        // Get total count for pagination
+        const countQuery = `SELECT COUNT(*) as total FROM "user"`;
+        const countResult = await pgPool.query(countQuery);
+        const totalUsers = parseInt(countResult.rows[0].total);
+        
+        res.json({
+            message: 'All users retrieved successfully',
+            users: result.rows,
+            count: result.rows.length,
+            total: totalUsers,
+            limit: limit,
+            offset: offset
+        });
+        
+    } catch (error) {
+        console.error('Error fetching all users for admin:', error);
+        res.status(500).json({
+            error: 'Internal server error',
+            message: 'Failed to fetch users'
+        });
+    }
+});
+
+// Delete user account (admin only)
+// Usage Example:
+// PATCH /api/users/admin/update/:userId
+// Headers: Authorization: Bearer <JWT_TOKEN>
+// Body: { name?: string, role?: string, profile_pic?: string }
+router.patch('/admin/update/:userId', checkJwt, async (req, res) => {
+    try {
+        const requestingUserGoogleId = req.user.sub || req.user.id;
+        const { userId } = req.params;
+        const { name, role, profile_pic } = req.body;
+        
+        if (!userId) {
+            return res.status(400).json({
+                error: 'Bad request',
+                message: 'User ID is required'
+            });
+        }
+        
+        // First verify that the requesting user is an admin
+        const adminQuery = `SELECT user_id, role FROM "user" WHERE google_id = $1`;
+        const adminResult = await pgPool.query(adminQuery, [requestingUserGoogleId]);
+        
+        if (adminResult.rows.length === 0) {
+            return res.status(404).json({
+                error: 'User not found',
+                message: 'Requesting user not found'
+            });
+        }
+        
+        if (adminResult.rows[0].role !== 'admin') {
+            return res.status(403).json({
+                error: 'Forbidden',
+                message: 'Only admins can update user accounts'
+            });
+        }
+        
+        // Check if the user to be updated exists
+        const userToUpdateQuery = `SELECT * FROM "user" WHERE user_id = $1`;
+        const userToUpdateResult = await pgPool.query(userToUpdateQuery, [userId]);
+        
+        if (userToUpdateResult.rows.length === 0) {
+            return res.status(404).json({
+                error: 'User not found',
+                message: 'User to update does not exist'
+            });
+        }
+        
+        const currentUser = userToUpdateResult.rows[0];
+        
+        // Build update query dynamically based on provided fields
+        const updates = [];
+        const values = [];
+        let paramIndex = 1;
+        
+        if (name !== undefined) {
+            updates.push(`name = $${paramIndex}`);
+            values.push(name);
+            paramIndex++;
+        }
+        
+        if (role !== undefined) {
+            // Validate role
+            const validRoles = ['admin', 'teacher', 'user'];
+            if (!validRoles.includes(role)) {
+                return res.status(400).json({
+                    error: 'Bad request',
+                    message: 'Invalid role. Must be one of: admin, teacher, user'
+                });
+            }
+            updates.push(`role = $${paramIndex}`);
+            values.push(role);
+            paramIndex++;
+        }
+        
+        if (profile_pic !== undefined) {
+            // If profile_pic is provided, update it
+            updates.push(`profile_pic = $${paramIndex}`);
+            values.push(profile_pic);
+            paramIndex++;
+        }
+        
+        // If no fields to update, return current user data
+        if (updates.length === 0) {
+            return res.json({
+                message: 'No changes made',
+                user: currentUser
+            });
+        }
+        
+        // Add user_id to values
+        values.push(userId);
+        
+        // Update user
+        const updateQuery = `
+            UPDATE "user" 
+            SET ${updates.join(', ')}
+            WHERE user_id = $${paramIndex}
+            RETURNING *
+        `;
+        
+        const updateResult = await pgPool.query(updateQuery, values);
+        
+        res.json({
+            message: 'User updated successfully',
+            user: updateResult.rows[0]
+        });
+        
+    } catch (error) {
+        console.error('Error updating user account:', error);
+        res.status(500).json({
+            error: 'Internal server error',
+            message: 'Failed to update user account'
+        });
+    }
+});
+
+// DELETE /api/users/admin/delete/12345678-1234-1234-1234-123456789012
+// Headers: Authorization: Bearer <JWT_TOKEN>
+router.delete('/admin/delete/:userId', checkJwt, async (req, res) => {
+    try {
+        const requestingUserGoogleId = req.user.sub || req.user.id;
+        const { userId } = req.params;
+        
+        if (!userId) {
+            return res.status(400).json({
+                error: 'Bad request',
+                message: 'User ID is required'
+            });
+        }
+        
+        // First verify that the requesting user is an admin
+        const adminQuery = `SELECT user_id, role FROM "user" WHERE google_id = $1`;
+        const adminResult = await pgPool.query(adminQuery, [requestingUserGoogleId]);
+        
+        if (adminResult.rows.length === 0) {
+            return res.status(404).json({
+                error: 'User not found',
+                message: 'Requesting user not found'
+            });
+        }
+        
+        if (adminResult.rows[0].role !== 'admin') {
+            return res.status(403).json({
+                error: 'Forbidden',
+                message: 'Only admins can delete user accounts'
+            });
+        }
+        
+        // Check if the user to be deleted exists
+        const userToDeleteQuery = `SELECT user_id, name, email FROM "user" WHERE user_id = $1`;
+        const userToDeleteResult = await pgPool.query(userToDeleteQuery, [userId]);
+        
+        if (userToDeleteResult.rows.length === 0) {
+            return res.status(404).json({
+                error: 'User not found',
+                message: 'User to delete does not exist'
+            });
+        }
+        
+        const userToDelete = userToDeleteResult.rows[0];
+        
+        // Prevent admin from deleting themselves
+        if (adminResult.rows[0].user_id === userId) {
+            return res.status(400).json({
+                error: 'Bad request',
+                message: 'You cannot delete your own account'
+            });
+        }
+        
+        // Use transaction to ensure data consistency
+        const client = await pgPool.connect();
+        try {
+            await client.query('BEGIN');
+            
+            // Delete user (CASCADE will automatically delete related records)
+            // This will delete:
+            // - prefered (user preferences)
+            // - friend (friend relationships)
+            // - garden (garden relationships)
+            const deleteQuery = `DELETE FROM "user" WHERE user_id = $1`;
+            const deleteResult = await client.query(deleteQuery, [userId]);
+            
+            if (deleteResult.rowCount === 0) {
+                await client.query('ROLLBACK');
+                return res.status(404).json({
+                    error: 'User not found',
+                    message: 'User could not be deleted'
+                });
+            }
+            
+            await client.query('COMMIT');
+            
+            res.json({
+                message: 'User account deleted successfully',
+                deletedUser: {
+                    user_id: userToDelete.user_id,
+                    name: userToDelete.name,
+                    email: userToDelete.email
+                }
+            });
+            
+        } catch (error) {
+            await client.query('ROLLBACK');
+            throw error;
+        } finally {
+            client.release();
+        }
+        
+    } catch (error) {
+        console.error('Error deleting user account:', error);
+        res.status(500).json({
+            error: 'Internal server error',
+            message: 'Failed to delete user account'
         });
     }
 });
