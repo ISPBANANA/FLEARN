@@ -308,17 +308,6 @@ BEGIN
             CONSTRAINT unique_subject_topic UNIQUE(subject_id, name)
         );
         
-        INSERT INTO topic (subject_id, name, description, status) VALUES
-            ((SELECT subject_id FROM subject WHERE name = 'Mathematics'), 'Calculus - L''Hôpital', 'L''Hôpital''s rule and applications', 'public'),
-            ((SELECT subject_id FROM subject WHERE name = 'Mathematics'), 'Algebra - Linear Equations', 'Linear equations and systems', 'public'),
-            ((SELECT subject_id FROM subject WHERE name = 'Mathematics'), 'Geometry - Triangles', 'Triangle properties and theorems', 'public'),
-            ((SELECT subject_id FROM subject WHERE name = 'Physics'), 'Mechanics - Newton''s Laws', 'Newton''s laws of motion', 'public'),
-            ((SELECT subject_id FROM subject WHERE name = 'Physics'), 'Thermodynamics - Heat Transfer', 'Heat transfer and thermodynamic processes', 'public'),
-            ((SELECT subject_id FROM subject WHERE name = 'Biology'), 'Cell Biology - Organelles', 'Cell structure and organelles', 'public'),
-            ((SELECT subject_id FROM subject WHERE name = 'Biology'), 'Genetics - DNA', 'DNA structure and function', 'public'),
-            ((SELECT subject_id FROM subject WHERE name = 'Chemistry'), 'Organic Chemistry - Hydrocarbons', 'Hydrocarbon compounds and reactions', 'public'),
-            ((SELECT subject_id FROM subject WHERE name = 'Chemistry'), 'Inorganic Chemistry - Periodic Table', 'Periodic table and element properties', 'public');
-        
         CREATE INDEX idx_topic_subject_id ON topic(subject_id);
         CREATE INDEX idx_topic_name ON topic(name);
         CREATE INDEX idx_topic_status ON topic(status);
