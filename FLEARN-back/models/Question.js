@@ -7,7 +7,7 @@ class Question {
     // Create a new question
     // ============================================
     static async create(questionData) {
-        const { subject_id, category_id, type_name, difficulty, points, time_limit, status, content, created_by } = questionData;
+        const { subject_id, category_id, topic_id, type_name, difficulty, points, time_limit, status, content, created_by } = questionData;
         
         try {
             // 1. Insert content into MongoDB
@@ -34,10 +34,10 @@ class Question {
             
             // 3. Insert metadata into PostgreSQL
             const pgResult = await pgPool.query(
-                `INSERT INTO question (subject_id, category_id, mongo_content_id, type_id, difficulty, points, time_limit, status, created_by)
-                 VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+                `INSERT INTO question (subject_id, category_id, topic_id, mongo_content_id, type_id, difficulty, points, time_limit, status, created_by)
+                 VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
                  RETURNING *`,
-                [subject_id, category_id || null, mongo_content_id, type_id, difficulty, points || 10, time_limit, status || 'private', created_by]
+                [subject_id, category_id || null, topic_id || null, mongo_content_id, type_id, difficulty, points || 10, time_limit, status || 'private', created_by]
             );
             
             return { 
@@ -58,11 +58,12 @@ class Question {
         try {
             // 1. Get metadata from PostgreSQL
             const pgResult = await pgPool.query(
-                `SELECT q.*, qt.type_name, s.name as subject_name, c.name as category_name
+                `SELECT q.*, qt.type_name, s.name as subject_name, c.name as category_name, t.name as topic_name
                  FROM question q
                  JOIN question_type qt ON q.type_id = qt.type_id
                  JOIN subject s ON q.subject_id = s.subject_id
                  LEFT JOIN category c ON q.category_id = c.category_id
+                 LEFT JOIN topic t ON q.topic_id = t.topic_id
                  WHERE q.question_id = $1 AND q.is_active = true`,
                 [question_id]
             );
@@ -93,7 +94,7 @@ class Question {
     // Get questions with filters
     // ============================================
     static async getAll(filters = {}) {
-        const { subject_id, category_id, type, type_name, difficulty, status, limit = 10, offset = 0 } = filters;
+        const { subject_id, category_id, topic_id, type, type_name, difficulty, status, limit = 10, offset = 0 } = filters;
         
         // Accept both 'type' and 'type_name' parameters (type is alias for type_name)
         const questionType = type_name || type;
@@ -101,12 +102,13 @@ class Question {
         try {
             let query = `
                 SELECT q.question_id, q.difficulty, q.points, q.time_limit, q.status,
-                       qt.type_name, s.name as subject_name, c.name as category_name,
+                       qt.type_name, s.name as subject_name, c.name as category_name, t.name as topic_name,
                        q.created_at
                 FROM question q
                 JOIN question_type qt ON q.type_id = qt.type_id
                 JOIN subject s ON q.subject_id = s.subject_id
                 LEFT JOIN category c ON q.category_id = c.category_id
+                LEFT JOIN topic t ON q.topic_id = t.topic_id
                 WHERE q.is_active = true
             `;
             const params = [];
@@ -119,6 +121,11 @@ class Question {
             if (category_id) {
                 params.push(category_id);
                 query += ` AND q.category_id = $${params.length}`;
+            }
+            
+            if (topic_id) {
+                params.push(topic_id);
+                query += ` AND q.topic_id = $${params.length}`;
             }
             
             if (questionType) {
@@ -234,7 +241,7 @@ class Question {
     // Update question
     // ============================================
     static async update(question_id, updates) {
-        const { difficulty, points, time_limit, category_id, status, content, is_active } = updates;
+        const { difficulty, points, time_limit, category_id, topic_id, status, content, is_active } = updates;
         
         try {
             // Validate status if provided
@@ -274,6 +281,10 @@ class Question {
             if (category_id !== undefined) {
                 fields.push(`category_id = $${paramCount++}`);
                 values.push(category_id);
+            }
+            if (topic_id !== undefined) {
+                fields.push(`topic_id = $${paramCount++}`);
+                values.push(topic_id);
             }
             if (status !== undefined) {
                 fields.push(`status = $${paramCount++}`);

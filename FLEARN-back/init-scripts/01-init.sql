@@ -110,6 +110,40 @@ INSERT INTO subject (name, category_id, description) VALUES
     ('Biology', (SELECT category_id FROM category WHERE name = 'Biology'), 'Life sciences and biology'),
     ('Chemistry', (SELECT category_id FROM category WHERE name = 'Chemistry'), 'Chemistry and chemical reactions');
 
+-- Topic table for organizing questions within subjects
+CREATE TABLE topic (
+    topic_id SERIAL PRIMARY KEY,
+    subject_id INT REFERENCES subject(subject_id) ON DELETE CASCADE,
+    name VARCHAR(200) NOT NULL,
+    description TEXT,
+    status TEXT DEFAULT 'public' CHECK (status IN ('private', 'public')),
+    created_by UUID REFERENCES "user"(user_id) ON DELETE SET NULL,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    CONSTRAINT unique_subject_topic UNIQUE(subject_id, name)
+);
+
+-- Insert default topics for Mathematics
+INSERT INTO topic (subject_id, name, description, status) VALUES
+    ((SELECT subject_id FROM subject WHERE name = 'Mathematics'), 'Calculus - L''Hôpital', 'L''Hôpital''s rule and applications', 'public'),
+    ((SELECT subject_id FROM subject WHERE name = 'Mathematics'), 'Algebra - Linear Equations', 'Linear equations and systems', 'public'),
+    ((SELECT subject_id FROM subject WHERE name = 'Mathematics'), 'Geometry - Triangles', 'Triangle properties and theorems', 'public');
+
+-- Insert default topics for Physics
+INSERT INTO topic (subject_id, name, description, status) VALUES
+    ((SELECT subject_id FROM subject WHERE name = 'Physics'), 'Mechanics - Newton''s Laws', 'Newton''s laws of motion', 'public'),
+    ((SELECT subject_id FROM subject WHERE name = 'Physics'), 'Thermodynamics - Heat Transfer', 'Heat transfer and thermodynamic processes', 'public');
+
+-- Insert default topics for Biology
+INSERT INTO topic (subject_id, name, description, status) VALUES
+    ((SELECT subject_id FROM subject WHERE name = 'Biology'), 'Cell Biology - Organelles', 'Cell structure and organelles', 'public'),
+    ((SELECT subject_id FROM subject WHERE name = 'Biology'), 'Genetics - DNA', 'DNA structure and function', 'public');
+
+-- Insert default topics for Chemistry
+INSERT INTO topic (subject_id, name, description, status) VALUES
+    ((SELECT subject_id FROM subject WHERE name = 'Chemistry'), 'Organic Chemistry - Hydrocarbons', 'Hydrocarbon compounds and reactions', 'public'),
+    ((SELECT subject_id FROM subject WHERE name = 'Chemistry'), 'Inorganic Chemistry - Periodic Table', 'Periodic table and element properties', 'public');
+
 -- Question types table
 CREATE TABLE question_type (
     type_id SERIAL PRIMARY KEY,
@@ -130,6 +164,7 @@ CREATE TABLE question (
     question_id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     subject_id INT REFERENCES subject(subject_id) ON DELETE CASCADE,
     category_id INT REFERENCES category(category_id) ON DELETE SET NULL,
+    topic_id INT REFERENCES topic(topic_id) ON DELETE SET NULL,
     mongo_content_id VARCHAR(24) NOT NULL,  -- Reference to MongoDB document _id
     type_id INT REFERENCES question_type(type_id),
     difficulty INT CHECK (difficulty BETWEEN 1 AND 5),
@@ -148,6 +183,7 @@ COMMENT ON COLUMN question.difficulty IS 'Question difficulty level from 1 (easi
 COMMENT ON COLUMN question.time_limit IS 'Time limit for answering the question in seconds';
 COMMENT ON COLUMN question.status IS 'Question visibility: private (only creator can see) or public (visible to all)';
 COMMENT ON COLUMN question.category_id IS 'Category for additional organization and filtering';
+COMMENT ON COLUMN question.topic_id IS 'Topic/subtopic within the subject for detailed organization';
 
 -- ----------------------------------------------------------------------------
 -- Indexes for better query performance
@@ -166,6 +202,7 @@ CREATE INDEX idx_garden_user2_id ON garden(user2_id);
 -- Question system indexes
 CREATE INDEX idx_question_subject_id ON question(subject_id);
 CREATE INDEX idx_question_category_id ON question(category_id);
+CREATE INDEX idx_question_topic_id ON question(topic_id);
 CREATE INDEX idx_question_type_id ON question(type_id);
 CREATE INDEX idx_question_difficulty ON question(difficulty);
 CREATE INDEX idx_question_status ON question(status);
@@ -175,6 +212,9 @@ CREATE INDEX idx_subject_name ON subject(name);
 CREATE INDEX idx_subject_category_id ON subject(category_id);
 CREATE INDEX idx_category_name ON category(name);
 CREATE INDEX idx_category_parent ON category(parent_category_id);
+CREATE INDEX idx_topic_subject_id ON topic(subject_id);
+CREATE INDEX idx_topic_name ON topic(name);
+CREATE INDEX idx_topic_status ON topic(status);
 
 -- ----------------------------------------------------------------------------
 -- Triggers and Functions
@@ -203,6 +243,9 @@ CREATE TRIGGER update_question_updated_at BEFORE UPDATE ON question
     FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
 CREATE TRIGGER update_category_updated_at BEFORE UPDATE ON category
+    FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+
+CREATE TRIGGER update_topic_updated_at BEFORE UPDATE ON topic
     FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
 -- ----------------------------------------------------------------------------
@@ -405,5 +448,73 @@ BEGIN
         RAISE NOTICE 'Successfully added status column to question table';
     ELSE
         RAISE NOTICE 'Question table already has status column';
+    END IF;
+END $$;
+
+-- Migration: Add Topic Table and Update Question Table
+DO $$
+BEGIN
+    -- Check if topic table already exists
+    IF NOT EXISTS (SELECT 1 FROM information_schema.tables 
+                   WHERE table_name = 'topic') THEN
+        
+        -- Create topic table if it doesn't exist
+        CREATE TABLE topic (
+            topic_id SERIAL PRIMARY KEY,
+            subject_id INT REFERENCES subject(subject_id) ON DELETE CASCADE,
+            name VARCHAR(200) NOT NULL,
+            description TEXT,
+            status TEXT DEFAULT 'public' CHECK (status IN ('private', 'public')),
+            created_by UUID REFERENCES "user"(user_id) ON DELETE SET NULL,
+            created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+            updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+            CONSTRAINT unique_subject_topic UNIQUE(subject_id, name)
+        );
+        
+        -- Insert default topics for Mathematics
+        INSERT INTO topic (subject_id, name, description, status) VALUES
+            ((SELECT subject_id FROM subject WHERE name = 'Mathematics'), 'Calculus - L''Hôpital', 'L''Hôpital''s rule and applications', 'public'),
+            ((SELECT subject_id FROM subject WHERE name = 'Mathematics'), 'Algebra - Linear Equations', 'Linear equations and systems', 'public'),
+            ((SELECT subject_id FROM subject WHERE name = 'Mathematics'), 'Geometry - Triangles', 'Triangle properties and theorems', 'public');
+        
+        -- Insert default topics for Physics
+        INSERT INTO topic (subject_id, name, description, status) VALUES
+            ((SELECT subject_id FROM subject WHERE name = 'Physics'), 'Mechanics - Newton''s Laws', 'Newton''s laws of motion', 'public'),
+            ((SELECT subject_id FROM subject WHERE name = 'Physics'), 'Thermodynamics - Heat Transfer', 'Heat transfer and thermodynamic processes', 'public');
+        
+        -- Insert default topics for Biology
+        INSERT INTO topic (subject_id, name, description, status) VALUES
+            ((SELECT subject_id FROM subject WHERE name = 'Biology'), 'Cell Biology - Organelles', 'Cell structure and organelles', 'public'),
+            ((SELECT subject_id FROM subject WHERE name = 'Biology'), 'Genetics - DNA', 'DNA structure and function', 'public');
+        
+        -- Insert default topics for Chemistry
+        INSERT INTO topic (subject_id, name, description, status) VALUES
+            ((SELECT subject_id FROM subject WHERE name = 'Chemistry'), 'Organic Chemistry - Hydrocarbons', 'Hydrocarbon compounds and reactions', 'public'),
+            ((SELECT subject_id FROM subject WHERE name = 'Chemistry'), 'Inorganic Chemistry - Periodic Table', 'Periodic table and element properties', 'public');
+        
+        -- Create indexes
+        CREATE INDEX idx_topic_subject_id ON topic(subject_id);
+        CREATE INDEX idx_topic_name ON topic(name);
+        CREATE INDEX idx_topic_status ON topic(status);
+        
+        -- Create trigger for updated_at
+        CREATE TRIGGER update_topic_updated_at BEFORE UPDATE ON topic
+            FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+        
+        RAISE NOTICE 'Successfully created topic table';
+    ELSE
+        RAISE NOTICE 'Topic table already exists';
+    END IF;
+    
+    -- Add topic_id to question table if it doesn't exist
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns 
+                   WHERE table_name = 'question' AND column_name = 'topic_id') THEN
+        
+        ALTER TABLE question ADD COLUMN topic_id INT REFERENCES topic(topic_id) ON DELETE SET NULL;
+        CREATE INDEX IF NOT EXISTS idx_question_topic_id ON question(topic_id);
+        
+        RAISE NOTICE 'Successfully added topic_id to question table';
+    ELSE
+        RAISE NOTICE 'Question table already has topic_id column';
     END IF;
 END $$;
