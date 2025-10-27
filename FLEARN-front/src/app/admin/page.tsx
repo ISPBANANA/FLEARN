@@ -99,6 +99,11 @@ export default function AdminPage() {
   const [editTopicForm, setEditTopicForm] = useState<{
     name: string;
   }>({ name: '' });
+  const [deleteTopicDialog, setDeleteTopicDialog] = useState<{
+    isOpen: boolean;
+    topic: Topic | null;
+  }>({ isOpen: false, topic: null });
+  const [isDeletingTopic, setIsDeletingTopic] = useState(false);
 
   // Auto-refresh users every 60 seconds
   useEffect(() => {
@@ -335,6 +340,44 @@ export default function AdminPage() {
       alert(`Error updating topic: ${errorMessage}`);
     } finally {
       setIsUpdatingTopic(false);
+    }
+  };
+
+  // Handle open delete topic dialog
+  const handleDeleteTopic = (topic: Topic) => {
+    setDeleteTopicDialog({ isOpen: true, topic });
+  };
+
+  // Handle cancel delete topic
+  const cancelDeleteTopic = () => {
+    setDeleteTopicDialog({ isOpen: false, topic: null });
+  };
+
+  // Handle confirm delete topic
+  const confirmDeleteTopic = async () => {
+    if (!deleteTopicDialog.topic) return;
+
+    try {
+      setIsDeletingTopic(true);
+      
+      await questionsAPI.deleteTopic(deleteTopicDialog.topic.topic_id);
+      
+      // Remove topic from local state
+      setSubjects(subjects.map(subject => ({
+        ...subject,
+        topics: subject.topics.filter(topic => topic.topic_id !== deleteTopicDialog.topic!.topic_id)
+      })));
+      
+      setDeleteTopicDialog({ isOpen: false, topic: null });
+      
+      // Optionally refresh subjects to ensure data is up-to-date
+      fetchSubjects();
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'Failed to delete topic';
+      alert(`Error deleting topic: ${errorMessage}`);
+      console.error('Error deleting topic:', err);
+    } finally {
+      setIsDeletingTopic(false);
     }
   };
 
@@ -857,7 +900,7 @@ export default function AdminPage() {
                                 <button 
                                   onClick={(e) => {
                                     e.stopPropagation();
-                                    // Delete topic handler (static for now)
+                                    handleDeleteTopic(topic);
                                   }}
                                   className="text-red-500 hover:text-red-600 p-1 rounded transition-colors"
                                   title="Delete topic"
@@ -1170,6 +1213,63 @@ export default function AdminPage() {
                   </>
                 ) : (
                   'Update Topic'
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Delete Topic Confirmation Dialog */}
+      {deleteTopicDialog.isOpen && (
+        <div className="fixed inset-0 backdrop-blur-xs flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
+            <h3 className="text-lg font-semibold text-gray-900 mb-4">
+              Confirm Topic Deletion
+            </h3>
+            <p className="text-gray-600 mb-6">
+              Are you sure you want to delete the topic{' '}
+              <strong>{deleteTopicDialog.topic?.name}</strong>?
+            </p>
+            <div className="bg-yellow-50 border border-yellow-200 rounded-md p-4 mb-6">
+              <p className="text-yellow-800 text-sm">
+                <strong>Warning:</strong> This action cannot be undone.
+              </p>
+              {deleteTopicDialog.topic && deleteTopicDialog.topic.question_count > 0 ? (
+                <div className="mt-3">
+                  <p className="text-yellow-800 text-sm font-semibold">
+                    ⚠️ This topic has {deleteTopicDialog.topic.question_count} associated question{deleteTopicDialog.topic.question_count !== 1 ? 's' : ''}.
+                  </p>
+                  <p className="text-yellow-700 text-sm mt-2">
+                    You must reassign or delete all questions in this topic before you can delete it.
+                  </p>
+                </div>
+              ) : (
+                <p className="text-yellow-700 text-sm mt-2">
+                  The topic will be permanently deleted from the database.
+                </p>
+              )}
+            </div>
+            <div className="flex gap-3 justify-end">
+              <button
+                onClick={cancelDeleteTopic}
+                disabled={isDeletingTopic}
+                className="px-4 py-2 text-gray-600 bg-gray-100 rounded hover:bg-gray-200 transition-colors disabled:opacity-50"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={confirmDeleteTopic}
+                disabled={isDeletingTopic || (deleteTopicDialog.topic ? deleteTopicDialog.topic.question_count > 0 : false)}
+                className="px-4 py-2 bg-red-500 text-white rounded hover:bg-red-600 transition-colors disabled:opacity-50 disabled:bg-red-300 flex items-center gap-2"
+              >
+                {isDeletingTopic ? (
+                  <>
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                    Deleting...
+                  </>
+                ) : (
+                  'Delete Topic'
                 )}
               </button>
             </div>
