@@ -110,8 +110,6 @@ function deployApplication() {
     logToFile(logFile, `[${timestamp}] 🔧 Configuring git safe directory...`);
     try {
       execSync(`git config --global --add safe.directory ${PROJECT_PATH}`, { stdio: 'pipe' });
-      execSync(`chown -R $(whoami):$(whoami) .git/`, { stdio: 'pipe' });
-      execSync(`chmod -R 755 .git/`, { stdio: 'pipe' });
     } catch (gitConfigError) {
       console.log(`⚠️  [${timestamp}] Git config warning:`, gitConfigError.message);
     }
