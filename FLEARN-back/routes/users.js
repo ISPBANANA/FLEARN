@@ -28,8 +28,27 @@ router.get('/profile', checkJwt, async (req, res) => {
             });
         }
         
+        const userId = result.rows[0].user_id;
+        
+        // Count completed tasks from backlog where correctness is true
+        const countQuery = `
+            SELECT COUNT(*) as completed_count
+            FROM backlog
+            WHERE user_id = $1 AND correctness = true
+        `;
+        const countResult = await pgPool.query(countQuery, [userId]);
+        const completedCount = parseInt(countResult.rows[0].completed_count);
+        
+        // Update the completed_task column
+        const updateQuery = `
+            UPDATE "user"
+            SET completed_task = $1, updated_at = NOW()
+            WHERE user_id = $2
+        `;
+        await pgPool.query(updateQuery, [completedCount, userId]);
+        
         // Check and reset streak if needed (if uptime_streak - todayDate >= 2 days)
-        const user = await checkAndResetUserStreak(pgPool, result.rows[0].user_id);
+        const user = await checkAndResetUserStreak(pgPool, userId);
         
         res.json({
             message: 'User profile retrieved successfully',
