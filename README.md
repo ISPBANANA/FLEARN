@@ -1,30 +1,5 @@
 # FLEARN - Interactive Learning Platform
 
-![FLEARN Logo](https- **[🏠 Home](../../wiki/Home)** - Main documentation hub
-- **[🚀 - Testing requirements
-
-## 🛠️ Development
-
-### Quick Commandsng Started](../../wiki/Getting-Started)** - Setup and installation guide
-- **[🏗️ Architecture](../../wiki/Architecture)** - System design and components
-- **[🔧 API Setup](../../wiki/API-Setup-Guide)** - Backend configuration
-- **[🔐 Authentication](../../wiki/Authentication-Auth0)** - Auth0 integration guide
-- **[🐳 Docker Deployment](../../wiki/Docker-Deployment)** - Container setup and deployment
-- **[🔒 Port Configuration](../../wiki/Port-Configuration)** - Port reference and securityshields.io/badge/FLEARN-Learning%20Platform-blue)
-![Next.js](https://img.shields.io/badge/Next.js-15.5.2-black)
-![Node.js](https://img.shields.io/badge/Node.js-Express-green)
-![MongoDB](https://img.shields.io/badge/MongoDB-7.0-green)
-![PostgreSQL](https://img.shields.io/badge/PostgreSQL-15-blue)
-![Docker](https://img.shields.io/badge/Docker-Containerized-blue)
-
-**[🏠 Home](../../wiki/Home)** - Main documentation hub  
-**[🚀 Getting Started](../../wiki/Getting-Started)** - Setup and installation guide  
-**[🏗️ Architecture](../../wiki/Architecture)** - System design and components  
-**[🔧 API Setup](../../wiki/API-Setup-Guide)** - Backend configuration  
-**[🔐 Authentication](../../wiki/Authentication-Auth0)** - Auth0 integration guide  
-**[🐳 Docker Deployment](../../wiki/Docker-Deployment)** - Container setup and deployment  
-**[🔒 Port Configuration](../../wiki/Port-Configuration)** - Port reference and security  
-
 FLEARN is an interactive learning platform designed to make education engaging and fun. Built with modern web technologies, it features gamification elements, progress tracking, and social learning components.
 
 ## 🌟 Features
@@ -39,8 +14,8 @@ FLEARN is an interactive learning platform designed to make education engaging a
 ## 🎯 Project Links
 
 - **🌐 Website Link (On Dev)**: [http://hongrocker49.thddns.net:2725/](http://hongrocker49.thddns.net:2725/)
-- **🎬 Pitching Video**: [Watch on YouTube](https://youtu.be/YiV91YK47vU)
-- **📋 Project Proposal**: [Google Docs](https://docs.google.com/document/d/1RPuF_MChizx3Fs8yoE2WUcgqADlSC1DL95WdcP_SXaw/edit?usp=sharing)
+- **🎬 Presentation video for each iteration**: [Watch on YouTube](https://www.youtube.com/playlist?list=PL5A1xxzpREhzRC439F8eBfSmphkWZ_mvW)
+- **📋 Project Proposal and Sprint update**: [Google Docs](https://docs.google.com/document/d/1RPuF_MChizx3Fs8yoE2WUcgqADlSC1DL95WdcP_SXaw/edit?usp=sharing)
 - **📊 Project Management**: [Jira Board](https://isp-banana.atlassian.net/jira/software/projects/FLEARN/boards/1/backlog)
 - **🎨 UI/UX Design**: [Figma](https://www.figma.com/design/aNtaPV5XsyTG1ETtTOuYwJ/FLEARN?t=uRrKrAPrcLgo4Q3D-1)
 - **📚 GitHub Repository**: [ISPBANANA/FLEARN](https://github.com/ISPBANANA/FLEARN)
@@ -136,14 +111,6 @@ docker compose up -d
 - [ ] Handle user pair request
 - [ ] Duo Steak reset daily
 
-## 🤝 Contributing
-
-We welcome contributions! Please see our **[Contributing Guidelines](../../wiki/Contributing-Guidelines)** for:
-- Development workflow and standards
-- Branch naming conventions  
-- Code review process
-- Testing requirements
-
 ## �️ Development
 
 ### Quick Commands
@@ -180,10 +147,10 @@ This project is part of an educational initiative. Please refer to the license f
 ## 👥 Team
 
 **ISPBANANA Development Team**
-- Project management via Jira
-- Weekly sprint meetings
-- Collaborative development workflow
-- Discord integration for team communication
+- 6710545610 Techaphatr Indhavivadhana
+- 6710545504 Chachalit Khanarat
+- 6710545938 Sethtatad Kijkanjanarat
+- 6710545733 Phruek Chantarasittiphon
 
 ---
 

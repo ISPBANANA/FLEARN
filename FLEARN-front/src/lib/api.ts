@@ -364,6 +364,30 @@ export const userAPI = {
     return apiCall(`/api/users/all?limit=${limit}&offset=${offset}`);
   },
 
+  // Get all users for admin dashboard (admin/teacher only)
+  async getAllUsersAdmin(limit: number = 50, offset: number = 0) {
+    return apiCall(`/api/users/admin/all?limit=${limit}&offset=${offset}`);
+  },
+
+  // Delete user account (admin only)
+  async deleteUserAdmin(userId: string) {
+    return apiCall(`/api/users/admin/delete/${encodeURIComponent(userId)}`, {
+      method: 'DELETE',
+    });
+  },
+
+  // Update user account (admin only)
+  async updateUserAdmin(userId: string, userData: {
+    name?: string;
+    role?: string;
+    profile_pic?: string;
+  }) {
+    return apiCall(`/api/users/admin/update/${encodeURIComponent(userId)}`, {
+      method: 'PATCH',
+      body: JSON.stringify(userData),
+    });
+  },
+
   // Create or update user profile
   async updateProfile(profileData: {
     name?: string;

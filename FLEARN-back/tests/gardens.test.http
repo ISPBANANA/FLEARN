@@ -1,0 +1,272 @@
+### FLEARN Gardens API Test Suite
+### Use REST Client extension in VS Code to run these tests
+
+@baseUrl = http://localhost:8099
+@token = YOUR_JWT_TOKEN_HERE
+@userId = YOUR_USER_UUID_HERE
+@partnerEmail = partner@example.com
+@gardenId = 1
+
+### ============================================
+### 1. Health Check
+### ============================================
+GET {{baseUrl}}/health
+
+### ============================================
+### 2. Get All Gardens (Current User)
+### Requires Authentication
+### ============================================
+GET {{baseUrl}}/api/gardens
+Authorization: Bearer {{token}}
+
+### ============================================
+### 3. Get Gardens for Specific User
+### Requires Authentication
+### ============================================
+GET {{baseUrl}}/api/gardens/user/{{userId}}
+Authorization: Bearer {{token}}
+
+### ============================================
+### 4. Create Garden Invitation
+### Requires Authentication (must be friends first)
+### ============================================
+POST {{baseUrl}}/api/gardens
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "partner_email": "{{partnerEmail}}"
+}
+
+### ============================================
+### 5. Create Garden - Missing Partner Email
+### Should return 400 error
+### ============================================
+POST {{baseUrl}}/api/gardens
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+}
+
+### ============================================
+### 6. Create Garden - Partner Not Found
+### Should return 404 error
+### ============================================
+POST {{baseUrl}}/api/gardens
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "partner_email": "nonexistent@example.com"
+}
+
+### ============================================
+### 7. Create Garden - With Yourself
+### Should return 400 error
+### ============================================
+POST {{baseUrl}}/api/gardens
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "partner_email": "your.own.email@example.com"
+}
+
+### ============================================
+### 8. Create Garden - Not Friends
+### Should return 400 error
+### ============================================
+POST {{baseUrl}}/api/gardens
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "partner_email": "{{partnerEmail}}"
+}
+
+### ============================================
+### 9. Create Garden - Already Exists
+### Should return 409 error
+### ============================================
+POST {{baseUrl}}/api/gardens
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "partner_email": "{{partnerEmail}}"
+}
+
+### ============================================
+### 10. Accept Garden Invitation
+### Requires Authentication
+### ============================================
+PATCH {{baseUrl}}/api/gardens/{{gardenId}}/invitation
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "status": "accepted"
+}
+
+### ============================================
+### 11. Reject Garden Invitation
+### Requires Authentication
+### ============================================
+PATCH {{baseUrl}}/api/gardens/{{gardenId}}/invitation
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "status": "rejected"
+}
+
+### ============================================
+### 12. Accept Invitation - Invalid Status
+### Should return 400 error
+### ============================================
+PATCH {{baseUrl}}/api/gardens/{{gardenId}}/invitation
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "status": "invalid"
+}
+
+### ============================================
+### 13. Increment Garden Streak
+### Requires Authentication
+### ============================================
+PATCH {{baseUrl}}/api/gardens/{{gardenId}}/streak
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "increment": true
+}
+
+### ============================================
+### 14. Reset Garden Streak
+### Requires Authentication
+### ============================================
+PATCH {{baseUrl}}/api/gardens/{{gardenId}}/streak
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "increment": false
+}
+
+### ============================================
+### 15. Update Garden Status to Active
+### Requires Authentication
+### ============================================
+PATCH {{baseUrl}}/api/gardens/{{gardenId}}/status
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "status": "active"
+}
+
+### ============================================
+### 16. Update Garden Status to Inactive
+### Requires Authentication
+### ============================================
+PATCH {{baseUrl}}/api/gardens/{{gardenId}}/status
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "status": "inactive"
+}
+
+### ============================================
+### 17. Update Garden Status to Completed
+### Requires Authentication
+### ============================================
+PATCH {{baseUrl}}/api/gardens/{{gardenId}}/status
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "status": "completed"
+}
+
+### ============================================
+### 18. Update Garden Status - Invalid Status
+### Should return 400 error
+### ============================================
+PATCH {{baseUrl}}/api/gardens/{{gardenId}}/status
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "status": "invalid"
+}
+
+### ============================================
+### 19. Delete Garden
+### Requires Authentication
+### ============================================
+DELETE {{baseUrl}}/api/gardens/{{gardenId}}
+Authorization: Bearer {{token}}
+
+### ============================================
+### 20. Delete Non-existent Garden
+### Should return 404 error
+### ============================================
+DELETE {{baseUrl}}/api/gardens/99999
+Authorization: Bearer {{token}}
+
+### ============================================
+### EXAMPLE TEST FLOW
+### ============================================
+
+### Step 1: Get all gardens
+GET {{baseUrl}}/api/gardens
+Authorization: Bearer {{token}}
+
+### Step 2: Create a garden invitation (ensure you're friends first)
+POST {{baseUrl}}/api/gardens
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "partner_email": "{{partnerEmail}}"
+}
+
+### Step 3: Accept the invitation (use gardenId from response)
+# PATCH {{baseUrl}}/api/gardens/1/invitation
+# Content-Type: application/json
+# Authorization: Bearer {{token}}
+#
+# {
+#   "status": "accepted"
+# }
+
+### Step 4: View updated gardens list
+GET {{baseUrl}}/api/gardens
+Authorization: Bearer {{token}}
+
+### Step 5: Increment garden streak
+# PATCH {{baseUrl}}/api/gardens/1/streak
+# Content-Type: application/json
+# Authorization: Bearer {{token}}
+#
+# {
+#   "increment": true
+# }
+
+### Step 6: Update garden status
+# PATCH {{baseUrl}}/api/gardens/1/status
+# Content-Type: application/json
+# Authorization: Bearer {{token}}
+#
+# {
+#   "status": "completed"
+# }
+
+### Step 7: Delete garden
+# DELETE {{baseUrl}}/api/gardens/1
+# Authorization: Bearer {{token}}

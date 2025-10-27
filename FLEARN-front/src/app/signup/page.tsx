@@ -61,6 +61,36 @@ export default function Home() {
   // CORS error handling
   const { executeAPI, corsError, clearErrors } = useAPIWithCORSHandling();
 
+  const convertImageToBase64 = async (imagePath: string): Promise<string> => {
+    try {
+      const response = await fetch(imagePath);
+      const blob = await response.blob();
+      
+      return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onloadend = () => resolve(reader.result as string);
+        reader.onerror = reject;
+        reader.readAsDataURL(blob);
+      });
+    } catch (error) {
+      console.error('Error converting image to base64:', error);
+      return '';
+    }
+  };
+
+  // Load default profile picture on component mount
+  useEffect(() => {
+    const loadDefaultProfilePicture = async () => {
+      const defaultBase64 = await convertImageToBase64("/Chr/defaultpfp.jpg");
+      if (defaultBase64) {
+        setFormData(prev => ({ ...prev, profilePicture: defaultBase64 }));
+        setImagePreview(defaultBase64);
+      }
+    };
+
+    loadDefaultProfilePicture();
+  }, []);
+
   const handleDataLoaded = useCallback((encodedData: string) => {
     try {
       // Decode the data from base64
@@ -423,6 +453,7 @@ export default function Home() {
                     style={{ boxShadow: '0px 0px 5px rgba(0, 0, 0, 0.25)' }}
                     value={formData.dateOfBirth}
                     onChange={handleDateOfBirthChange}
+                    max={new Date().toISOString().split('T')[0]}
                   />
                   {showValidationErrors && formData.dateOfBirth === '' && (
                     <p className="text-red-500 text-sm mb-3">Date of birth is required</p>

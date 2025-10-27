@@ -1,6 +1,7 @@
 const express = require('express');
 const { pgPool } = require('../config/database');
 const { checkJwt } = require('../middleware/auth');
+const { checkAndResetGardenStreak } = require('../middleware/streakHelper');
 
 const router = express.Router();
 
@@ -60,9 +61,24 @@ router.get('/', checkJwt, async (req, res) => {
         
         const result = await pgPool.query(query, [userId]);
         
+        // Check and reset streak for each garden if needed (if uptime_streak - todayDate >= 2 days)
+        const updatedGardens = await Promise.all(
+            result.rows.map(async (garden) => {
+                const updatedGarden = await checkAndResetGardenStreak(pgPool, garden.row_id);
+                // Preserve the joined fields from the original query
+                return {
+                    ...updatedGarden,
+                    partner_name: garden.partner_name,
+                    partner_email: garden.partner_email,
+                    partner_profile_pic: garden.partner_profile_pic,
+                    partner_user_id: garden.partner_user_id
+                };
+            })
+        );
+        
         res.json({
             message: 'Gardens retrieved successfully',
-            gardens: result.rows
+            gardens: updatedGardens
         });
         
     } catch (error) {
@@ -135,9 +151,24 @@ router.get('/user/:userId', checkJwt, async (req, res) => {
         
         const result = await pgPool.query(query, [userId]);
         
+        // Check and reset streak for each garden if needed (if uptime_streak - todayDate >= 2 days)
+        const updatedGardens = await Promise.all(
+            result.rows.map(async (garden) => {
+                const updatedGarden = await checkAndResetGardenStreak(pgPool, garden.row_id);
+                // Preserve the joined fields from the original query
+                return {
+                    ...updatedGarden,
+                    partner_name: garden.partner_name,
+                    partner_email: garden.partner_email,
+                    partner_profile_pic: garden.partner_profile_pic,
+                    partner_user_id: garden.partner_user_id
+                };
+            })
+        );
+        
         res.json({
             message: 'Gardens retrieved successfully',
-            gardens: result.rows
+            gardens: updatedGardens
         });
         
     } catch (error) {
