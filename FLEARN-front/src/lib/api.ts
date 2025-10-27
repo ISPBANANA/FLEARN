@@ -284,10 +284,14 @@ async function apiCall(endpoint: string, options: RequestInit = {}) {
     headers['Authorization'] = `Bearer ${token}`;
   } else {
     // For protected endpoints, we need a token
-    const protectedEndpoints = ['/api/users/', '/api/friends/', '/api/gardens/'];
+    const protectedEndpoints = ['/api/users/', '/api/friends/', '/api/gardens/', '/api/topics'];
     const isProtectedEndpoint = protectedEndpoints.some(path => endpoint.startsWith(path));
     
-    if (isProtectedEndpoint) {
+    // Check if it's a POST, PUT, or DELETE request to /api/topics (these need auth)
+    const isTopicMutation = endpoint.startsWith('/api/topics') && 
+                           (options.method === 'POST' || options.method === 'PUT' || options.method === 'DELETE');
+    
+    if (isProtectedEndpoint || isTopicMutation) {
       throw new Error('No token provided - please log in to access this resource');
     }
   }
@@ -303,11 +307,20 @@ async function apiCall(endpoint: string, options: RequestInit = {}) {
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({}));
       
+      console.error('API Error Response:', {
+        status: response.status,
+        statusText: response.statusText,
+        errorData,
+        endpoint
+      });
+      
       if (response.status === 401) {
         throw new Error('Unauthorized - please log in again');
       }
       
-      throw new Error(errorData.message || `API call failed: ${response.status}`);
+      // Use the backend's error message if available
+      const errorMessage = errorData.error || errorData.message || `API call failed: ${response.status}`;
+      throw new Error(errorMessage);
     }
     
     return response.json();
@@ -554,6 +567,76 @@ export const gardensAPI = {
   },
 };
 
+// Questions and Topics API functions
+export const questionsAPI = {
+  // Get all subjects
+  async getSubjects() {
+    return apiCall('/api/questions/subjects');
+  },
+
+  // Get all topics (with optional filters)
+  async getTopics(filters?: {
+    subject_id?: number;
+    status?: 'public' | 'private';
+    limit?: number;
+    offset?: number;
+  }) {
+    const params = new URLSearchParams();
+    if (filters?.subject_id) params.append('subject_id', filters.subject_id.toString());
+    if (filters?.status) params.append('status', filters.status);
+    if (filters?.limit) params.append('limit', filters.limit.toString());
+    if (filters?.offset) params.append('offset', filters.offset.toString());
+    
+    const queryString = params.toString();
+    return apiCall(`/api/topics${queryString ? `?${queryString}` : ''}`);
+  },
+
+  // Get topics by subject
+  async getTopicsBySubject(subjectId: number) {
+    return apiCall(`/api/topics/subject/${subjectId}`);
+  },
+
+  // Update topic status (admin only)
+  async updateTopicStatus(topicId: number, status: 'public' | 'private') {
+    return apiCall(`/api/topics/${topicId}`, {
+      method: 'PUT',
+      body: JSON.stringify({ status }),
+    });
+  },
+
+  // Create new topic (admin only)
+  async createTopic(topicData: {
+    subject_id: number;
+    name: string;
+    description?: string;
+    status?: 'public' | 'private';
+  }) {
+    return apiCall('/api/topics', {
+      method: 'POST',
+      body: JSON.stringify(topicData),
+    });
+  },
+
+  // Update topic (admin only)
+  async updateTopic(topicId: number, topicData: {
+    name?: string;
+    description?: string;
+    status?: 'public' | 'private';
+  }) {
+    return apiCall(`/api/topics/${topicId}`, {
+      method: 'PUT',
+      body: JSON.stringify(topicData),
+    });
+  },
+
+  // Delete topic (admin only)
+  async deleteTopic(topicId: number) {
+    return apiCall(`/api/topics/${topicId}`, {
+      method: 'DELETE',
+    });
+  },
+};
+
 // Enhanced health check with CORS detection
 export async function checkBackendHealth(): Promise<{
   isHealthy: boolean;
@@ -611,6 +694,7 @@ export default {
   userAPI,
   friendsAPI,
   gardensAPI,
+  questionsAPI,
   getCurrentUser,
   isAuthenticated,
   checkBackendHealth,

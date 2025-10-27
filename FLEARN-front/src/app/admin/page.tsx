@@ -12,7 +12,7 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { notFound } from 'next/navigation';
 import { Edit, Trash2, RefreshCw, ChevronDown, ChevronRight, Search } from 'lucide-react';
-import { userAPI } from '@/lib/api';
+import { userAPI, questionsAPI } from '@/lib/api';
 
 // Force dynamic rendering to avoid build-time issues with useSearchParams
 export const dynamic = 'force-dynamic';
@@ -37,14 +37,15 @@ interface AdminUser {
 }
 
 interface Topic {
-  id: string;
+  topic_id: number;
   name: string;
-  totalQuestions: number;
-  status: 'Public' | 'Private';
+  question_count: number;
+  status: 'public' | 'private';
+  description?: string;
 }
 
 interface Subject {
-  id: string;
+  subject_id: number;
   name: string;
   topics: Topic[];
   isExpanded: boolean;
@@ -76,59 +77,45 @@ export default function AdminPage() {
   }>({ name: '', role: '', profile_pic: '' });
 
   // Subject Management States
-  const [subjects, setSubjects] = useState<Subject[]>([
-    {
-      id: '1',
-      name: 'Mathematics',
-      isExpanded: false,
-      topics: [
-        { id: 'm1', name: 'Calculus - Lopital', totalQuestions: 100, status: 'Public' },
-        { id: 'm2', name: 'Linear Algebra', totalQuestions: 85, status: 'Public' },
-        { id: 'm3', name: 'Differential Equations', totalQuestions: 120, status: 'Private' },
-        { id: 'm4', name: 'asd', totalQuestions: 120, status: 'Private' },
-        { id: 'm5', name: 'lhjhs', totalQuestions: 100, status: 'Private' },
-        { id: 'm6', name: 'kjhg', totalQuestions: 100, status: 'Private' },
-        { id: 'm7', name: 'qwerty', totalQuestions: 100, status: 'Private' },
-      ]
-    },
-    {
-      id: '2',
-      name: 'Physics',
-      isExpanded: false,
-      topics: [
-        { id: 'p1', name: 'Mechanics', totalQuestions: 95, status: 'Public' },
-        { id: 'p2', name: 'Thermodynamics', totalQuestions: 75, status: 'Public' },
-        { id: 'p3', name: 'Electromagnetism', totalQuestions: 110, status: 'Private' },
-      ]
-    },
-    {
-      id: '3',
-      name: 'Chemistry',
-      isExpanded: false,
-      topics: [
-        { id: 'c1', name: 'Organic Chemistry', totalQuestions: 90, status: 'Public' },
-        { id: 'c2', name: 'Inorganic Chemistry', totalQuestions: 80, status: 'Public' },
-        { id: 'c3', name: 'Physical Chemistry', totalQuestions: 105, status: 'Private' },
-      ]
-    },
-    {
-      id: '4',
-      name: 'Biology',
-      isExpanded: false,
-      topics: [
-        { id: 'b1', name: 'Cell Biology', totalQuestions: 88, status: 'Public' },
-        { id: 'b2', name: 'Genetics', totalQuestions: 92, status: 'Public' },
-        { id: 'b3', name: 'Ecology', totalQuestions: 70, status: 'Private' },
-      ]
-    },
-  ]);
-  const [topicSearchTerms, setTopicSearchTerms] = useState<{[key: string]: string}>({});
+  const [subjects, setSubjects] = useState<Subject[]>([]);
+  const [topicSearchTerms, setTopicSearchTerms] = useState<{[key: number]: string}>({});
+  const [isLoadingSubjects, setIsLoadingSubjects] = useState(false);
+  const [subjectsError, setSubjectsError] = useState<string | null>(null);
+  const [lastSubjectsRefresh, setLastSubjectsRefresh] = useState<Date | null>(null);
+  const [newTopicDialog, setNewTopicDialog] = useState<{
+    isOpen: boolean;
+    subjectId: number | null;
+    subjectName: string;
+  }>({ isOpen: false, subjectId: null, subjectName: '' });
+  const [isCreatingTopic, setIsCreatingTopic] = useState(false);
+  const [newTopicForm, setNewTopicForm] = useState<{
+    name: string;
+  }>({ name: '' });
+  const [editTopicDialog, setEditTopicDialog] = useState<{
+    isOpen: boolean;
+    topic: Topic | null;
+  }>({ isOpen: false, topic: null });
+  const [isUpdatingTopic, setIsUpdatingTopic] = useState(false);
+  const [editTopicForm, setEditTopicForm] = useState<{
+    name: string;
+  }>({ name: '' });
 
-  // Auto-refresh every 10 seconds
+  // Auto-refresh users every 60 seconds
   useEffect(() => {
     const interval = setInterval(() => {
       if (isAuthenticated && profile && (profile.role === 'admin' || profile.role === 'teacher')) {
         fetchUsers();
+      }
+    }, 60000); // 60 seconds
+
+    return () => clearInterval(interval);
+  }, [isAuthenticated, profile]);
+
+  // Auto-refresh subjects every 60 seconds
+  useEffect(() => {
+    const interval = setInterval(() => {
+      if (isAuthenticated && profile && (profile.role === 'admin' || profile.role === 'teacher')) {
+        fetchSubjects();
       }
     }, 60000); // 60 seconds
 
@@ -149,6 +136,205 @@ export default function AdminPage() {
       console.error('Error fetching users:', err);
     } finally {
       setIsLoadingUsers(false);
+    }
+  };
+
+  // Fetch subjects and topics function
+  const fetchSubjects = async () => {
+    try {
+      setIsLoadingSubjects(true);
+      setSubjectsError(null);
+      
+      // Fetch all subjects
+      const subjectsResponse = await questionsAPI.getSubjects();
+      const subjectsData = subjectsResponse.data || [];
+      
+      // Fetch topics for each subject
+      const subjectsWithTopics = await Promise.all(
+        subjectsData.map(async (subject: any) => {
+          const topicsResponse = await questionsAPI.getTopicsBySubject(subject.subject_id);
+          return {
+            subject_id: subject.subject_id,
+            name: subject.name,
+            topics: topicsResponse.data || [],
+            isExpanded: false
+          };
+        })
+      );
+      
+      setSubjects(subjectsWithTopics);
+      setLastSubjectsRefresh(new Date());
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'Failed to fetch subjects';
+      setSubjectsError(errorMessage);
+      console.error('Error fetching subjects:', err);
+    } finally {
+      setIsLoadingSubjects(false);
+    }
+  };
+
+  // Manual refresh subjects
+  const handleManualSubjectsRefresh = () => {
+    fetchSubjects();
+  };
+
+  // Handle topic status change
+  const handleTopicStatusChange = async (topicId: number, newStatus: 'public' | 'private') => {
+    try {
+      await questionsAPI.updateTopicStatus(topicId, newStatus);
+      
+      // Update local state
+      setSubjects(subjects.map(subject => ({
+        ...subject,
+        topics: subject.topics.map(topic =>
+          topic.topic_id === topicId ? { ...topic, status: newStatus } : topic
+        )
+      })));
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'Failed to update topic status';
+      alert(`Error: ${errorMessage}`);
+      console.error('Error updating topic status:', err);
+    }
+  };
+
+  // Handle open new topic dialog
+  const handleOpenNewTopicDialog = (subjectId: number, subjectName: string) => {
+    setNewTopicDialog({ isOpen: true, subjectId, subjectName });
+    setNewTopicForm({ name: '' });
+  };
+
+  // Handle cancel new topic
+  const cancelNewTopic = () => {
+    setNewTopicDialog({ isOpen: false, subjectId: null, subjectName: '' });
+    setNewTopicForm({ name: '' });
+  };
+
+  // Handle create new topic
+  const confirmCreateTopic = async () => {
+    if (!newTopicDialog.subjectId || !newTopicForm.name.trim()) {
+      alert('Topic name is required');
+      return;
+    }
+
+    try {
+      setIsCreatingTopic(true);
+      
+      const topicData = {
+        subject_id: newTopicDialog.subjectId,
+        name: newTopicForm.name.trim(),
+        status: 'private' as const, // Always set to private
+        description: '', // Add empty description to avoid backend issues
+      };
+      
+      console.log('Creating topic with data:', topicData);
+      
+      const response = await questionsAPI.createTopic(topicData);
+      
+      console.log('Topic created successfully:', response);
+      
+      // Update local state with new topic
+      setSubjects(subjects.map(subject => 
+        subject.subject_id === newTopicDialog.subjectId
+          ? {
+              ...subject,
+              topics: [...subject.topics, response.data]
+            }
+          : subject
+      ));
+      
+      setNewTopicDialog({ isOpen: false, subjectId: null, subjectName: '' });
+      setNewTopicForm({ name: '' });
+      
+      // Optionally refresh subjects to ensure data is up-to-date
+      fetchSubjects();
+    } catch (err) {
+      console.error('Full error object:', err);
+      const errorMessage = err instanceof Error ? err.message : 'Failed to create topic';
+      
+      // Try to extract more detailed error information
+      if (err && typeof err === 'object' && 'response' in err) {
+        const response = (err as any).response;
+        if (response && response.data && response.data.error) {
+          alert(`Error creating topic: ${response.data.error}`);
+          return;
+        }
+      }
+      
+      alert(`Error creating topic: ${errorMessage}`);
+    } finally {
+      setIsCreatingTopic(false);
+    }
+  };
+
+  // Handle open edit topic dialog
+  const handleOpenEditTopicDialog = (topic: Topic) => {
+    setEditTopicDialog({ isOpen: true, topic });
+    setEditTopicForm({ name: topic.name });
+  };
+
+  // Handle cancel edit topic
+  const cancelEditTopic = () => {
+    setEditTopicDialog({ isOpen: false, topic: null });
+    setEditTopicForm({ name: '' });
+  };
+
+  // Handle update topic
+  const confirmUpdateTopic = async () => {
+    if (!editTopicDialog.topic || !editTopicForm.name.trim()) {
+      alert('Topic name is required');
+      return;
+    }
+
+    // Check if name has changed
+    if (editTopicForm.name.trim() === editTopicDialog.topic.name) {
+      alert('No changes detected');
+      return;
+    }
+
+    try {
+      setIsUpdatingTopic(true);
+      
+      const topicData = {
+        name: editTopicForm.name.trim(),
+      };
+      
+      console.log('Updating topic with data:', topicData);
+      
+      const response = await questionsAPI.updateTopic(editTopicDialog.topic.topic_id, topicData);
+      
+      console.log('Topic updated successfully:', response);
+      
+      // Update local state
+      setSubjects(subjects.map(subject => ({
+        ...subject,
+        topics: subject.topics.map(topic =>
+          topic.topic_id === editTopicDialog.topic!.topic_id 
+            ? { ...topic, name: editTopicForm.name.trim() }
+            : topic
+        )
+      })));
+      
+      setEditTopicDialog({ isOpen: false, topic: null });
+      setEditTopicForm({ name: '' });
+      
+      // Optionally refresh subjects to ensure data is up-to-date
+      fetchSubjects();
+    } catch (err) {
+      console.error('Full error object:', err);
+      const errorMessage = err instanceof Error ? err.message : 'Failed to update topic';
+      
+      // Try to extract more detailed error information
+      if (err && typeof err === 'object' && 'response' in err) {
+        const response = (err as any).response;
+        if (response && response.data && response.data.error) {
+          alert(`Error updating topic: ${response.data.error}`);
+          return;
+        }
+      }
+      
+      alert(`Error updating topic: ${errorMessage}`);
+    } finally {
+      setIsUpdatingTopic(false);
     }
   };
 
@@ -271,8 +457,9 @@ export default function AdminPage() {
       if (!isAuthenticated || !profile || (profile.role !== 'admin' && profile.role !== 'teacher')) {
         notFound();
       } else {
-        // Fetch users on initial load
+        // Fetch data on initial load
         fetchUsers();
+        fetchSubjects();
       }
     }
   }, [isAuthenticated, profile, authLoading, profileLoading]);
@@ -293,9 +480,9 @@ export default function AdminPage() {
   }, [users, searchTerm]);
 
   // Toggle subject expansion
-  const toggleSubject = (subjectId: string) => {
+  const toggleSubject = (subjectId: number) => {
     setSubjects(subjects.map(subject => 
-      subject.id === subjectId 
+      subject.subject_id === subjectId 
         ? { ...subject, isExpanded: !subject.isExpanded }
         : subject
     ));
@@ -303,7 +490,7 @@ export default function AdminPage() {
 
   // Get filtered topics for a subject
   const getFilteredTopics = (subject: Subject) => {
-    const searchTerm = topicSearchTerms[subject.id] || '';
+    const searchTerm = topicSearchTerms[subject.subject_id] || '';
     if (!searchTerm.trim()) {
       return subject.topics;
     }
@@ -313,7 +500,7 @@ export default function AdminPage() {
   };
 
   // Update topic search term for a specific subject
-  const updateTopicSearchTerm = (subjectId: string, value: string) => {
+  const updateTopicSearchTerm = (subjectId: number, value: string) => {
     setTopicSearchTerms(prev => ({
       ...prev,
       [subjectId]: value
@@ -486,8 +673,31 @@ export default function AdminPage() {
             <div className="w-full flex flex-row justify-between items-center mb-4 my-4">
               <div className="flex flex-col">
                 <h2 className="text-2xl font-bold text-[#454545]">Subject Topic Management</h2>
+                {lastSubjectsRefresh && (
+                  <p className="text-sm text-gray-500">
+                    Last updated: {lastSubjectsRefresh.toLocaleTimeString()}
+                  </p>
+                )}
+              </div>
+              <div className="flex flex-row gap-4 items-center">
+                {/* Manual Refresh Button */}
+                <button 
+                  onClick={handleManualSubjectsRefresh}
+                  disabled={isLoadingSubjects}
+                  className="bg-white border border-blue-400 text-blue-800 py-1 px-4 rounded hover:border-blue-500 transition disabled:opacity-50 flex items-center gap-2"
+                >
+                  <RefreshCw size={16} className={isLoadingSubjects ? 'animate-spin' : ''} />
+                  Refresh
+                </button>
               </div>
             </div>
+
+            {/* Error Display */}
+            {subjectsError && (
+              <div className="w-full mb-4 p-3 bg-red-100 border border-red-400 text-red-700 rounded">
+                Error: {subjectsError}
+              </div>
+            )}
 
             {/* Subject List */}
             <div className="flex flex-col overflow-y-auto w-full h-full gap-2 pb-4">
@@ -497,17 +707,25 @@ export default function AdminPage() {
                 <div className="text-left">Subject</div>
               </div>
 
+              {/* Loading State */}
+              {isLoadingSubjects && (
+                <div className="flex justify-center items-center py-8">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-purple-500"></div>
+                  <span className="ml-2 text-gray-600">Loading subjects...</span>
+                </div>
+              )}
+
               {/* Subjects Data */}
-              {subjects.length === 0 && (
+              {!isLoadingSubjects && subjects.length === 0 && !subjectsError && (
                 <div className="text-center py-8 text-gray-500">
                   No subjects found.
                 </div>
               )}
 
-              {subjects.map((subject) => {
+              {!isLoadingSubjects && subjects.map((subject) => {
                 const filteredTopics = getFilteredTopics(subject);
                 return (
-                  <div key={subject.id} className="flex flex-col">
+                  <div key={subject.subject_id} className="flex flex-col">
                     {/* Subject Row */}
                     <div 
                       className="m-1 py-2 px-4 border-b border-gray-100 hover:bg-gray-50 rounded-lg transition-colors flex items-center gap-4" 
@@ -515,7 +733,7 @@ export default function AdminPage() {
                     >
                       <div 
                         className="flex items-center gap-4 flex-1 cursor-pointer"
-                        onClick={() => toggleSubject(subject.id)}
+                        onClick={() => toggleSubject(subject.subject_id)}
                       >
                         <div className="flex items-center justify-center w-[40px]">
                           {subject.isExpanded ? (
@@ -538,7 +756,7 @@ export default function AdminPage() {
                               className="bg-purple-500 text-white py-1 px-4 rounded hover:bg-purple-600 transition flex items-center gap-2"
                               onClick={(e) => {
                                 e.stopPropagation();
-                                // Add new topic handler (static for now)
+                                handleOpenNewTopicDialog(subject.subject_id, subject.name);
                               }}
                             >
                               <Edit size={16} />
@@ -550,10 +768,10 @@ export default function AdminPage() {
                             <input
                               type="text"
                               placeholder="Name"
-                              value={topicSearchTerms[subject.id] || ''}
+                              value={topicSearchTerms[subject.subject_id] || ''}
                               onChange={(e) => {
                                 e.stopPropagation();
-                                updateTopicSearchTerm(subject.id, e.target.value);
+                                updateTopicSearchTerm(subject.subject_id, e.target.value);
                               }}
                               onClick={(e) => e.stopPropagation()}
                               className="border border-gray-300 rounded px-4 py-1 w-60 focus:outline-none focus:ring-2 focus:ring-purple-500 text-[#454545]"
@@ -582,13 +800,13 @@ export default function AdminPage() {
                         <div className={filteredTopics.length > 3 ? 'overflow-y-auto' : ''} style={filteredTopics.length > 3 ? { maxHeight: '240px' } : {}}>
                           {filteredTopics.length === 0 && (
                             <div className="text-center py-2 text-gray-500 text-sm">
-                              {topicSearchTerms[subject.id] ? 'No topics found matching your search.' : 'No topics available.'}
+                              {topicSearchTerms[subject.subject_id] ? 'No topics found matching your search.' : 'No topics available.'}
                             </div>
                           )}
 
                           {filteredTopics.map((topic) => (
                           <div 
-                            key={topic.id} 
+                            key={topic.topic_id} 
                             className={`grid gap-4 py-2 px-4 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors mb-2`}
                             style={{gridTemplateColumns: profile?.role === 'admin' ? '2fr 1fr 1fr 100px' : '2fr 1fr 1fr', boxShadow: '0px 0px 2px rgba(0, 0, 0, 0.1)' }}
                           >
@@ -596,30 +814,31 @@ export default function AdminPage() {
                               {topic.name}
                             </div>
                             <div className="text-gray-700 flex items-center justify-center">
-                              {topic.totalQuestions}
+                              {topic.question_count}
                             </div>
                             <div className="flex items-center justify-center">
                               {profile?.role === 'admin' ? (
                                 <button
                                   onClick={(e) => {
                                     e.stopPropagation();
-                                    // Toggle status handler (static for now)
+                                    const newStatus = topic.status === 'public' ? 'private' : 'public';
+                                    handleTopicStatusChange(topic.topic_id, newStatus);
                                   }}
                                   className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium cursor-pointer transition-colors ${
-                                    topic.status === 'Public' 
+                                    topic.status === 'public' 
                                       ? 'bg-green-100 text-green-800 hover:bg-green-200' 
                                       : 'bg-gray-100 text-gray-800 hover:bg-gray-200'
                                   }`}
                                 >
-                                  {topic.status}
+                                  {topic.status === 'public' ? 'Public' : 'Private'}
                                 </button>
                               ) : (
                                 <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium ${
-                                  topic.status === 'Public' 
+                                  topic.status === 'public' 
                                     ? 'bg-green-100 text-green-800' 
                                     : 'bg-gray-100 text-gray-800'
                                 }`}>
-                                  {topic.status}
+                                  {topic.status === 'public' ? 'Public' : 'Private'}
                                 </span>
                               )}
                             </div>
@@ -628,7 +847,7 @@ export default function AdminPage() {
                                 <button 
                                   onClick={(e) => {
                                     e.stopPropagation();
-                                    // Edit topic handler (static for now)
+                                    handleOpenEditTopicDialog(topic);
                                   }}
                                   className="text-blue-500 hover:text-blue-600 p-1 rounded transition-colors"
                                   title="Edit topic"
@@ -821,6 +1040,136 @@ export default function AdminPage() {
                   </>
                 ) : (
                   'Save Changes'
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Add New Topic Dialog */}
+      {newTopicDialog.isOpen && (
+        <div className="fixed inset-0 backdrop-blur-xs flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
+            <h3 className="text-lg font-semibold text-gray-900 mb-4">
+              Add New Topic
+            </h3>
+            <p className="text-gray-600 mb-4">
+              Creating a new topic for{' '}
+              <strong>{newTopicDialog.subjectName}</strong>
+            </p>
+            
+            {/* Form */}
+            <div className="space-y-4 mb-6">
+              {/* Topic Name Field */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Topic Name <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="text"
+                  value={newTopicForm.name}
+                  onChange={(e) => setNewTopicForm({ name: e.target.value })}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500 text-gray-900"
+                  placeholder="Enter topic name"
+                  autoFocus
+                />
+              </div>
+
+              {/* Status Info */}
+              <div className="bg-purple-50 border border-purple-200 rounded-md p-3">
+                <p className="text-purple-800 text-sm">
+                  <strong>Status:</strong> This topic will be created as <strong>Private</strong> by default. You can change it to Public later.
+                </p>
+              </div>
+            </div>
+
+            {/* Action Buttons */}
+            <div className="flex gap-3 justify-end">
+              <button
+                onClick={cancelNewTopic}
+                disabled={isCreatingTopic}
+                className="px-4 py-2 text-gray-600 bg-gray-100 rounded hover:bg-gray-200 transition-colors disabled:opacity-50"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={confirmCreateTopic}
+                disabled={isCreatingTopic || !newTopicForm.name.trim()}
+                className="px-4 py-2 bg-purple-500 text-white rounded hover:bg-purple-600 transition-colors disabled:opacity-50 disabled:bg-purple-300 flex items-center gap-2"
+              >
+                {isCreatingTopic ? (
+                  <>
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                    Creating...
+                  </>
+                ) : (
+                  'Create Topic'
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Edit Topic Dialog */}
+      {editTopicDialog.isOpen && (
+        <div className="fixed inset-0 backdrop-blur-xs flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
+            <h3 className="text-lg font-semibold text-gray-900 mb-4">
+              Edit Topic
+            </h3>
+            <p className="text-gray-600 mb-4">
+              Editing topic:{' '}
+              <strong>{editTopicDialog.topic?.name}</strong>
+            </p>
+            
+            {/* Form */}
+            <div className="space-y-4 mb-6">
+              {/* Topic Name Field */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Topic Name <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="text"
+                  value={editTopicForm.name}
+                  onChange={(e) => setEditTopicForm({ name: e.target.value })}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900"
+                  placeholder="Enter topic name"
+                  autoFocus
+                />
+              </div>
+
+              {/* Info Box */}
+              <div className="bg-blue-50 border border-blue-200 rounded-md p-3">
+                <p className="text-blue-800 text-sm">
+                  <strong>Note:</strong> Only the topic name will be updated. Status can be changed by clicking the status badge in the topic list.
+                </p>
+              </div>
+            </div>
+
+            {/* Action Buttons */}
+            <div className="flex gap-3 justify-end">
+              <button
+                onClick={cancelEditTopic}
+                disabled={isUpdatingTopic}
+                className="px-4 py-2 text-gray-600 bg-gray-100 rounded hover:bg-gray-200 transition-colors disabled:opacity-50"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={confirmUpdateTopic}
+                disabled={isUpdatingTopic || !editTopicForm.name.trim() || editTopicForm.name.trim() === editTopicDialog.topic?.name}
+                className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 transition-colors disabled:opacity-50 disabled:bg-blue-300 flex items-center gap-2"
+              >
+                {isUpdatingTopic ? (
+                  <>
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                    Updating...
+                  </>
+                ) : (
+                  'Update Topic'
                 )}
               </button>
             </div>

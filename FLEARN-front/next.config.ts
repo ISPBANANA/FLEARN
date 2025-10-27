@@ -11,13 +11,6 @@ const nextConfig: NextConfig = {
       'th3.googleusercontent.com',
       'lh3.googleusercontent.com'
     ],
-  },
-  experimental: {
-    turbo: {
-      root: path.resolve(__dirname),
-    },
-  },
-  images: {
     remotePatterns: [
       {
         protocol: 'https',
@@ -32,6 +25,11 @@ const nextConfig: NextConfig = {
         pathname: '/**',
       },
     ],
+  },
+  experimental: {
+    turbo: {
+      root: path.resolve(__dirname),
+    },
   },
   env: {
     NEXT_PUBLIC_API_BASE_URL: process.env.NEXT_PUBLIC_API_BASE_URL,
@@ -68,6 +66,18 @@ const nextConfig: NextConfig = {
         destination: process.env.NODE_ENV === 'production' 
           ? 'http://flearn-backend:8099/api/friends/:path*'
           : 'http://localhost:8099/api/friends/:path*',
+      },
+      {
+        source: '/api/questions/:path*',
+        destination: process.env.NODE_ENV === 'production' 
+          ? 'http://flearn-backend:8099/api/questions/:path*'
+          : 'http://localhost:8099/api/questions/:path*',
+      },
+      {
+        source: '/api/topics/:path*',
+        destination: process.env.NODE_ENV === 'production' 
+          ? 'http://flearn-backend:8099/api/topics/:path*'
+          : 'http://localhost:8099/api/topics/:path*',
       },
       // Keep auth routes local - they will be handled by frontend API routes
     ];
