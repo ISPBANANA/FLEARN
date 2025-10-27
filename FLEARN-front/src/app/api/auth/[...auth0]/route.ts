@@ -180,7 +180,7 @@ async function handleCallback(request: NextRequest) {
           'Authorization': `Bearer ${id_token}`,
         },
       });
-      
+
       if (userCheckResponse.status === 404) {
         isNewUser = true;
       } else {

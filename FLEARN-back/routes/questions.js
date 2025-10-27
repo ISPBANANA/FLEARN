@@ -139,9 +139,31 @@ router.post('/', checkJwt, async (req, res) => {
 // GET /api/questions?status=public
 // GET /api/questions?subject_id=1&topic_id=1&type=multiple_choice&difficulty=2&status=public&limit=5&offset=0
 // ============================================
-router.get('/', async (req, res) => {
+router.get('/', optionalJwt, async (req, res) => {
     try {
-        const questions = await Question.getAll(req.query);
+        const filters = { ...req.query };
+        
+        // If user is authenticated and is a teacher, filter by created_by
+        if (req.user) {
+            const googleId = req.user.sub || req.user.id;
+            const { pgPool } = require('../config/database');
+            
+            // Get user info including role
+            const userQuery = 'SELECT user_id, role FROM "user" WHERE google_id = $1';
+            const userResult = await pgPool.query(userQuery, [googleId]);
+            
+            if (userResult.rows.length > 0) {
+                const user = userResult.rows[0];
+                
+                // If user is a teacher (not admin), only show their own questions
+                if (user.role === 'teacher') {
+                    filters.created_by = user.user_id;
+                }
+                // Admin can see all questions (no filter needed)
+            }
+        }
+        
+        const questions = await Question.getAll(filters);
         
         res.json({
             success: true,
