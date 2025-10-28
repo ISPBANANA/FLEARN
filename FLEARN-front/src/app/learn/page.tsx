@@ -44,9 +44,12 @@ interface Topic {
 interface BacklogStats {
   topic_id: number;
   topic_name: string;
-  total_attempts: number;
-  correct_answers: number;
-  incorrect_answers: number;
+  total_attempts: string | number;  // API returns string from database COUNT
+  correct_count: string | number;   // API returns string from database SUM
+  incorrect_count: string | number; // API returns string from database SUM
+  accuracy_percentage?: string;     // API returns string from database ROUND
+  subject_id?: number;
+  subject_name?: string;
 }
 
 export default function Home() {
@@ -82,6 +85,19 @@ export default function Home() {
     };
     
     fetchUserProfile();
+
+    // Restore last selected subject and topic from localStorage
+    const lastSubjectId = localStorage.getItem('lastSelectedSubjectId');
+    const lastTopicId = localStorage.getItem('lastSelectedTopicId');
+    
+    if (lastSubjectId) {
+      // We'll restore after subjects are loaded
+      // Store the IDs for restoration
+      sessionStorage.setItem('restoreSubjectId', lastSubjectId);
+      if (lastTopicId) {
+        sessionStorage.setItem('restoreTopicId', lastTopicId);
+      }
+    }
   }, []);
 
   // Fetch topics when subject is selected
@@ -99,6 +115,22 @@ export default function Home() {
     if (selectedTopic && currentUserId) {
       fetchBacklogStats(currentUserId, selectedTopic.topic_id);
     }
+  }, [selectedTopic, currentUserId]);
+
+  // Refresh backlog stats when page becomes visible (e.g., returning from problem page)
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (!document.hidden && selectedTopic && currentUserId) {
+        // Page is visible again, refresh backlog stats
+        fetchBacklogStats(currentUserId, selectedTopic.topic_id);
+      }
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
   }, [selectedTopic, currentUserId]);
 
   // Filter topics based on search
@@ -120,6 +152,18 @@ export default function Home() {
       const response = await questionsAPI.getSubjects();
       if (response.success && response.data) {
         setSubjects(response.data);
+        
+        // After subjects are loaded, restore the last selected subject if available
+        const restoreSubjectId = sessionStorage.getItem('restoreSubjectId');
+        if (restoreSubjectId) {
+          const subjectToRestore = response.data.find(
+            (s: Subject) => s.subject_id === parseInt(restoreSubjectId)
+          );
+          if (subjectToRestore) {
+            setSelectedSubject(subjectToRestore);
+          }
+          sessionStorage.removeItem('restoreSubjectId');
+        }
       } else {
         throw new Error('Failed to fetch subjects');
       }
@@ -144,6 +188,18 @@ export default function Home() {
       if (response.success && response.data) {
         setTopics(response.data);
         setFilteredTopics(response.data);
+        
+        // After topics are loaded, restore the last selected topic if available
+        const restoreTopicId = sessionStorage.getItem('restoreTopicId');
+        if (restoreTopicId) {
+          const topicToRestore = response.data.find(
+            (t: Topic) => t.topic_id === parseInt(restoreTopicId)
+          );
+          if (topicToRestore) {
+            setSelectedTopic(topicToRestore);
+          }
+          sessionStorage.removeItem('restoreTopicId');
+        }
       } else {
         throw new Error('Failed to fetch topics');
       }
@@ -159,11 +215,25 @@ export default function Home() {
 
   const fetchBacklogStats = async (userId: string, topicId: number) => {
     try {
-      const response = await backlogAPI.getStatsByTopic(userId);
-      if (response.success && response.data) {
-        // Filter for the specific topic
-        const topicStats = response.data.filter((stat: BacklogStats) => stat.topic_id === topicId);
-        setBacklogStats(topicStats);
+      // Fetch backlog entries for this specific topic
+      const response = await backlogAPI.getByUser(userId, { topic_id: topicId });
+      
+      // Backend returns { message, count, data } structure
+      if (response.data && Array.isArray(response.data)) {
+        // Create a stats object from the entries
+        // Count is simply the number of entries returned
+        const stats: BacklogStats = {
+          topic_id: topicId,
+          topic_name: selectedTopic?.name || '',
+          total_attempts: response.data.length,
+          correct_count: response.data.filter((entry: any) => entry.correctness === true).length,
+          incorrect_count: response.data.filter((entry: any) => entry.correctness === false).length,
+        };
+        
+        setBacklogStats([stats]);
+      } else {
+        // No backlog entries for this topic
+        setBacklogStats([]);
       }
     } catch (err) {
       console.error('Error fetching backlog stats:', err);
@@ -175,6 +245,9 @@ export default function Home() {
     if (subject.subject_id === selectedSubject?.subject_id) {
       setSelectedSubject(null);
       setSelectedTopic(null);
+      // Clear localStorage when deselecting
+      localStorage.removeItem('lastSelectedSubjectId');
+      localStorage.removeItem('lastSelectedTopicId');
     } else {
       if (selectedSubject) {
         // If there's already a selected subject, slide out first
@@ -186,11 +259,17 @@ export default function Home() {
           setSelectedSubject(subject);
           setIsAnimating(false);
           setIsContentAnimating(false);
+          // Save to localStorage
+          localStorage.setItem('lastSelectedSubjectId', subject.subject_id.toString());
+          localStorage.removeItem('lastSelectedTopicId'); // Clear topic when changing subject
         }, 150);
       } else {
         // No subject selected, just slide in
         setSelectedSubject(subject);
         setSelectedTopic(null);
+        // Save to localStorage
+        localStorage.setItem('lastSelectedSubjectId', subject.subject_id.toString());
+        localStorage.removeItem('lastSelectedTopicId');
       }
     }
   };
@@ -198,6 +277,8 @@ export default function Home() {
   const handleSubtopicClick = (topic: Topic) => {
     if (topic.topic_id === selectedTopic?.topic_id) {
       setSelectedTopic(null);
+      // Clear topic from localStorage when deselecting
+      localStorage.removeItem('lastSelectedTopicId');
     } else {
       if (selectedTopic) {
         // If there's already a selected subtopic, slide out first
@@ -206,10 +287,14 @@ export default function Home() {
         setTimeout(() => {
           setSelectedTopic(topic);
           setIsContentAnimating(false);
+          // Save to localStorage
+          localStorage.setItem('lastSelectedTopicId', topic.topic_id.toString());
         }, 150);
       } else {
         // No subtopic selected, just slide in
         setSelectedTopic(topic);
+        // Save to localStorage
+        localStorage.setItem('lastSelectedTopicId', topic.topic_id.toString());
       }
     }
   };
@@ -345,7 +430,11 @@ export default function Home() {
           >
             {selectedTopic && (() => {
               // Calculate current level: count(backlog) // 3 + 1
-              const backlogCount = backlogStats.reduce((sum, stat) => sum + stat.total_attempts, 0);
+              // backlogStats has one entry with total_attempts = number of backlog entries
+              const backlogCount = backlogStats.length > 0 
+                ? parseInt(String(backlogStats[0].total_attempts) || '0')
+                : 0;
+              
               const currentLevel = Math.floor(backlogCount / 3) + 1;
               
               // Calculate which levels to display
@@ -415,21 +504,35 @@ export default function Home() {
                         } else if (isPastLevel) {
                           colorClass = 'bg-gradient-to-br from-green-400 via-green-500 to-emerald-500';
                         } else {
-                          colorClass = 'bg-gradient-to-br from-purple-500 via-purple-600 to-indigo-600';
+                          colorClass = 'bg-gradient-to-br from-gray-400 via-gray-500 to-gray-600';
                         }
                         
                         return (
                           <div key={level} className={`flex flex-col items-center ${opacity} transition-all duration-300`}>
-                            {/* Level node */}
-                            <div
-                              className={`${sizeClass} ${colorClass} ${textSize} ${shadowClass} rounded-[50px] text-white font-bold flex items-center justify-center cursor-default transform hover:scale-105 transition-all duration-200 relative`}
+                            {/* Level node - only current level is clickable */}
+                            <button
+                              onClick={() => {
+                                // Only allow navigation to current level
+                                if (isCurrentLevel && selectedSubject && selectedTopic) {
+                                  window.location.href = `/learn/problem?topic_id=${selectedTopic.topic_id}&level=${level}&subject_id=${selectedSubject.subject_id}`;
+                                }
+                              }}
+                              disabled={!isCurrentLevel}
+                              className={`${sizeClass} ${colorClass} ${textSize} ${shadowClass} rounded-[50px] text-white font-bold flex items-center justify-center ${
+                                isCurrentLevel 
+                                  ? 'cursor-pointer transform hover:scale-110' 
+                                  : 'cursor-not-allowed opacity-60'
+                              } transition-all duration-200 relative focus:outline-none ${
+                                isCurrentLevel ? 'focus:ring-4 focus:ring-purple-300' : ''
+                              }`}
+                              title={isCurrentLevel ? 'Click to start this level' : isPastLevel ? 'Level completed' : 'Complete current level to unlock'}
                             >
                               {level}
                               {/* Pulse animation for current level */}
                               {isCurrentLevel && (
                                 <div className="absolute inset-0 rounded-[50px] bg-yellow-400 animate-ping opacity-20"></div>
                               )}
-                            </div>
+                            </button>
                             
                             {/* Connector line with gradient */}
                             {index < levelsToShow.length - 1 && (
@@ -438,7 +541,7 @@ export default function Home() {
                                   ? 'bg-gradient-to-b from-green-400 to-green-500' 
                                   : isCurrentLevel 
                                   ? 'bg-gradient-to-b from-yellow-400 to-purple-500'
-                                  : 'bg-gradient-to-b from-purple-500 to-purple-600'
+                                  : 'bg-gradient-to-b from-gray-500 to-gray-600'
                               } rounded-full ${shadowClass}`}></div>
                             )}
                           </div>

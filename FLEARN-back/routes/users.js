@@ -30,11 +30,11 @@ router.get('/profile', checkJwt, async (req, res) => {
         
         const userId = result.rows[0].user_id;
         
-        // Count completed tasks from backlog where correctness is true
+        // Count completed tasks from backlog
         const countQuery = `
             SELECT COUNT(*) as completed_count
             FROM backlog
-            WHERE user_id = $1 AND correctness = true
+            WHERE user_id = $1
         `;
         const countResult = await pgPool.query(countQuery, [userId]);
         const completedCount = parseInt(countResult.rows[0].completed_count);
@@ -90,11 +90,11 @@ router.get('/profilebyid', checkJwt, async (req, res) => {
             });
         }
         
-        // Count completed tasks from backlog where correctness is true
+        // Count completed tasks from backlog
         const countQuery = `
             SELECT COUNT(*) as completed_count
             FROM backlog
-            WHERE user_id = $1 AND correctness = true
+            WHERE user_id = $1
         `;
         const countResult = await pgPool.query(countQuery, [userId]);
         const completedCount = parseInt(countResult.rows[0].completed_count);

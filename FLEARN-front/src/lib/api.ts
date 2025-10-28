@@ -569,6 +569,19 @@ export const gardensAPI = {
 
 // Questions and Topics API functions
 export const backlogAPI = {
+  // Create a new backlog entry
+  async createEntry(entryData: {
+    user_id: string;
+    subject_id: number;
+    topic_id?: number;
+    correctness: boolean;
+  }) {
+    return apiCall('/api/backlog', {
+      method: 'POST',
+      body: JSON.stringify(entryData),
+    });
+  },
+
   // Get backlog statistics by topic for a user
   async getStatsByTopic(userId: string, subjectId?: number) {
     const params = new URLSearchParams();
@@ -583,8 +596,15 @@ export const backlogAPI = {
   },
 
   // Get all backlog entries for a user
-  async getByUser(userId: string) {
-    return apiCall(`/api/backlog/user/${userId}`);
+  async getByUser(userId: string, filters?: { subject_id?: number; topic_id?: number; correctness?: boolean; limit?: number; offset?: number }) {
+    const params = new URLSearchParams();
+    if (filters?.subject_id) params.append('subject_id', filters.subject_id.toString());
+    if (filters?.topic_id) params.append('topic_id', filters.topic_id.toString());
+    if (filters?.correctness !== undefined) params.append('correctness', filters.correctness.toString());
+    if (filters?.limit) params.append('limit', filters.limit.toString());
+    if (filters?.offset) params.append('offset', filters.offset.toString());
+    const queryString = params.toString();
+    return apiCall(`/api/backlog/user/${userId}${queryString ? `?${queryString}` : ''}`);
   },
 };
 

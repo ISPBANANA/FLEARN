@@ -100,7 +100,7 @@ class Question {
         
         try {
             let query = `
-                SELECT q.question_id, q.difficulty, q.points, q.status,
+                SELECT q.question_id, q.difficulty, q.points, q.status, q.mongo_content_id,
                        qt.type_name, s.name as subject_name, t.name as topic_name,
                        q.created_at, q.created_by
                 FROM question q
@@ -145,7 +145,33 @@ class Question {
             query += ` ORDER BY q.created_at DESC LIMIT $${params.length - 1} OFFSET $${params.length}`;
             
             const result = await pgPool.query(query, params);
-            return result.rows;
+            
+            // Fetch content from MongoDB for each question
+            const db = getMongoDb();
+            const questionsWithContent = await Promise.all(
+                result.rows.map(async (question) => {
+                    try {
+                        const content = await db.collection('question_contents').findOne({
+                            _id: new ObjectId(question.mongo_content_id)
+                        });
+                        
+                        if (!content) {
+                            console.warn(`MongoDB content not found for question ${question.question_id}`);
+                            return null;
+                        }
+                        
+                        // Remove mongo_content_id from response (internal use only)
+                        const { mongo_content_id, ...questionWithoutMongoId } = question;
+                        return { ...questionWithoutMongoId, content };
+                    } catch (err) {
+                        console.error(`Error fetching content for question ${question.question_id}:`, err);
+                        return null;
+                    }
+                })
+            );
+            
+            // Filter out any questions where content fetch failed
+            return questionsWithContent.filter(q => q !== null);
         } catch (error) {
             console.error('Error getting all questions:', error);
             throw error;
