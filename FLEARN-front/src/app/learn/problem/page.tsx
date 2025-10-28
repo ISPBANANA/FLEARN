@@ -492,6 +492,15 @@ export default function ProblemPage() {
               await userAPI.updateExperience(expData);
             }
           }
+
+          // Update user streak after completing the level (all 3 questions)
+          // This will increment streak if uptime_streak is not today
+          try {
+            await userAPI.updateStreak();
+          } catch (err) {
+            console.error('Error updating user streak:', err);
+            // Don't block the flow if streak update fails
+          }
         } catch (err) {
           console.error('Error saving results to backlog or updating experience:', err);
         }

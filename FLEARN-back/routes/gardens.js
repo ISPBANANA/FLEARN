@@ -1,7 +1,7 @@
 const express = require('express');
 const { pgPool } = require('../config/database');
 const { checkJwt } = require('../middleware/auth');
-const { checkAndResetGardenStreak } = require('../middleware/streakHelper');
+const { checkAndResetGardenStreak, incrementGardenStreakIfBothUsersActive } = require('../middleware/streakHelper');
 
 const router = express.Router();
 
@@ -62,12 +62,19 @@ router.get('/', checkJwt, async (req, res) => {
         const result = await pgPool.query(query, [userId]);
         
         // Check and reset streak for each garden if needed (if uptime_streak - todayDate >= 2 days)
+        // Then check and increment garden streak if both users are active today
         const updatedGardens = await Promise.all(
             result.rows.map(async (garden) => {
-                const updatedGarden = await checkAndResetGardenStreak(pgPool, garden.row_id);
+                // First, check and reset if needed
+                const resetGarden = await checkAndResetGardenStreak(pgPool, garden.row_id);
+                
+                // Then, check and increment if both users are active today
+                const incrementResult = await incrementGardenStreakIfBothUsersActive(pgPool, garden.row_id);
+                const finalGarden = incrementResult.garden || resetGarden;
+                
                 // Preserve the joined fields from the original query
                 return {
-                    ...updatedGarden,
+                    ...finalGarden,
                     partner_name: garden.partner_name,
                     partner_email: garden.partner_email,
                     partner_profile_pic: garden.partner_profile_pic,
@@ -152,12 +159,19 @@ router.get('/user/:userId', checkJwt, async (req, res) => {
         const result = await pgPool.query(query, [userId]);
         
         // Check and reset streak for each garden if needed (if uptime_streak - todayDate >= 2 days)
+        // Then check and increment garden streak if both users are active today
         const updatedGardens = await Promise.all(
             result.rows.map(async (garden) => {
-                const updatedGarden = await checkAndResetGardenStreak(pgPool, garden.row_id);
+                // First, check and reset if needed
+                const resetGarden = await checkAndResetGardenStreak(pgPool, garden.row_id);
+                
+                // Then, check and increment if both users are active today
+                const incrementResult = await incrementGardenStreakIfBothUsersActive(pgPool, garden.row_id);
+                const finalGarden = incrementResult.garden || resetGarden;
+                
                 // Preserve the joined fields from the original query
                 return {
-                    ...updatedGarden,
+                    ...finalGarden,
                     partner_name: garden.partner_name,
                     partner_email: garden.partner_email,
                     partner_profile_pic: garden.partner_profile_pic,
@@ -316,11 +330,11 @@ router.patch('/:gardenId/streak', checkJwt, async (req, res) => {
         let queryParams;
         
         if (increment) {
-            // Increment streak and update uptime_streak
+            // Increment streak and update uptime_streak (using Thailand timezone)
             updateQuery = `
                 UPDATE garden 
                 SET streak = streak + 1, 
-                    uptime_streak = CURRENT_DATE,
+                    uptime_streak = (CURRENT_DATE AT TIME ZONE 'UTC' AT TIME ZONE 'Asia/Bangkok')::date,
                     updated_at = NOW()
                 WHERE row_id = $1 AND (user1_id = $2 OR user2_id = $2)
                 RETURNING *

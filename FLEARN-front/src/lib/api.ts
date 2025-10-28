@@ -453,6 +453,13 @@ export const userAPI = {
     });
   },
 
+  // Update user streak after completing a level
+  async updateStreak() {
+    return apiCall('/api/users/streak', {
+      method: 'PATCH',
+    });
+  },
+
   // Get leaderboard (top 50 users by daily_exp)
   async getLeaderboard() {
     return apiCall('/api/users/leaderboard');

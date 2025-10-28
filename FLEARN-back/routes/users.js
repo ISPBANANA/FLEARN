@@ -2,7 +2,7 @@ const express = require('express');
 const { pgPool } = require('../config/database');
 const { checkJwt, optionalJwt } = require('../middleware/auth');
 const { v4: uuidv4 } = require('uuid');
-const { checkAndResetUserStreak, calculateRank } = require('../middleware/streakHelper');
+const { checkAndResetUserStreak, calculateRank, incrementUserStreakIfNeeded, incrementGardenStreakIfBothUsersActive } = require('../middleware/streakHelper');
 
 const router = express.Router();
 
@@ -520,6 +520,74 @@ router.patch('/experience', checkJwt, async (req, res) => {
         res.status(500).json({
             error: 'Internal server error',
             message: 'Failed to update experience points'
+        });
+    }
+});
+
+// Update user streak after completing a level
+// Usage Example:
+// PATCH /api/users/streak
+// Headers: Authorization: Bearer <JWT_TOKEN>
+router.patch('/streak', checkJwt, async (req, res) => {
+    try {
+        const googleId = req.user.sub || req.user.id;
+        
+        // First get user_id from google_id
+        const userQuery = `SELECT user_id FROM "user" WHERE google_id = $1`;
+        const userResult = await pgPool.query(userQuery, [googleId]);
+        
+        if (userResult.rows.length === 0) {
+            return res.status(404).json({
+                error: 'User not found',
+                message: 'Please complete your profile setup first'
+            });
+        }
+        
+        const userId = userResult.rows[0].user_id;
+        
+        // Increment streak if needed (if uptime_streak is not today)
+        const result = await incrementUserStreakIfNeeded(pgPool, userId);
+        
+        if (result.error) {
+            return res.status(404).json({
+                error: 'User not found',
+                message: result.error
+            });
+        }
+
+        // After updating user streak, check and update all active gardens for this user
+        // This ensures garden streaks are updated immediately when both users complete their daily activity
+        const gardensQuery = `
+            SELECT row_id FROM garden 
+            WHERE (user1_id = $1 OR user2_id = $1) AND status = 'active'
+        `;
+        const gardensResult = await pgPool.query(gardensQuery, [userId]);
+        
+        const gardenUpdates = [];
+        for (const garden of gardensResult.rows) {
+            const gardenResult = await incrementGardenStreakIfBothUsersActive(pgPool, garden.row_id);
+            if (gardenResult.updated) {
+                gardenUpdates.push({
+                    garden_id: garden.row_id,
+                    updated: true,
+                    message: gardenResult.message
+                });
+            }
+        }
+        
+        res.json({
+            message: result.message,
+            updated: result.updated,
+            user: result.user,
+            gardens_updated: gardenUpdates.length,
+            garden_updates: gardenUpdates
+        });
+        
+    } catch (error) {
+        console.error('Error updating user streak:', error);
+        res.status(500).json({
+            error: 'Internal server error',
+            message: 'Failed to update user streak'
         });
     }
 });
