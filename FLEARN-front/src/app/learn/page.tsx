@@ -83,15 +83,7 @@ export default function Home() {
     <div className="min-h-screen bg-white">
       <Nav />
 
-      {/* Return to Profile - outside the bordered sections */}
-      <div className="px-8 pt-4 pb-2">
-        <button className="flex items-center gap-2 text-gray-600 hover:text-purple-600 transition-colors">
-          <span className="text-lg">←</span>
-          <span>Return to Profile</span>
-        </button>
-      </div>
-
-      <div className="px-4 flex min-h-[calc(100vh-160px)]">
+      <div className="px-4 py-4 flex min-h-[calc(100vh-80px)]">
         {/* Left column - Subjects */}
         <aside className="flex flex-col bg-white p-4 w-60 h-fit">
           <h3 className="text-base font-semibold text-gray-600 mb-4">Subjects</h3>
@@ -128,6 +120,14 @@ export default function Home() {
               );
             })}
           </div>
+
+          {/* Return to Profile button */}
+          <div className="mt-4 pt-4 border-t border-gray-200">
+            <button className="w-full flex items-center gap-2 text-gray-600 hover:text-purple-600 transition-colors px-3 py-2">
+              <span className="text-lg">←</span>
+              <span>Return to Profile</span>
+            </button>
+          </div>
         </aside>
 
         {/* Vertical divider line */}
@@ -140,7 +140,7 @@ export default function Home() {
           }`}
         >
           {selectedSubject && (
-            <section className="flex flex-col bg-gray-100 p-4 h-fit w-64 rounded-lg border border-gray-200">
+            <section className="flex flex-col p-4 w-64 bg-gray-100 min-h-[calc(100vh-96px)]">
               <div className="mb-4">
                 <h4 className="text-base font-semibold text-gray-600 mb-3">Sub-Topics</h4>
                 <div className="relative w-full">
@@ -159,7 +159,7 @@ export default function Home() {
                 </div>
               </div>
 
-              <div className="space-y-2 max-h-96 overflow-y-auto pr-2 pl-1 py-1">
+              <div className="space-y-2 max-h-[calc(100vh-250px)] overflow-y-auto pr-2 pl-1 py-1">
                 {(subtopicsBySubject[selectedSubject] || [])
                   .filter((st) => 
                     st.toLowerCase().includes(searchValue.toLowerCase())
