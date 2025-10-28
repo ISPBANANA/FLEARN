@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Nav } from "@/components/nav";
 import { Footer } from "@/components/footer";
@@ -43,7 +43,7 @@ interface ShuffledPair {
   originalRightValue: string;
 }
 
-export default function ProblemPage() {
+function ProblemPageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const topicId = searchParams.get('topic_id');
@@ -790,4 +790,24 @@ export default function ProblemPage() {
         return false;
     }
   }
+}
+
+// Wrap the component in Suspense to prevent SSR issues with useSearchParams
+export default function ProblemPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen bg-white">
+        <Nav />
+        <div className="flex items-center justify-center h-[calc(100vh-80px)]">
+          <div className="text-center">
+            <Loader2 className="animate-spin text-purple-600 mx-auto mb-4" size={48} />
+            <p className="text-gray-600">Loading...</p>
+          </div>
+        </div>
+        <Footer />
+      </div>
+    }>
+      <ProblemPageContent />
+    </Suspense>
+  );
 }
