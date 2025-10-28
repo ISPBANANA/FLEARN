@@ -568,6 +568,26 @@ export const gardensAPI = {
 };
 
 // Questions and Topics API functions
+export const backlogAPI = {
+  // Get backlog statistics by topic for a user
+  async getStatsByTopic(userId: string, subjectId?: number) {
+    const params = new URLSearchParams();
+    if (subjectId) params.append('subject_id', subjectId.toString());
+    const queryString = params.toString();
+    return apiCall(`/api/backlog/stats/topic/${userId}${queryString ? `?${queryString}` : ''}`);
+  },
+
+  // Get backlog statistics by subject for a user
+  async getStatsBySubject(userId: string) {
+    return apiCall(`/api/backlog/stats/subject/${userId}`);
+  },
+
+  // Get all backlog entries for a user
+  async getByUser(userId: string) {
+    return apiCall(`/api/backlog/user/${userId}`);
+  },
+};
+
 export const questionsAPI = {
   // Get all subjects
   async getSubjects() {
@@ -770,6 +790,7 @@ export default {
   friendsAPI,
   gardensAPI,
   questionsAPI,
+  backlogAPI,
   getCurrentUser,
   isAuthenticated,
   checkBackendHealth,

@@ -79,6 +79,12 @@ const nextConfig: NextConfig = {
           ? 'http://flearn-backend:8099/api/topics/:path*'
           : 'http://localhost:8099/api/topics/:path*',
       },
+      {
+        source: '/api/backlog/:path*',
+        destination: process.env.NODE_ENV === 'production' 
+          ? 'http://flearn-backend:8099/api/backlog/:path*'
+          : 'http://localhost:8099/api/backlog/:path*',
+      },
       // Keep auth routes local - they will be handled by frontend API routes
     ];
   },
