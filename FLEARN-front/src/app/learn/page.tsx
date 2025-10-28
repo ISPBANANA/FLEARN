@@ -1,9 +1,10 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Nav } from "@/components/nav";
 import { Footer } from "@/components/footer";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
+import { questionsAPI } from "@/lib/api";
 import { 
   Calculator, 
   Dna, 
@@ -12,102 +13,130 @@ import {
   ChevronRight,
   Search,
   ArrowLeft,
-  Play
+  Play,
+  Loader2
 } from "lucide-react";
 
-const subjects = [
-  { name: "Mathematics", icon: Calculator },
-  { name: "Biology", icon: Dna },
-  { name: "Physics", icon: Atom },
-  { name: "Chemistry", icon: FlaskConical }
-];
-
-const subtopicsBySubject: Record<string, string[]> = {
-  Mathematics: [
-    "Calculus L'Hopital",
-    "Linear Algebra",
-    "Differential Equations",
-    "Statistics",
-    "Probability Theory",
-    "Trigonometry",
-    "Geometry",
-    "Number Theory",
-    "Complex Analysis",
-    "Discrete Mathematics",
-    "Vector Calculus",
-    "Matrix Theory",
-    "Graph Theory",
-    "Set Theory"
-  ],
-  Biology: [
-    "Cell Biology",
-    "Genetics",
-    "Evolution",
-    "Ecology",
-    "Molecular Biology",
-    "Anatomy",
-    "Physiology",
-    "Microbiology",
-    "Immunology",
-    "Botany",
-    "Zoology",
-    "Neuroscience",
-    "Developmental Biology",
-    "Marine Biology"
-  ],
-  Physics: [
-    "Mechanics",
-    "Thermodynamics",
-    "Electromagnetism",
-    "Quantum Physics",
-    "Optics",
-    "Relativity",
-    "Nuclear Physics",
-    "Waves",
-    "Fluid Dynamics",
-    "Solid State Physics",
-    "Particle Physics",
-    "Astrophysics",
-    "Plasma Physics",
-    "Acoustics"
-  ],
-  Chemistry: [
-    "Organic",
-    "Inorganic",
-    "Physical Chemistry",
-    "Analytical Chemistry",
-    "Biochemistry",
-    "Electrochemistry",
-    "Thermochemistry",
-    "Chemical Kinetics",
-    "Polymer Chemistry",
-    "Environmental Chemistry",
-    "Medicinal Chemistry",
-    "Coordination Chemistry",
-    "Spectroscopy",
-    "Catalysis"
-  ],
+// Icon mapping for subjects
+const subjectIcons: Record<string, any> = {
+  Mathematics: Calculator,
+  Biology: Dna,
+  Physics: Atom,
+  Chemistry: FlaskConical,
 };
 
+interface Subject {
+  subject_id: number;
+  name: string;
+  description?: string;
+}
+
+interface Topic {
+  topic_id: number;
+  subject_id: number;
+  name: string;
+  description?: string;
+  status: string;
+  subject_name: string;
+  question_count?: number;
+}
+
 export default function Home() {
-  const [selectedSubject, setSelectedSubject] = useState<string | null>(null);
-  const [selectedSubtopic, setSelectedSubtopic] = useState<string | null>(null);
+  const [subjects, setSubjects] = useState<Subject[]>([]);
+  const [topics, setTopics] = useState<Topic[]>([]);
+  const [filteredTopics, setFilteredTopics] = useState<Topic[]>([]);
+  const [selectedSubject, setSelectedSubject] = useState<Subject | null>(null);
+  const [selectedTopic, setSelectedTopic] = useState<Topic | null>(null);
   const [searchValue, setSearchValue] = useState<string>("");
   const [isSearchFocused, setIsSearchFocused] = useState<boolean>(false);
   const [isAnimating, setIsAnimating] = useState<boolean>(false);
   const [isContentAnimating, setIsContentAnimating] = useState<boolean>(false);
+  const [isLoadingSubjects, setIsLoadingSubjects] = useState<boolean>(true);
+  const [isLoadingTopics, setIsLoadingTopics] = useState<boolean>(false);
+  const [error, setError] = useState<string | null>(null);
 
-  const handleSubjectClick = (subject: string) => {
-    if (subject === selectedSubject) {
+  // Fetch subjects on component mount
+  useEffect(() => {
+    fetchSubjects();
+  }, []);
+
+  // Fetch topics when subject is selected
+  useEffect(() => {
+    if (selectedSubject) {
+      fetchTopics(selectedSubject.subject_id);
+    } else {
+      setTopics([]);
+      setFilteredTopics([]);
+    }
+  }, [selectedSubject]);
+
+  // Filter topics based on search
+  useEffect(() => {
+    if (searchValue) {
+      const filtered = topics.filter((topic) =>
+        topic.name.toLowerCase().includes(searchValue.toLowerCase())
+      );
+      setFilteredTopics(filtered);
+    } else {
+      setFilteredTopics(topics);
+    }
+  }, [searchValue, topics]);
+
+  const fetchSubjects = async () => {
+    try {
+      setIsLoadingSubjects(true);
+      setError(null);
+      const response = await questionsAPI.getSubjects();
+      if (response.success && response.data) {
+        setSubjects(response.data);
+      } else {
+        throw new Error('Failed to fetch subjects');
+      }
+    } catch (err) {
+      console.error('Error fetching subjects:', err);
+      setError('Failed to load subjects. Please try again later.');
+    } finally {
+      setIsLoadingSubjects(false);
+    }
+  };
+
+  const fetchTopics = async (subjectId: number) => {
+    try {
+      setIsLoadingTopics(true);
+      setError(null);
+      // Only fetch public topics
+      const response = await questionsAPI.getTopics({
+        subject_id: subjectId,
+        status: 'public',
+        limit: 100
+      });
+      if (response.success && response.data) {
+        setTopics(response.data);
+        setFilteredTopics(response.data);
+      } else {
+        throw new Error('Failed to fetch topics');
+      }
+    } catch (err) {
+      console.error('Error fetching topics:', err);
+      setError('Failed to load topics. Please try again later.');
+      setTopics([]);
+      setFilteredTopics([]);
+    } finally {
+      setIsLoadingTopics(false);
+    }
+  };
+
+  const handleSubjectClick = (subject: Subject) => {
+    if (subject.subject_id === selectedSubject?.subject_id) {
       setSelectedSubject(null);
-      setSelectedSubtopic(null);
+      setSelectedTopic(null);
     } else {
       if (selectedSubject) {
         // If there's already a selected subject, slide out first
         setIsAnimating(true);
         setIsContentAnimating(true);
         setSelectedSubject(null);
-        setSelectedSubtopic(null);
+        setSelectedTopic(null);
         setTimeout(() => {
           setSelectedSubject(subject);
           setIsAnimating(false);
@@ -116,26 +145,26 @@ export default function Home() {
       } else {
         // No subject selected, just slide in
         setSelectedSubject(subject);
-        setSelectedSubtopic(null);
+        setSelectedTopic(null);
       }
     }
   };
 
-  const handleSubtopicClick = (subtopic: string) => {
-    if (subtopic === selectedSubtopic) {
-      setSelectedSubtopic(null);
+  const handleSubtopicClick = (topic: Topic) => {
+    if (topic.topic_id === selectedTopic?.topic_id) {
+      setSelectedTopic(null);
     } else {
-      if (selectedSubtopic) {
+      if (selectedTopic) {
         // If there's already a selected subtopic, slide out first
         setIsContentAnimating(true);
-        setSelectedSubtopic(null);
+        setSelectedTopic(null);
         setTimeout(() => {
-          setSelectedSubtopic(subtopic);
+          setSelectedTopic(topic);
           setIsContentAnimating(false);
         }, 150);
       } else {
         // No subtopic selected, just slide in
-        setSelectedSubtopic(subtopic);
+        setSelectedTopic(topic);
       }
     }
   };
@@ -150,33 +179,41 @@ export default function Home() {
           <aside className="flex flex-col bg-white py-4 px-4 w-60 h-full z-0 relative" style={{boxShadow: '0px 0px 5px rgba(0, 0, 0, 0.25)' }}>
             <h3 className="text-base font-semibold text-gray-600 mb-4">Subjects</h3>
 
-            <div className="space-y-3 flex-1">
-              {subjects.map((s) => {
-                const active = s.name === selectedSubject;
-                const Icon = s.icon;
-                return (
-                  <button
-                    key={s.name}
-                    onClick={() => handleSubjectClick(s.name)}
-                    className={`w-full flex items-center justify-between px-3 py-2 rounded-xl transition-all duration-200 focus:outline-none ${
-                      active
-                        ? "bg-purple-600 text-white shadow hover:bg-purple-700"
-                        : "bg-white text-gray-700 border border-gray-200 hover:border-purple-400 hover:shadow-md hover:scale-105"
-                    }`}
-                  >
-                    <div className="flex items-center gap-3">
-                      <span className={`flex-shrink-0 w-6 h-6 rounded-full flex items-center justify-center text-sm ${
-                        active ? 'bg-white text-purple-600' : 'bg-purple-50 text-purple-600'
-                      }`}>
-                        <Icon size={16} />
-                      </span>
-                      <span className="truncate">{s.name}</span>
-                    </div>
-                    <ChevronRight size={16} className="opacity-60" />
-                  </button>
-                );
-              })}
-            </div>
+            {isLoadingSubjects ? (
+              <div className="flex items-center justify-center py-8">
+                <Loader2 className="animate-spin text-purple-600" size={32} />
+              </div>
+            ) : error ? (
+              <div className="text-red-500 text-sm text-center py-4">{error}</div>
+            ) : (
+              <div className="space-y-3 flex-1">
+                {subjects.map((s) => {
+                  const active = s.subject_id === selectedSubject?.subject_id;
+                  const Icon = subjectIcons[s.name] || Calculator;
+                  return (
+                    <button
+                      key={s.subject_id}
+                      onClick={() => handleSubjectClick(s)}
+                      className={`w-full flex items-center justify-between px-3 py-2 rounded-xl transition-all duration-200 focus:outline-none ${
+                        active
+                          ? "bg-purple-600 text-white shadow hover:bg-purple-700"
+                          : "bg-white text-gray-700 border border-gray-200 hover:border-purple-400 hover:shadow-md hover:scale-105"
+                      }`}
+                    >
+                      <div className="flex items-center gap-3">
+                        <span className={`flex-shrink-0 w-6 h-6 rounded-full flex items-center justify-center text-sm ${
+                          active ? 'bg-white text-purple-600' : 'bg-purple-50 text-purple-600'
+                        }`}>
+                          <Icon size={16} />
+                        </span>
+                        <span className="truncate">{s.name}</span>
+                      </div>
+                      <ChevronRight size={16} className="opacity-60" />
+                    </button>
+                  );
+                })}
+              </div>
+            )}
 
             {/* Return to Profile button */}
             <div className="mt-4 pt-4 border-t border-gray-200">
@@ -213,17 +250,22 @@ export default function Home() {
                   </div>
                 </div>
 
-                <div className="space-y-2 max-h-[calc(100vh-250px)] overflow-y-auto pr-2 pl-1 py-1">
-                  {(subtopicsBySubject[selectedSubject] || [])
-                    .filter((st) => 
-                      st.toLowerCase().includes(searchValue.toLowerCase())
-                    )
-                    .map((st) => {
-                      const active = st === selectedSubtopic;
+                {isLoadingTopics ? (
+                  <div className="flex items-center justify-center py-8">
+                    <Loader2 className="animate-spin text-purple-600" size={24} />
+                  </div>
+                ) : filteredTopics.length === 0 ? (
+                  <div className="text-gray-500 text-sm text-center py-4">
+                    {searchValue ? "No topics found" : "No topics available"}
+                  </div>
+                ) : (
+                  <div className="space-y-2 max-h-[calc(100vh-250px)] overflow-y-auto pr-2 pl-1 py-1">
+                    {filteredTopics.map((topic) => {
+                      const active = topic.topic_id === selectedTopic?.topic_id;
                       return (
                         <button
-                          key={st}
-                          onClick={() => handleSubtopicClick(st)}
+                          key={topic.topic_id}
+                          onClick={() => handleSubtopicClick(topic)}
                           className={`w-full text-left flex items-center gap-3 px-3 py-2 rounded-md transition-all duration-200 ${
                             active
                               ? "bg-purple-600 text-white hover:bg-purple-700"
@@ -235,11 +277,12 @@ export default function Home() {
                           }`}>
                             <Play size={12} fill="currentColor" />
                           </span>
-                          <span className="truncate">{st}</span>
+                          <span className="truncate">{topic.name}</span>
                         </button>
                       );
                     })}
-                </div>
+                  </div>
+                )}
               </section>
             )}
           </div>
@@ -252,13 +295,13 @@ export default function Home() {
           {/* Main content area - shown when subtopic is selected */}
           <div
             className={`transition-all duration-150 ease-in-out overflow-hidden ${
-              selectedSubtopic && !isContentAnimating ? "flex-1 opacity-100" : "w-0 opacity-0"
+              selectedTopic && !isContentAnimating ? "flex-1 opacity-100" : "w-0 opacity-0"
             }`}
           >
-            {selectedSubtopic && (
+            {selectedTopic && (
               <div className="flex flex-col items-center pt-8 px-8 w-full h-[calc(100vh-92px)] overflow-y-auto">
                 {/* Title */}
-                <h1 className="text-5xl font-bold text-purple-600 mb-8">{selectedSubtopic}</h1>
+                <h1 className="text-5xl font-bold text-purple-600 mb-8">{selectedTopic.name}</h1>
 
                 {/* Vertical timeline with numbered circles */}
                 <div className="flex flex-col items-center pb-8">
