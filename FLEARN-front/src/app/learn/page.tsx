@@ -21,9 +21,17 @@ export default function Home() {
     <div className="min-h-screen bg-white">
       <Nav />
 
-      <div className="px-4 flex min-h-[calc(100vh-120px)]">
+      {/* Return to Profile - outside the bordered sections */}
+      <div className="px-8 pt-4 pb-2">
+        <button className="flex items-center gap-2 text-gray-600 hover:text-purple-600 transition-colors">
+          <span className="text-lg">←</span>
+          <span>Return to Profile</span>
+        </button>
+      </div>
+
+      <div className="px-4 flex min-h-[calc(100vh-160px)]">
         {/* Left column - Subjects */}
-        <aside className="flex flex-col bg-white p-4 w-60 h-fit mt-8">
+        <aside className="flex flex-col bg-white p-4 w-60 h-fit">
           <h3 className="text-sm font-semibold text-gray-600 mb-4">Subjects</h3>
 
           <div className="space-y-3 flex-1">
@@ -58,10 +66,6 @@ export default function Home() {
               );
             })}
           </div>
-
-          <div className="mt-6">
-            <button className="w-full px-6 py-2 border rounded-md text-gray-700">Profile</button>
-          </div>
         </aside>
 
         {/* Vertical divider line */}
@@ -74,7 +78,7 @@ export default function Home() {
           }`}
         >
           {selectedSubject && (
-            <section className="flex flex-col bg-gray-50 p-4 h-fit w-64 mt-8 rounded-lg border border-gray-200">
+            <section className="flex flex-col bg-gray-50 p-4 h-fit w-64 rounded-lg border border-gray-200">
               <div className="flex items-center justify-between mb-4">
                 <h4 className="text-sm font-semibold text-gray-600">Sub-Topics</h4>
                 <div className="relative w-32">
