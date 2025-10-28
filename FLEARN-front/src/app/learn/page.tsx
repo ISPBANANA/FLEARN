@@ -106,9 +106,9 @@ export default function Home() {
     <div className="min-h-screen bg-white">
       <Nav />
 
-      <div className="px-4 py-4 flex min-h-[calc(100vh-80px)]">
+      <div className="px-4 py-2 flex min-h-[calc(100vh-80px)]">
         {/* Left column - Subjects */}
-        <aside className="flex flex-col bg-white p-4 w-60 h-fit">
+        <aside className="flex flex-col bg-white py-4 px-4 w-60 h-fit">
           <h3 className="text-base font-semibold text-gray-600 mb-4">Subjects</h3>
 
           <div className="space-y-3 flex-1">
@@ -146,7 +146,7 @@ export default function Home() {
         </aside>
 
         {/* Vertical divider line */}
-        <div className="border-l-2 border-gray-300"></div>
+        <div className="border-l-2 border-gray-200 shadow-sm"></div>
 
         {/* Middle column - Sub-Topics (slides in when subject is selected) */}
         <div
@@ -155,7 +155,7 @@ export default function Home() {
           }`}
         >
           {selectedSubject && (
-            <section className="flex flex-col px-4 py-4 w-64 bg-gray-100 h-[calc(100vh-96px)]">
+            <section className="flex flex-col px-4 py-4 w-64 bg-gray-200 h-[calc(100vh-96px)]">
               <div className="mb-4">
                 <h4 className="text-base font-semibold text-gray-600 mb-3">Sub-Topics</h4>
                 <div className="relative w-full">
@@ -165,7 +165,7 @@ export default function Home() {
                     onChange={(e) => setSearchValue(e.target.value)}
                     onFocus={() => setIsSearchFocused(true)}
                     onBlur={() => setIsSearchFocused(false)}
-                    className="w-full px-3 py-1 text-gray-400 text-sm rounded-md border border-gray-300 focus:outline-none focus:border-gray-300 focus:bg-white"
+                    className="w-full px-3 py-1 text-gray-400 text-sm rounded-md border border-gray-300 bg-white focus:outline-none focus:border-gray-300 focus:bg-white"
                     placeholder={isSearchFocused ? "" : "Placeholder"}
                   />
                   <div className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 text-xs pointer-events-none">
@@ -205,7 +205,7 @@ export default function Home() {
 
         {/* Vertical divider line between Sub-Topics and main content */}
         {selectedSubject && (
-          <div className="border-l-2 border-gray-300 transition-opacity duration-300"></div>
+          <div className="border-l-2 border-gray-200 shadow-sm transition-opacity duration-300"></div>
         )}
       </div>
 
