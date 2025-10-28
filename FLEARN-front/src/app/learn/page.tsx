@@ -16,6 +16,8 @@ const subtopicsBySubject: Record<string, string[]> = {
 export default function Home() {
   const [selectedSubject, setSelectedSubject] = useState<string | null>(null);
   const [selectedSubtopic, setSelectedSubtopic] = useState<string | null>(null);
+  const [searchValue, setSearchValue] = useState<string>("");
+  const [isSearchFocused, setIsSearchFocused] = useState<boolean>(false);
 
   return (
     <div className="min-h-screen bg-white">
@@ -83,10 +85,15 @@ export default function Home() {
                 <h4 className="text-sm font-semibold text-gray-600">Sub-Topics</h4>
                 <div className="relative w-32">
                   <input
-                    className="w-full px-3 py-1 text-sm rounded-md border border-gray-200"
-                    placeholder="Placeholder"
+                    type="text"
+                    value={searchValue}
+                    onChange={(e) => setSearchValue(e.target.value)}
+                    onFocus={() => setIsSearchFocused(true)}
+                    onBlur={() => setIsSearchFocused(false)}
+                    className="w-full px-3 py-1 text-gray-400 text-sm rounded-md border border-gray-300 focus:outline-none focus:border-gray-300 focus:bg-white"
+                    placeholder={isSearchFocused ? "" : "Placeholder"}
                   />
-                  <div className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 text-xs">
+                  <div className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 text-xs pointer-events-none">
                     🔍
                   </div>
                 </div>
