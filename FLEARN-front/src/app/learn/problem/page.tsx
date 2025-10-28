@@ -601,7 +601,7 @@ export default function ProblemPage() {
                         <span className="flex-shrink-0 w-8 h-8 rounded-full bg-purple-100 text-purple-600 flex items-center justify-center font-semibold">
                           {option.id}
                         </span>
-                        <div className="flex-1 prose prose-sm">
+                        <div className="flex-1 prose prose-sm text-gray-700">
                           <ReactMarkdown
                             remarkPlugins={[remarkMath]}
                             rehypePlugins={[rehypeKatex]}
