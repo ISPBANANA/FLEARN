@@ -3,7 +3,20 @@
  * - Resets streak to 0 if uptime_streak - todayDate >= 2 days
  * - Calculates and updates user rank based on total subject experience
  * - Resets daily_exp to 0 if not updated today (daily reset)
+ * - Uses Thailand timezone (Asia/Bangkok, GMT+7) for all date calculations
  */
+
+/**
+ * Get current date in Thailand timezone (Asia/Bangkok)
+ * @returns {Date} - Current date in Thailand timezone, set to start of day
+ */
+const getThailandDate = () => {
+    // Get current time in Thailand (GMT+7)
+    const now = new Date();
+    const thailandTime = new Date(now.toLocaleString('en-US', { timeZone: 'Asia/Bangkok' }));
+    thailandTime.setHours(0, 0, 0, 0);
+    return thailandTime;
+};
 
 /**
  * Rank thresholds and names
@@ -40,6 +53,7 @@ const calculateRank = (mathExp, phyExp, bioExp, chemExp) => {
 
 /**
  * Check if a streak should be reset based on the last update date
+ * Uses Thailand timezone for comparison
  * @param {Date|string} uptimeStreak - The last streak update date
  * @returns {boolean} - True if streak should be reset
  */
@@ -48,14 +62,14 @@ const shouldResetStreak = (uptimeStreak) => {
         return false; // No uptime_streak means streak is already 0 or never started
     }
 
-    const today = new Date();
-    today.setHours(0, 0, 0, 0); // Reset to start of day for accurate comparison
+    const today = getThailandDate();
     
     const lastUpdate = new Date(uptimeStreak);
-    lastUpdate.setHours(0, 0, 0, 0);
+    const lastUpdateThailand = new Date(lastUpdate.toLocaleString('en-US', { timeZone: 'Asia/Bangkok' }));
+    lastUpdateThailand.setHours(0, 0, 0, 0);
     
     // Calculate difference in days
-    const diffTime = today - lastUpdate;
+    const diffTime = today - lastUpdateThailand;
     const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
     
     // Reset if 2 or more days have passed
@@ -64,6 +78,7 @@ const shouldResetStreak = (uptimeStreak) => {
 
 /**
  * Check if daily exp should be reset based on the last update timestamp
+ * Uses Thailand timezone for comparison
  * @param {Date|string} updatedAt - The last updated_at timestamp
  * @returns {boolean} - True if daily exp should be reset (not updated today)
  */
@@ -72,14 +87,33 @@ const shouldResetDailyExp = (updatedAt) => {
         return false; // No updated_at means daily_exp is already 0 or never set
     }
 
-    const today = new Date();
-    today.setHours(0, 0, 0, 0); // Reset to start of day for accurate comparison
+    const today = getThailandDate();
     
     const lastUpdate = new Date(updatedAt);
-    lastUpdate.setHours(0, 0, 0, 0);
+    const lastUpdateThailand = new Date(lastUpdate.toLocaleString('en-US', { timeZone: 'Asia/Bangkok' }));
+    lastUpdateThailand.setHours(0, 0, 0, 0);
     
     // Reset if it's a different day (1 or more days have passed)
-    return today > lastUpdate;
+    return today > lastUpdateThailand;
+};
+
+/**
+ * Check if uptime_streak is today (Thailand timezone)
+ * @param {Date|string} uptimeStreak - The last streak update date
+ * @returns {boolean} - True if uptime_streak is today
+ */
+const isStreakToday = (uptimeStreak) => {
+    if (!uptimeStreak) {
+        return false;
+    }
+
+    const today = getThailandDate();
+    
+    const lastUpdate = new Date(uptimeStreak);
+    const lastUpdateThailand = new Date(lastUpdate.toLocaleString('en-US', { timeZone: 'Asia/Bangkok' }));
+    lastUpdateThailand.setHours(0, 0, 0, 0);
+    
+    return today.getTime() === lastUpdateThailand.getTime();
 };
 
 /**
@@ -126,6 +160,103 @@ const resetGardenStreakIfNeeded = async (pgPool, gardenId, uptimeStreak) => {
         return true;
     }
     return false;
+};
+
+/**
+ * Increment user streak if uptime_streak is not today
+ * @param {object} pgPool - PostgreSQL connection pool
+ * @param {string} userId - User ID
+ * @returns {Promise<object>} - Result object with updated status and user data
+ */
+const incrementUserStreakIfNeeded = async (pgPool, userId) => {
+    // Get current user data
+    const selectQuery = `SELECT * FROM "user" WHERE user_id = $1`;
+    const result = await pgPool.query(selectQuery, [userId]);
+    
+    if (result.rows.length === 0) {
+        return { updated: false, user: null, error: 'User not found' };
+    }
+    
+    const user = result.rows[0];
+    
+    // Check if uptime_streak is today
+    if (isStreakToday(user.uptime_streak)) {
+        // Already updated today, no need to increment
+        return { updated: false, user: user, message: 'Streak already updated today' };
+    }
+    
+    // Uptime_streak is not today, increment streak and set uptime_streak to today
+    const updateQuery = `
+        UPDATE "user" 
+        SET streak = streak + 1, 
+            uptime_streak = (CURRENT_DATE AT TIME ZONE 'UTC' AT TIME ZONE 'Asia/Bangkok')::date,
+            updated_at = NOW()
+        WHERE user_id = $1
+        RETURNING *
+    `;
+    
+    const updateResult = await pgPool.query(updateQuery, [userId]);
+    return { updated: true, user: updateResult.rows[0], message: 'Streak incremented successfully' };
+};
+
+/**
+ * Increment garden streak if both users have today's uptime_streak and garden doesn't
+ * @param {object} pgPool - PostgreSQL connection pool
+ * @param {number} gardenId - Garden row_id
+ * @returns {Promise<object>} - Result object with updated status and garden data
+ */
+const incrementGardenStreakIfBothUsersActive = async (pgPool, gardenId) => {
+    // Get garden and both users' data
+    const query = `
+        SELECT 
+            g.*,
+            u1.uptime_streak as user1_uptime_streak,
+            u2.uptime_streak as user2_uptime_streak
+        FROM garden g
+        JOIN "user" u1 ON g.user1_id = u1.user_id
+        JOIN "user" u2 ON g.user2_id = u2.user_id
+        WHERE g.row_id = $1
+    `;
+    
+    const result = await pgPool.query(query, [gardenId]);
+    
+    if (result.rows.length === 0) {
+        return { updated: false, garden: null, error: 'Garden not found' };
+    }
+    
+    const gardenData = result.rows[0];
+    
+    // Check if both users have today's uptime_streak
+    const user1HasToday = isStreakToday(gardenData.user1_uptime_streak);
+    const user2HasToday = isStreakToday(gardenData.user2_uptime_streak);
+    
+    if (!user1HasToday || !user2HasToday) {
+        // One or both users don't have today's streak, don't update garden
+        return { 
+            updated: false, 
+            garden: gardenData, 
+            message: 'Both users must have today\'s streak to update garden streak' 
+        };
+    }
+    
+    // Check if garden already has today's uptime_streak
+    if (isStreakToday(gardenData.uptime_streak)) {
+        // Garden already updated today
+        return { updated: false, garden: gardenData, message: 'Garden streak already updated today' };
+    }
+    
+    // Both users have today's streak and garden doesn't, increment garden streak
+    const updateQuery = `
+        UPDATE garden 
+        SET streak = streak + 1, 
+            uptime_streak = (CURRENT_DATE AT TIME ZONE 'UTC' AT TIME ZONE 'Asia/Bangkok')::date,
+            updated_at = NOW()
+        WHERE row_id = $1
+        RETURNING *
+    `;
+    
+    const updateResult = await pgPool.query(updateQuery, [gardenId]);
+    return { updated: true, garden: updateResult.rows[0], message: 'Garden streak incremented successfully' };
 };
 
 /**
@@ -249,11 +380,15 @@ const checkAndResetGardenStreak = async (pgPool, gardenId) => {
 };
 
 module.exports = {
+    getThailandDate,
     shouldResetStreak,
     shouldResetDailyExp,
+    isStreakToday,
     resetUserStreakIfNeeded,
     resetGardenStreakIfNeeded,
     resetDailyExpIfNeeded,
+    incrementUserStreakIfNeeded,
+    incrementGardenStreakIfBothUsersActive,
     checkAndResetUserStreak,
     checkAndResetGardenStreak,
     calculateRank,
