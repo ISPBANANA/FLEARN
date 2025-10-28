@@ -4,7 +4,7 @@ import React, { useState, useEffect } from "react";
 import { Nav } from "@/components/nav";
 import { Footer } from "@/components/footer";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
-import { questionsAPI } from "@/lib/api";
+import { questionsAPI, backlogAPI, userAPI } from "@/lib/api";
 import { 
   Calculator, 
   Dna, 
@@ -41,12 +41,22 @@ interface Topic {
   question_count?: number;
 }
 
+interface BacklogStats {
+  topic_id: number;
+  topic_name: string;
+  total_attempts: number;
+  correct_answers: number;
+  incorrect_answers: number;
+}
+
 export default function Home() {
   const [subjects, setSubjects] = useState<Subject[]>([]);
   const [topics, setTopics] = useState<Topic[]>([]);
   const [filteredTopics, setFilteredTopics] = useState<Topic[]>([]);
   const [selectedSubject, setSelectedSubject] = useState<Subject | null>(null);
   const [selectedTopic, setSelectedTopic] = useState<Topic | null>(null);
+  const [backlogStats, setBacklogStats] = useState<BacklogStats[]>([]);
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
   const [searchValue, setSearchValue] = useState<string>("");
   const [isSearchFocused, setIsSearchFocused] = useState<boolean>(false);
   const [isAnimating, setIsAnimating] = useState<boolean>(false);
@@ -58,6 +68,20 @@ export default function Home() {
   // Fetch subjects on component mount
   useEffect(() => {
     fetchSubjects();
+    
+    // Fetch user profile to get the real user_id (UUID)
+    const fetchUserProfile = async () => {
+      try {
+        const response = await userAPI.getProfile();
+        if (response.user && response.user.user_id) {
+          setCurrentUserId(response.user.user_id);
+        }
+      } catch (err) {
+        console.error('Error fetching user profile:', err);
+      }
+    };
+    
+    fetchUserProfile();
   }, []);
 
   // Fetch topics when subject is selected
@@ -69,6 +93,13 @@ export default function Home() {
       setFilteredTopics([]);
     }
   }, [selectedSubject]);
+
+  // Fetch backlog stats when topic is selected
+  useEffect(() => {
+    if (selectedTopic && currentUserId) {
+      fetchBacklogStats(currentUserId, selectedTopic.topic_id);
+    }
+  }, [selectedTopic, currentUserId]);
 
   // Filter topics based on search
   useEffect(() => {
@@ -123,6 +154,20 @@ export default function Home() {
       setFilteredTopics([]);
     } finally {
       setIsLoadingTopics(false);
+    }
+  };
+
+  const fetchBacklogStats = async (userId: string, topicId: number) => {
+    try {
+      const response = await backlogAPI.getStatsByTopic(userId);
+      if (response.success && response.data) {
+        // Filter for the specific topic
+        const topicStats = response.data.filter((stat: BacklogStats) => stat.topic_id === topicId);
+        setBacklogStats(topicStats);
+      }
+    } catch (err) {
+      console.error('Error fetching backlog stats:', err);
+      setBacklogStats([]);
     }
   };
 
@@ -298,35 +343,166 @@ export default function Home() {
               selectedTopic && !isContentAnimating ? "flex-1 opacity-100" : "w-0 opacity-0"
             }`}
           >
-            {selectedTopic && (
-              <div className="flex flex-col items-center pt-8 px-8 w-full h-[calc(100vh-92px)] overflow-y-auto">
-                {/* Title */}
-                <h1 className="text-5xl font-bold text-purple-600 mb-8">{selectedTopic.name}</h1>
+            {selectedTopic && (() => {
+              // Calculate current level: count(backlog) // 3 + 1
+              const backlogCount = backlogStats.reduce((sum, stat) => sum + stat.total_attempts, 0);
+              const currentLevel = Math.floor(backlogCount / 3) + 1;
+              
+              // Calculate which levels to display
+              // Display: currentLevel-2, currentLevel-1, currentLevel, currentLevel+1, currentLevel+2
+              const allLevels = [
+                currentLevel - 2,
+                currentLevel - 1,
+                currentLevel,
+                currentLevel + 1,
+                currentLevel + 2
+              ];
+              const levelsToShow = allLevels.filter(level => level > 0); // Only show positive levels
+              
+              // Check if there are levels above and below current level
+              const hasLevelsAbove = currentLevel > 1;
+              const hasLevelsBelow = true; // Always true since levels are infinite
 
-                {/* Vertical timeline with numbered circles */}
-                <div className="flex flex-col items-center pb-8">
-                  {/* First level - Yellow oval with number 1 */}
-                  <div className="flex flex-col items-center">
-                    <button className="w-40 h-24 rounded-[50px] bg-yellow-400 text-white text-3xl font-bold flex items-center justify-center hover:bg-yellow-500 transition-colors shadow-lg">
-                      1
-                    </button>
-                    <div className="w-1 h-16 bg-gray-300"></div>
+              return (
+                <div className="flex flex-col w-full h-[calc(100vh-92px)] overflow-hidden relative bg-gradient-to-b from-purple-50 via-white to-purple-50">
+                  {/* Title - with smooth gradient transition to content */}
+                  <div className="absolute top-0 left-0 right-0 bg-gradient-to-b from-white via-white to-purple-50/30 py-8 z-20">
+                    <h1 className="text-5xl font-bold text-purple-600 text-center">{selectedTopic.name}</h1>
                   </div>
 
-                  {/* Remaining levels - Purple ovals */}
-                  {[2, 3, 4, 5, 6].map((num) => (
-                    <div key={num} className="flex flex-col items-center">
-                      <button className="w-32 h-20 rounded-[40px] bg-purple-600 text-white text-3xl font-bold flex items-center justify-center hover:bg-purple-700 transition-colors shadow-lg">
-                        {num}
-                      </button>
-                      {num < 6 && (
-                        <div className="w-1 h-16 bg-gray-300"></div>
+                  {/* Fade overlay at top - only show if there are levels above */}
+                  {hasLevelsAbove && (
+                    <>
+                      <div className="absolute top-24 left-0 right-0 h-32 bg-gradient-to-b from-purple-50/30 via-white/50 to-transparent z-10 pointer-events-none"></div>
+                      {/* Fading line before first level to suggest continuation upward */}
+                      <div className="absolute top-28 left-1/2 -translate-x-1/2 w-2 h-24 bg-gradient-to-t from-green-400 via-green-300 to-transparent rounded-full opacity-60 z-5"></div>
+                    </>
+                  )}
+
+                  {/* Centered container for levels */}
+                  <div className="flex-1 flex items-center justify-center pt-24 pb-8">
+                    {/* Vertical timeline with numbered circles - always centered */}
+                    <div className="flex flex-col items-center gap-0 relative">
+                      {levelsToShow.map((level, index) => {
+                        const isCurrentLevel = level === currentLevel;
+                        const isPastLevel = level < currentLevel;
+                        const distanceFromCurrent = Math.abs(level - currentLevel);
+                        
+                        // Calculate size and opacity based on distance from current level
+                        let sizeClass, textSize, opacity, shadowClass;
+                        
+                        if (isCurrentLevel) {
+                          sizeClass = 'w-48 h-28';
+                          textSize = 'text-5xl';
+                          opacity = 'opacity-100';
+                          shadowClass = 'shadow-2xl';
+                        } else if (distanceFromCurrent === 1) {
+                          sizeClass = 'w-36 h-22';
+                          textSize = 'text-3xl';
+                          opacity = 'opacity-90';
+                          shadowClass = 'shadow-lg';
+                        } else {
+                          sizeClass = 'w-28 h-18';
+                          textSize = 'text-2xl';
+                          opacity = 'opacity-70';
+                          shadowClass = 'shadow-md';
+                        }
+
+                        // Determine color scheme
+                        let colorClass;
+                        if (isCurrentLevel) {
+                          colorClass = 'bg-gradient-to-br from-yellow-400 via-yellow-500 to-orange-400 ring-4 ring-yellow-200';
+                        } else if (isPastLevel) {
+                          colorClass = 'bg-gradient-to-br from-green-400 via-green-500 to-emerald-500';
+                        } else {
+                          colorClass = 'bg-gradient-to-br from-purple-500 via-purple-600 to-indigo-600';
+                        }
+                        
+                        return (
+                          <div key={level} className={`flex flex-col items-center ${opacity} transition-all duration-300`}>
+                            {/* Level node */}
+                            <div
+                              className={`${sizeClass} ${colorClass} ${textSize} ${shadowClass} rounded-[50px] text-white font-bold flex items-center justify-center cursor-default transform hover:scale-105 transition-all duration-200 relative`}
+                            >
+                              {level}
+                              {/* Pulse animation for current level */}
+                              {isCurrentLevel && (
+                                <div className="absolute inset-0 rounded-[50px] bg-yellow-400 animate-ping opacity-20"></div>
+                              )}
+                            </div>
+                            
+                            {/* Connector line with gradient */}
+                            {index < levelsToShow.length - 1 && (
+                              <div className={`w-2 h-16 ${
+                                isPastLevel 
+                                  ? 'bg-gradient-to-b from-green-400 to-green-500' 
+                                  : isCurrentLevel 
+                                  ? 'bg-gradient-to-b from-yellow-400 to-purple-500'
+                                  : 'bg-gradient-to-b from-purple-500 to-purple-600'
+                              } rounded-full ${shadowClass}`}></div>
+                            )}
+                          </div>
+                        );
+                      })}
+                      
+                      {/* Fading line after the last level to suggest continuation downward */}
+                      {hasLevelsBelow && (
+                        <div className="w-2 h-32 bg-gradient-to-b from-purple-600 via-purple-400 to-transparent rounded-full opacity-60"></div>
                       )}
                     </div>
-                  ))}
+                  </div>
+
+                  {/* Fade overlay at bottom - only show if there are levels below */}
+                  {hasLevelsBelow && (
+                    <div className="absolute bottom-0 left-0 right-0 h-32 bg-gradient-to-t from-white via-white/80 to-transparent z-10 pointer-events-none"></div>
+                  )}
+
+                  {/* Decorative elements to enhance depth - with patrol animations */}
+                  <style jsx>{`
+                    @keyframes patrol1 {
+                      0%, 100% { transform: translate(0, 0); }
+                      25% { transform: translate(30px, -20px); }
+                      50% { transform: translate(60px, 10px); }
+                      75% { transform: translate(30px, 30px); }
+                    }
+                    @keyframes patrol2 {
+                      0%, 100% { transform: translate(0, 0); }
+                      25% { transform: translate(-40px, 25px); }
+                      50% { transform: translate(-20px, -15px); }
+                      75% { transform: translate(-50px, 5px); }
+                    }
+                    @keyframes patrol3 {
+                      0%, 100% { transform: translate(0, 0); }
+                      25% { transform: translate(25px, 35px); }
+                      50% { transform: translate(50px, 15px); }
+                      75% { transform: translate(20px, -10px); }
+                    }
+                    @keyframes patrol4 {
+                      0%, 100% { transform: translate(0, 0); }
+                      25% { transform: translate(-35px, -20px); }
+                      50% { transform: translate(-15px, 30px); }
+                      75% { transform: translate(-45px, 10px); }
+                    }
+                  `}</style>
+                  <div 
+                    className="absolute top-1/4 left-8 w-2 h-2 bg-purple-300 rounded-full opacity-50"
+                    style={{ animation: 'patrol1 15s ease-in-out infinite' }}
+                  ></div>
+                  <div 
+                    className="absolute top-1/3 right-12 w-3 h-3 bg-purple-400 rounded-full opacity-40"
+                    style={{ animation: 'patrol2 18s ease-in-out infinite' }}
+                  ></div>
+                  <div 
+                    className="absolute bottom-1/4 left-16 w-2 h-2 bg-purple-300 rounded-full opacity-50"
+                    style={{ animation: 'patrol3 20s ease-in-out infinite' }}
+                  ></div>
+                  <div 
+                    className="absolute bottom-1/3 right-8 w-3 h-3 bg-purple-400 rounded-full opacity-40"
+                    style={{ animation: 'patrol4 22s ease-in-out infinite' }}
+                  ></div>
                 </div>
-              </div>
-            )}
+              );
+            })()}
           </div>
         </div>
 
