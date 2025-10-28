@@ -239,20 +239,26 @@ export default function Home() {
           {selectedSubtopic && (
             <div className="flex flex-col items-center pt-8 px-8 w-full h-[calc(100vh-92px)] overflow-y-auto">
               {/* Title */}
-              <h1 className="text-4xl font-bold text-purple-600 mb-8">{selectedSubtopic}</h1>
-
-              {/* Yellow oval placeholder (replacing dog mascot) */}
-              <div className="w-24 h-32 bg-yellow-400 rounded-full mb-8"></div>
+              <h1 className="text-5xl font-bold text-purple-600 mb-8">{selectedSubtopic}</h1>
 
               {/* Vertical timeline with numbered circles */}
-              <div className="flex flex-col items-center gap-6 pb-8">
+              <div className="flex flex-col items-center pb-8">
+                {/* First level - Yellow oval with number 1 */}
+                <div className="flex flex-col items-center">
+                  <button className="w-40 h-24 rounded-[50px] bg-yellow-400 text-white text-3xl font-bold flex items-center justify-center hover:bg-yellow-500 transition-colors shadow-lg">
+                    1
+                  </button>
+                  <div className="w-1 h-16 bg-gray-300"></div>
+                </div>
+
+                {/* Remaining levels - Purple ovals */}
                 {[2, 3, 4, 5, 6].map((num) => (
                   <div key={num} className="flex flex-col items-center">
-                    <button className="w-16 h-16 rounded-full bg-purple-600 text-white text-2xl font-bold flex items-center justify-center hover:bg-purple-700 transition-colors shadow-lg">
+                    <button className="w-32 h-20 rounded-[40px] bg-purple-600 text-white text-3xl font-bold flex items-center justify-center hover:bg-purple-700 transition-colors shadow-lg">
                       {num}
                     </button>
                     {num < 6 && (
-                      <div className="w-1 h-12 bg-gray-300"></div>
+                      <div className="w-1 h-16 bg-gray-300"></div>
                     )}
                   </div>
                 ))}
