@@ -3,19 +3,18 @@
  * - Resets streak to 0 if uptime_streak - todayDate >= 2 days
  * - Calculates and updates user rank based on total subject experience
  * - Resets daily_exp to 0 if not updated today (daily reset)
- * - Uses Thailand timezone (Asia/Bangkok, GMT+7) for all date calculations
+ * - Uses server's local timezone for all date calculations
  */
 
 /**
- * Get current date in Thailand timezone (Asia/Bangkok)
- * @returns {Date} - Current date in Thailand timezone, set to start of day
+ * Get current date in server's local timezone
+ * @returns {Date} - Current date in server's local timezone, set to start of day
  */
-const getThailandDate = () => {
-    // Get current time in Thailand (GMT+7)
+const getLocalDate = () => {
+    // Get current time in server's local timezone
     const now = new Date();
-    const thailandTime = new Date(now.toLocaleString('en-US', { timeZone: 'Asia/Bangkok' }));
-    thailandTime.setHours(0, 0, 0, 0);
-    return thailandTime;
+    now.setHours(0, 0, 0, 0);
+    return now;
 };
 
 /**
@@ -53,7 +52,7 @@ const calculateRank = (mathExp, phyExp, bioExp, chemExp) => {
 
 /**
  * Check if a streak should be reset based on the last update date
- * Uses Thailand timezone for comparison
+ * Uses server's local timezone for comparison
  * @param {Date|string} uptimeStreak - The last streak update date
  * @returns {boolean} - True if streak should be reset
  */
@@ -62,14 +61,13 @@ const shouldResetStreak = (uptimeStreak) => {
         return false; // No uptime_streak means streak is already 0 or never started
     }
 
-    const today = getThailandDate();
+    const today = getLocalDate();
     
     const lastUpdate = new Date(uptimeStreak);
-    const lastUpdateThailand = new Date(lastUpdate.toLocaleString('en-US', { timeZone: 'Asia/Bangkok' }));
-    lastUpdateThailand.setHours(0, 0, 0, 0);
+    lastUpdate.setHours(0, 0, 0, 0);
     
     // Calculate difference in days
-    const diffTime = today - lastUpdateThailand;
+    const diffTime = today - lastUpdate;
     const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
     
     // Reset if 2 or more days have passed
@@ -78,7 +76,7 @@ const shouldResetStreak = (uptimeStreak) => {
 
 /**
  * Check if daily exp should be reset based on the last update timestamp
- * Uses Thailand timezone for comparison
+ * Uses server's local timezone for comparison
  * @param {Date|string} updatedAt - The last updated_at timestamp
  * @returns {boolean} - True if daily exp should be reset (not updated today)
  */
@@ -87,18 +85,17 @@ const shouldResetDailyExp = (updatedAt) => {
         return false; // No updated_at means daily_exp is already 0 or never set
     }
 
-    const today = getThailandDate();
+    const today = getLocalDate();
     
     const lastUpdate = new Date(updatedAt);
-    const lastUpdateThailand = new Date(lastUpdate.toLocaleString('en-US', { timeZone: 'Asia/Bangkok' }));
-    lastUpdateThailand.setHours(0, 0, 0, 0);
+    lastUpdate.setHours(0, 0, 0, 0);
     
     // Reset if it's a different day (1 or more days have passed)
-    return today > lastUpdateThailand;
+    return today > lastUpdate;
 };
 
 /**
- * Check if uptime_streak is today (Thailand timezone)
+ * Check if uptime_streak is today (server's local timezone)
  * @param {Date|string} uptimeStreak - The last streak update date
  * @returns {boolean} - True if uptime_streak is today
  */
@@ -107,13 +104,12 @@ const isStreakToday = (uptimeStreak) => {
         return false;
     }
 
-    const today = getThailandDate();
+    const today = getLocalDate();
     
     const lastUpdate = new Date(uptimeStreak);
-    const lastUpdateThailand = new Date(lastUpdate.toLocaleString('en-US', { timeZone: 'Asia/Bangkok' }));
-    lastUpdateThailand.setHours(0, 0, 0, 0);
+    lastUpdate.setHours(0, 0, 0, 0);
     
-    return today.getTime() === lastUpdateThailand.getTime();
+    return today.getTime() === lastUpdate.getTime();
 };
 
 /**
@@ -189,7 +185,7 @@ const incrementUserStreakIfNeeded = async (pgPool, userId) => {
     const updateQuery = `
         UPDATE "user" 
         SET streak = streak + 1, 
-            uptime_streak = (CURRENT_DATE AT TIME ZONE 'UTC' AT TIME ZONE 'Asia/Bangkok')::date,
+            uptime_streak = CURRENT_DATE,
             updated_at = NOW()
         WHERE user_id = $1
         RETURNING *
@@ -249,7 +245,7 @@ const incrementGardenStreakIfBothUsersActive = async (pgPool, gardenId) => {
     const updateQuery = `
         UPDATE garden 
         SET streak = streak + 1, 
-            uptime_streak = (CURRENT_DATE AT TIME ZONE 'UTC' AT TIME ZONE 'Asia/Bangkok')::date,
+            uptime_streak = CURRENT_DATE,
             updated_at = NOW()
         WHERE row_id = $1
         RETURNING *
@@ -380,7 +376,7 @@ const checkAndResetGardenStreak = async (pgPool, gardenId) => {
 };
 
 module.exports = {
-    getThailandDate,
+    getLocalDate,
     shouldResetStreak,
     shouldResetDailyExp,
     isStreakToday,
