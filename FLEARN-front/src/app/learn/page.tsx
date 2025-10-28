@@ -79,6 +79,7 @@ export default function Home() {
   const [searchValue, setSearchValue] = useState<string>("");
   const [isSearchFocused, setIsSearchFocused] = useState<boolean>(false);
   const [isAnimating, setIsAnimating] = useState<boolean>(false);
+  const [isContentAnimating, setIsContentAnimating] = useState<boolean>(false);
 
   const handleSubjectClick = (subject: string) => {
     if (subject === selectedSubject) {
@@ -88,16 +89,37 @@ export default function Home() {
       if (selectedSubject) {
         // If there's already a selected subject, slide out first
         setIsAnimating(true);
+        setIsContentAnimating(true);
         setSelectedSubject(null);
+        setSelectedSubtopic(null);
         setTimeout(() => {
           setSelectedSubject(subject);
-          setSelectedSubtopic(null);
           setIsAnimating(false);
+          setIsContentAnimating(false);
         }, 150);
       } else {
         // No subject selected, just slide in
         setSelectedSubject(subject);
         setSelectedSubtopic(null);
+      }
+    }
+  };
+
+  const handleSubtopicClick = (subtopic: string) => {
+    if (subtopic === selectedSubtopic) {
+      setSelectedSubtopic(null);
+    } else {
+      if (selectedSubtopic) {
+        // If there's already a selected subtopic, slide out first
+        setIsContentAnimating(true);
+        setSelectedSubtopic(null);
+        setTimeout(() => {
+          setSelectedSubtopic(subtopic);
+          setIsContentAnimating(false);
+        }, 150);
+      } else {
+        // No subtopic selected, just slide in
+        setSelectedSubtopic(subtopic);
       }
     }
   };
@@ -184,7 +206,7 @@ export default function Home() {
                     return (
                       <button
                         key={st}
-                        onClick={() => setSelectedSubtopic(st)}
+                        onClick={() => handleSubtopicClick(st)}
                         className={`w-full text-left flex items-center gap-3 px-3 py-2 rounded-md transition-all duration-200 ${
                           active
                             ? "bg-purple-600 text-white hover:bg-purple-700"
@@ -207,6 +229,37 @@ export default function Home() {
         {selectedSubject && (
           <div className="border-l-2 border-gray-200 shadow-sm transition-opacity duration-300"></div>
         )}
+
+        {/* Main content area - shown when subtopic is selected */}
+        <div
+          className={`transition-all duration-150 ease-in-out overflow-hidden ${
+            selectedSubtopic && !isContentAnimating ? "flex-1 opacity-100" : "w-0 opacity-0"
+          }`}
+        >
+          {selectedSubtopic && (
+            <div className="flex flex-col items-center pt-8 px-8 w-full h-[calc(100vh-92px)] overflow-y-auto">
+              {/* Title */}
+              <h1 className="text-4xl font-bold text-purple-600 mb-8">{selectedSubtopic}</h1>
+
+              {/* Yellow oval placeholder (replacing dog mascot) */}
+              <div className="w-24 h-32 bg-yellow-400 rounded-full mb-8"></div>
+
+              {/* Vertical timeline with numbered circles */}
+              <div className="flex flex-col items-center gap-6 pb-8">
+                {[2, 3, 4, 5, 6].map((num) => (
+                  <div key={num} className="flex flex-col items-center">
+                    <button className="w-16 h-16 rounded-full bg-purple-600 text-white text-2xl font-bold flex items-center justify-center hover:bg-purple-700 transition-colors shadow-lg">
+                      {num}
+                    </button>
+                    {num < 6 && (
+                      <div className="w-1 h-12 bg-gray-300"></div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
       </div>
 
       <Footer />
