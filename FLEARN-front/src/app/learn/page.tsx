@@ -78,6 +78,29 @@ export default function Home() {
   const [selectedSubtopic, setSelectedSubtopic] = useState<string | null>(null);
   const [searchValue, setSearchValue] = useState<string>("");
   const [isSearchFocused, setIsSearchFocused] = useState<boolean>(false);
+  const [isAnimating, setIsAnimating] = useState<boolean>(false);
+
+  const handleSubjectClick = (subject: string) => {
+    if (subject === selectedSubject) {
+      setSelectedSubject(null);
+      setSelectedSubtopic(null);
+    } else {
+      if (selectedSubject) {
+        // If there's already a selected subject, slide out first
+        setIsAnimating(true);
+        setSelectedSubject(null);
+        setTimeout(() => {
+          setSelectedSubject(subject);
+          setSelectedSubtopic(null);
+          setIsAnimating(false);
+        }, 150);
+      } else {
+        // No subject selected, just slide in
+        setSelectedSubject(subject);
+        setSelectedSubtopic(null);
+      }
+    }
+  };
 
   return (
     <div className="min-h-screen bg-white">
@@ -94,15 +117,7 @@ export default function Home() {
               return (
                 <button
                   key={s}
-                  onClick={() => {
-                    if (active) {
-                      setSelectedSubject(null);
-                      setSelectedSubtopic(null);
-                    } else {
-                      setSelectedSubject(s);
-                      setSelectedSubtopic(null);
-                    }
-                  }}
+                  onClick={() => handleSubjectClick(s)}
                   className={`w-full flex items-center justify-between px-3 py-2 rounded-xl transition-all duration-200 focus:outline-none ${
                     active
                       ? "bg-purple-600 text-white shadow hover:bg-purple-700"
@@ -131,16 +146,16 @@ export default function Home() {
         </aside>
 
         {/* Vertical divider line */}
-        <div className="border-l-2 border-gray-300 mx-4"></div>
+        <div className="border-l-2 border-gray-300"></div>
 
         {/* Middle column - Sub-Topics (slides in when subject is selected) */}
         <div
-          className={`transition-all duration-300 ease-in-out overflow-hidden ${
-            selectedSubject ? "w-64 opacity-100" : "w-0 opacity-0"
+          className={`transition-all duration-150 ease-in-out overflow-hidden ${
+            selectedSubject && !isAnimating ? "w-64 opacity-100" : "w-0 opacity-0"
           }`}
         >
           {selectedSubject && (
-            <section className="flex flex-col p-4 w-64 bg-gray-100 min-h-[calc(100vh-96px)]">
+            <section className="flex flex-col px-4 py-4 w-64 bg-gray-100 h-[calc(100vh-96px)]">
               <div className="mb-4">
                 <h4 className="text-base font-semibold text-gray-600 mb-3">Sub-Topics</h4>
                 <div className="relative w-full">
@@ -190,7 +205,7 @@ export default function Home() {
 
         {/* Vertical divider line between Sub-Topics and main content */}
         {selectedSubject && (
-          <div className="border-l-2 border-gray-300 mx-4 transition-opacity duration-300"></div>
+          <div className="border-l-2 border-gray-300 transition-opacity duration-300"></div>
         )}
       </div>
 
