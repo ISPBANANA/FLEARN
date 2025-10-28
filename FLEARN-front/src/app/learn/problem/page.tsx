@@ -434,9 +434,17 @@ export default function ProblemPage() {
     if (currentQuestionIndex < questions.length - 1) {
       setCurrentQuestionIndex(currentQuestionIndex + 1);
     } else {
-      // All questions completed, save all results to backlog
+      // All questions completed, save all results to backlog and update experience
       if (currentUserId && sessionResults.length === questions.length && topicId && subjectId) {
         try {
+          // Calculate total points from correct answers
+          let totalPoints = 0;
+          for (const result of sessionResults) {
+            if (result.correct) {
+              totalPoints += result.question.points || 0;
+            }
+          }
+
           // Save all results to backlog
           // Use topicId and subjectId from URL params since API doesn't return them
           for (const result of sessionResults) {
@@ -447,8 +455,45 @@ export default function ProblemPage() {
               correctness: result.correct
             });
           }
+
+          // Update experience points if user earned any points
+          if (totalPoints > 0 && questions.length > 0) {
+            // First, get current user profile to get existing experience values
+            const userProfile = await userAPI.getProfile();
+            if (userProfile.user) {
+              const currentUser = userProfile.user;
+              
+              // Get subject name from the first question
+              const subjectName = questions[0].subject_name;
+              
+              // Map subject name to experience field and ADD to existing values
+              const expData: {
+                daily_exp: number;
+                math_exp?: number;
+                phy_exp?: number;
+                bio_exp?: number;
+                chem_exp?: number;
+              } = {
+                daily_exp: (currentUser.daily_exp || 0) + totalPoints
+              };
+
+              // Add points to the appropriate subject experience (ADD to existing, not replace)
+              if (subjectName === 'Mathematics') {
+                expData.math_exp = (currentUser.math_exp || 0) + totalPoints;
+              } else if (subjectName === 'Physics') {
+                expData.phy_exp = (currentUser.phy_exp || 0) + totalPoints;
+              } else if (subjectName === 'Biology') {
+                expData.bio_exp = (currentUser.bio_exp || 0) + totalPoints;
+              } else if (subjectName === 'Chemistry') {
+                expData.chem_exp = (currentUser.chem_exp || 0) + totalPoints;
+              }
+
+              // Update user experience with new totals
+              await userAPI.updateExperience(expData);
+            }
+          }
         } catch (err) {
-          console.error('Error saving results to backlog:', err);
+          console.error('Error saving results to backlog or updating experience:', err);
         }
       }
       
