@@ -21,9 +21,9 @@ export default function Home() {
     <div className="min-h-screen bg-white">
       <Nav />
 
-      <div className="mt-8 mb-12 px-4 flex">
+      <div className="px-4 flex min-h-[calc(100vh-120px)]">
         {/* Left column - Subjects */}
-        <aside className="flex flex-col bg-white border rounded-lg p-4 w-60">
+        <aside className="flex flex-col bg-white p-4 w-60 h-fit mt-8">
           <h3 className="text-sm font-semibold text-gray-600 mb-4">Subjects</h3>
 
           <div className="space-y-3 flex-1">
@@ -32,11 +32,19 @@ export default function Home() {
               return (
                 <button
                   key={s}
-                  onClick={() => setSelectedSubject(active ? null : s)}
-                  className={`w-full flex items-center justify-between px-3 py-2 rounded-xl transition-colors focus:outline-none ${
+                  onClick={() => {
+                    if (active) {
+                      setSelectedSubject(null);
+                      setSelectedSubtopic(null);
+                    } else {
+                      setSelectedSubject(s);
+                      setSelectedSubtopic(null);
+                    }
+                  }}
+                  className={`w-full flex items-center justify-between px-3 py-2 rounded-xl transition-all duration-200 focus:outline-none ${
                     active
-                      ? "bg-purple-600 text-white shadow"
-                      : "bg-white text-gray-700 border border-gray-200"
+                      ? "bg-purple-600 text-white shadow hover:bg-purple-700"
+                      : "bg-white text-gray-700 border border-gray-200 hover:border-purple-400 hover:shadow-md hover:scale-105"
                   }`}
                 >
                   <div className="flex items-center gap-3">
@@ -56,6 +64,9 @@ export default function Home() {
           </div>
         </aside>
 
+        {/* Vertical divider line */}
+        <div className="border-l-2 border-gray-300 mx-4"></div>
+
         {/* Middle column - Sub-Topics (slides in when subject is selected) */}
         <div
           className={`transition-all duration-300 ease-in-out overflow-hidden ${
@@ -63,7 +74,7 @@ export default function Home() {
           }`}
         >
           {selectedSubject && (
-            <section className="flex flex-col bg-white border rounded-lg p-4 ml-4 h-fit">
+            <section className="flex flex-col bg-gray-50 p-4 h-fit w-64 mt-8 rounded-lg border border-gray-200">
               <div className="flex items-center justify-between mb-4">
                 <h4 className="text-sm font-semibold text-gray-600">Sub-Topics</h4>
                 <div className="relative w-32">
@@ -84,10 +95,10 @@ export default function Home() {
                     <button
                       key={st}
                       onClick={() => setSelectedSubtopic(st)}
-                      className={`w-full text-left flex items-center gap-3 px-3 py-2 rounded-md transition-colors ${
+                      className={`w-full text-left flex items-center gap-3 px-3 py-2 rounded-md transition-all duration-200 ${
                         active
-                          ? "bg-purple-600 text-white"
-                          : "bg-white text-gray-700 border border-gray-200"
+                          ? "bg-purple-600 text-white hover:bg-purple-700"
+                          : "bg-white text-gray-700 border border-gray-200 hover:border-purple-400 hover:shadow-md hover:scale-105"
                       }`}
                     >
                       <span className={`w-4 h-4 rounded-sm flex-shrink-0 ${
@@ -101,6 +112,9 @@ export default function Home() {
             </section>
           )}
         </div>
+
+        {/* Vertical divider line between Sub-Topics and main content */}
+        <div className="border-l-2 border-gray-300 mx-4"></div>
       </div>
 
       <Footer />
