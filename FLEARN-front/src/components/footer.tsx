@@ -13,7 +13,7 @@ export function Footer() {
 
     return (
         <div
-          className="w-full bg-white z-50 py-6"
+          className="w-full bg-white z-50 relative py-6"
           style={{ boxShadow: '0px -4px 4px rgba(0, 0, 0, 0.25)' }}
         >
           <div className="flex justify-between items-start px-10 w-full max-w-[1920px] mx-auto">
