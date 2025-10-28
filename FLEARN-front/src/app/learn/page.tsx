@@ -5,6 +5,7 @@ import { Nav } from "@/components/nav";
 import { Footer } from "@/components/footer";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
 import { questionsAPI, backlogAPI, userAPI } from "@/lib/api";
+import Link from "next/link";
 import { 
   Calculator, 
   Dna, 
@@ -347,10 +348,12 @@ export default function Home() {
 
             {/* Return to Profile button */}
             <div className="mt-4 pt-4 border-t border-gray-200">
-              <button className="w-full flex items-center gap-2 text-gray-600 hover:text-purple-600 transition-colors px-3 py-2">
-                <ArrowLeft size={20} />
-                <span>Return to Profile</span>
-              </button>
+              <Link href={`/profile/${currentUserId}`}>
+                <button className="w-full flex items-center gap-2 text-gray-600 hover:text-purple-600 transition-colors px-3 py-2">
+                  <ArrowLeft size={20} />
+                  <span>Return to Profile</span>
+                </button>
+              </Link>
             </div>
           </aside>
 
@@ -361,7 +364,7 @@ export default function Home() {
             }`}
           >
             {selectedSubject && (
-              <section className="flex flex-col px-4 py-4 w-64 bg-gray-200 h-[calc(100vh-96px)]">
+              <section className="flex flex-col px-4 py-4 w-64 bg-gray-100 h-full">
                 <div className="mb-4">
                   <h4 className="text-base font-semibold text-gray-600 mb-3">Sub-Topics</h4>
                   <div className="relative w-full">
@@ -455,7 +458,7 @@ export default function Home() {
               return (
                 <div className="flex flex-col w-full h-[calc(100vh-92px)] overflow-hidden relative bg-gradient-to-b from-purple-50 via-white to-purple-50">
                   {/* Title - with smooth gradient transition to content */}
-                  <div className="absolute top-0 left-0 right-0 bg-gradient-to-b from-white via-white to-purple-50/30 py-8 z-20">
+                  <div className="absolute top-0 left-0 right-0 py-8 z-20">
                     <h1 className="text-5xl font-bold text-purple-600 text-center">{selectedTopic.name}</h1>
                   </div>
 
