@@ -603,9 +603,11 @@ export default function ProfilePage({ params }: ProfilePageProps) {
                       To Profile
                     </button>
                   )}
-                  <button className={`bg-purple-500 text-white hover:text-white hover:bg-purple-600 py-2 px-4 w-50 rounded transition h-10`}>
-                    Learn
-                  </button>
+                  <Link href="/learn">
+                    <button className={`bg-purple-500 text-white hover:text-white hover:bg-purple-600 py-2 px-4 w-50 rounded transition h-10`}>
+                      Learn
+                    </button>
+                  </Link>
                 </div>
               </>
             )}
