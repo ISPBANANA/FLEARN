@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { useParams, notFound } from 'next/navigation';
+import { useParams, notFound, useRouter } from 'next/navigation';
 import { useAuth } from '@/hooks/useAuth';
 import { useUserProfile } from '@/hooks/useUserProfile';
 import { backlogAPI } from '@/lib/api';
@@ -23,7 +23,8 @@ import {
 
 // Subject colors matching common subjects
 const SUBJECT_COLORS: { [key: string]: string } = {
-  'Math': '#8B5CF6', // Purple
+  'Mathematics': '#8B5CF6', // Purple
+  'Math': '#8B5CF6', // Purple (alias)
   'Physics': '#3B82F6', // Blue
   'Chemistry': '#10B981', // Green
   'Biology': '#F59E0B', // Orange
@@ -37,6 +38,7 @@ const DONUT_COLORS = {
 
 interface DailyData {
   date: string;
+  Mathematics?: number;
   Math?: number;
   Physics?: number;
   Chemistry?: number;
@@ -47,6 +49,7 @@ interface DailyData {
 
 interface ExpData {
   date: string;
+  Mathematics?: number;
   Math?: number;
   Physics?: number;
   Chemistry?: number;
@@ -74,6 +77,7 @@ interface AnalyticsData {
 
 export default function BacklogAnalyticsPage() {
   const params = useParams();
+  const router = useRouter();
   const userId = params.uuid as string;
   const { isAuthenticated, isLoading: authLoading } = useAuth();
   const { profile, isLoading: profileLoading } = useUserProfile();
@@ -116,14 +120,21 @@ export default function BacklogAnalyticsPage() {
     const start = new Date();
 
     if (dateRange === 'custom' && customStartDate && customEndDate) {
+      // For custom range, add one day to end date to include the entire end date
+      const endDateObj = new Date(customEndDate);
+      endDateObj.setDate(endDateObj.getDate() + 1);
+      
       return {
         start: customStartDate,
-        end: customEndDate,
+        end: endDateObj.toISOString().split('T')[0],
       };
     }
 
     const days = parseInt(dateRange);
     start.setDate(start.getDate() - days);
+    
+    // Add one day to end date to include today
+    end.setDate(end.getDate() + 1);
 
     return {
       start: start.toISOString().split('T')[0],
@@ -141,7 +152,7 @@ export default function BacklogAnalyticsPage() {
         const { start, end } = getDateRange();
         const response = await backlogAPI.getAnalytics(userId, start, end);
 
-        if (response.success && response.data) {
+        if (response.data) {
           setAnalyticsData(response.data);
           processAnalyticsData(response.data);
         } else {
@@ -197,6 +208,7 @@ export default function BacklogAnalyticsPage() {
     allDates.forEach(date => {
       tasksMap.set(date, { 
         date, 
+        Mathematics: 0,
         Math: 0, 
         Physics: 0, 
         Chemistry: 0, 
@@ -220,7 +232,8 @@ export default function BacklogAnalyticsPage() {
 
     // Calculate "All" totals for each day
     tasksMap.forEach(entry => {
-      entry.All = (entry.Math || 0) + (entry.Physics || 0) + (entry.Chemistry || 0) + (entry.Biology || 0);
+      const math = (entry.Mathematics || 0) + (entry.Math || 0);
+      entry.All = math + (entry.Physics || 0) + (entry.Chemistry || 0) + (entry.Biology || 0);
     });
 
     setDailyTasksData(Array.from(tasksMap.values()));
@@ -232,6 +245,7 @@ export default function BacklogAnalyticsPage() {
     allDates.forEach(date => {
       expMap.set(date, { 
         date, 
+        Mathematics: 0,
         Math: 0, 
         Physics: 0, 
         Chemistry: 0, 
@@ -255,7 +269,8 @@ export default function BacklogAnalyticsPage() {
 
     // Calculate "All" totals for each day
     expMap.forEach(entry => {
-      entry.All = (entry.Math || 0) + (entry.Physics || 0) + (entry.Chemistry || 0) + (entry.Biology || 0);
+      const math = (entry.Mathematics || 0) + (entry.Math || 0);
+      entry.All = math + (entry.Physics || 0) + (entry.Chemistry || 0) + (entry.Biology || 0);
     });
 
     setDailyExpData(Array.from(expMap.values()));
@@ -321,8 +336,28 @@ export default function BacklogAnalyticsPage() {
       <Nav />
 
       <div className="max-w-7xl mx-auto px-4 py-8">
-        {/* Header */}
+        {/* Header with Return Button */}
         <div className="mb-8">
+          <button
+            onClick={() => router.push(`/profile/${userId}`)}
+            className="flex items-center gap-2 mb-4 text-gray-600 hover:text-purple-600 transition-colors"
+          >
+            <svg
+              className="w-5 h-5"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M15 19l-7-7 7-7"
+              />
+            </svg>
+            Return to Profile
+          </button>
+          
           <h1 className="text-4xl font-bold text-purple-600 mb-2">
             Learning Analytics
           </h1>
@@ -393,14 +428,14 @@ export default function BacklogAnalyticsPage() {
           </div>
         ) : (
           <div className="space-y-8">
-            {/* Debug info */}
-            {dailyTasksData.length === 0 && (
+            {/* Debug info - check if there's actual data, not just empty date entries */}
+            {dailyTasksData.length === 0 || (dailyTasksData.every(d => d.All === 0)) ? (
               <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-4">
                 <p className="text-yellow-800 text-sm">
-                  No data available for the selected date range. The graphs will show empty with date labels.
+                  No data available for the selected date range. Complete some tasks to see your analytics!
                 </p>
               </div>
-            )}
+            ) : null}
 
             {/* Graph 1: Daily Completed Tasks */}
             <div className="bg-white rounded-lg shadow-md p-6">
@@ -436,12 +471,11 @@ export default function BacklogAnalyticsPage() {
                     />
                     <Line 
                       type="monotone" 
-                      dataKey="Math" 
-                      stroke={SUBJECT_COLORS['Math']} 
+                      dataKey="Mathematics" 
+                      stroke={SUBJECT_COLORS['Mathematics']} 
                       strokeWidth={2}
                       dot={{ r: 4 }}
                       activeDot={{ r: 6 }}
-                      connectNulls
                     />
                     <Line 
                       type="monotone" 
@@ -450,7 +484,6 @@ export default function BacklogAnalyticsPage() {
                       strokeWidth={2}
                       dot={{ r: 4 }}
                       activeDot={{ r: 6 }}
-                      connectNulls
                     />
                     <Line 
                       type="monotone" 
@@ -459,7 +492,6 @@ export default function BacklogAnalyticsPage() {
                       strokeWidth={2}
                       dot={{ r: 4 }}
                       activeDot={{ r: 6 }}
-                      connectNulls
                     />
                     <Line 
                       type="monotone" 
@@ -468,7 +500,6 @@ export default function BacklogAnalyticsPage() {
                       strokeWidth={2}
                       dot={{ r: 4 }}
                       activeDot={{ r: 6 }}
-                      connectNulls
                     />
                     <Line 
                       type="monotone" 
@@ -478,7 +509,6 @@ export default function BacklogAnalyticsPage() {
                       strokeDasharray="5 5"
                       dot={{ r: 4 }}
                       activeDot={{ r: 6 }}
-                      connectNulls
                     />
                   </LineChart>
                 </ResponsiveContainer>
@@ -588,12 +618,11 @@ export default function BacklogAnalyticsPage() {
                     />
                     <Line 
                       type="monotone" 
-                      dataKey="Math" 
-                      stroke={SUBJECT_COLORS['Math']} 
+                      dataKey="Mathematics" 
+                      stroke={SUBJECT_COLORS['Mathematics']} 
                       strokeWidth={2}
                       dot={{ r: 4 }}
                       activeDot={{ r: 6 }}
-                      connectNulls
                     />
                     <Line 
                       type="monotone" 
@@ -602,7 +631,6 @@ export default function BacklogAnalyticsPage() {
                       strokeWidth={2}
                       dot={{ r: 4 }}
                       activeDot={{ r: 6 }}
-                      connectNulls
                     />
                     <Line 
                       type="monotone" 
@@ -611,7 +639,6 @@ export default function BacklogAnalyticsPage() {
                       strokeWidth={2}
                       dot={{ r: 4 }}
                       activeDot={{ r: 6 }}
-                      connectNulls
                     />
                     <Line 
                       type="monotone" 
@@ -620,7 +647,6 @@ export default function BacklogAnalyticsPage() {
                       strokeWidth={2}
                       dot={{ r: 4 }}
                       activeDot={{ r: 6 }}
-                      connectNulls
                     />
                     <Line 
                       type="monotone" 
@@ -630,7 +656,6 @@ export default function BacklogAnalyticsPage() {
                       strokeDasharray="5 5"
                       dot={{ r: 4 }}
                       activeDot={{ r: 6 }}
-                      connectNulls
                     />
                   </LineChart>
                 </ResponsiveContainer>
