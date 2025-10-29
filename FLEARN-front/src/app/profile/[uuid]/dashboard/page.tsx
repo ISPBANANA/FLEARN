@@ -368,24 +368,48 @@ export default function BacklogAnalyticsPage() {
 
         {/* Date Range Selector */}
         <div className="bg-white rounded-lg shadow-md p-6 mb-8">
-          <h2 className="text-xl font-semibold text-gray-800 mb-4">Date Range</h2>
+          <div className="flex justify-between items-center mb-4">
+            <h2 className="text-xl font-semibold text-gray-800">Date Range</h2>
+            <button
+              onClick={() => {
+                // TODO: Implement download report functionality
+                alert('Download report feature coming soon!');
+              }}
+              className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors flex items-center gap-2"
+            >
+              <svg
+                className="w-5 h-5"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+                />
+              </svg>
+              Download Report
+            </button>
+          </div>
           
           <div className="flex flex-wrap gap-4 items-end">
             {/* Dropdown selector */}
-            <div className="flex-1 min-w-[200px] max-w-[300px]">
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Select Time Period
-              </label>
-              <select
-                value={dateRange}
-                onChange={(e) => setDateRange(e.target.value as '7' | '14' | '28' | 'custom')}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent bg-white text-gray-900"
-              >
-                <option value="7">Past 7 Days</option>
-                <option value="14">Past 14 Days</option>
-                <option value="28">Past 28 Days</option>
-                <option value="custom">Custom Range</option>
-              </select>
+              <div className="flex-1 min-w-[200px] max-w-[300px]">
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Select Time Period
+                </label>
+                <select
+                  value={dateRange}
+                  onChange={(e) => setDateRange(e.target.value as '7' | '14' | '28' | 'custom')}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent bg-white text-gray-900"
+                >
+                  <option value="7">Past 7 Days</option>
+                  <option value="14">Past 14 Days</option>
+                  <option value="28">Past 28 Days</option>
+                  <option value="custom">Custom Range</option>
+                </select>
             </div>
 
             {/* Custom date inputs */}
@@ -400,7 +424,7 @@ export default function BacklogAnalyticsPage() {
                     value={customStartDate}
                     max={customEndDate || new Date().toISOString().split('T')[0]}
                     onChange={(e) => setCustomStartDate(e.target.value)}
-                    className="px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 bg-white"
+                    className="text-gray-700 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 bg-white"
                   />
                 </div>
                 <div>
@@ -413,7 +437,7 @@ export default function BacklogAnalyticsPage() {
                     min={customStartDate}
                     max={new Date().toISOString().split('T')[0]}
                     onChange={(e) => setCustomEndDate(e.target.value)}
-                    className="px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 bg-white"
+                    className="text-gray-700 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 bg-white"
                   />
                 </div>
               </div>
