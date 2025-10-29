@@ -7,7 +7,7 @@ import { ProtectedRoute } from "@/components/ProtectedRoute";
 import { useUserProfile } from '@/hooks/useUserProfile';
 import { userAPI, friendsAPI } from '@/lib/api';
 import Link from "next/link";
-import { UserRound, LogOut, Users, TreePine } from 'lucide-react';
+import { UserRound, LogOut, Users, TreePine, LayoutDashboard } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/hooks/useAuth';
@@ -553,17 +553,28 @@ export default function ProfilePage({ params }: ProfilePageProps) {
                     )}
                   </ul>
 
-                  <div className="space-y-3 flex flex-col gap-3">
+                  <div className="space-y-3 flex flex-col gap-1">
                     {isOwnProfile && (
-                      <Link href="/search">
-                        <button className="w-full bg-purple-50 text-purple-600 py-3 px-4 rounded border border-purple-200 hover:bg-purple-100 transition-colors flex items-center justify-center gap-2 text-sm font-medium">
-                          <Users size={18} />
-                          Find Friend
-                          <svg className="w-4 h-4 ml-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
-                          </svg>
-                        </button>
-                      </Link>
+                      <>
+                        <Link href="/search">
+                          <button className="w-full bg-purple-50 text-purple-600 py-3 px-4 rounded border border-purple-200 hover:bg-purple-100 transition-colors flex items-center justify-center gap-2 text-sm font-medium">
+                            <Users size={18} />
+                            Find Friend
+                            <svg className="w-4 h-4 ml-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                            </svg>
+                          </button>
+                        </Link>
+                        <Link href={`${pathname}/dashboard`}>
+                          <button className="w-full bg-purple-50 text-purple-600 py-3 px-4 rounded border border-purple-200 hover:bg-purple-100 transition-colors flex items-center justify-center gap-2 text-sm font-medium">
+                            <LayoutDashboard size={18} />
+                            Learning Dashboard
+                            <svg className="w-4 h-4 ml-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                            </svg>
+                          </button>
+                        </Link>
+                      </>
                     )}
 
                     <Link href={`${pathname}/garden`}>
