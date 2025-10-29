@@ -87,6 +87,21 @@ export default function BacklogAnalyticsPage() {
   const [customStartDate, setCustomStartDate] = useState('');
   const [customEndDate, setCustomEndDate] = useState('');
 
+  // Handle date range change
+  const handleDateRangeChange = (value: '7' | '14' | '28' | 'custom') => {
+    setDateRange(value);
+    
+    // If switching to custom and dates are empty, set them to past 7 days
+    if (value === 'custom' && !customStartDate && !customEndDate) {
+      const end = new Date();
+      const start = new Date();
+      start.setDate(start.getDate() - 7);
+      
+      setCustomStartDate(start.toISOString().split('T')[0]);
+      setCustomEndDate(end.toISOString().split('T')[0]);
+    }
+  };
+
   // Data states
   const [analyticsData, setAnalyticsData] = useState<AnalyticsData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -402,7 +417,7 @@ export default function BacklogAnalyticsPage() {
                 </label>
                 <select
                   value={dateRange}
-                  onChange={(e) => setDateRange(e.target.value as '7' | '14' | '28' | 'custom')}
+                  onChange={(e) => handleDateRangeChange(e.target.value as '7' | '14' | '28' | 'custom')}
                   className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent bg-white text-gray-900"
                 >
                   <option value="7">Past 7 Days</option>
@@ -422,7 +437,11 @@ export default function BacklogAnalyticsPage() {
                   <input
                     type="date"
                     value={customStartDate}
-                    max={customEndDate || new Date().toISOString().split('T')[0]}
+                    max={(() => {
+                      const yesterday = new Date();
+                      yesterday.setDate(yesterday.getDate() - 1);
+                      return yesterday.toISOString().split('T')[0];
+                    })()}
                     onChange={(e) => setCustomStartDate(e.target.value)}
                     className="text-gray-700 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 bg-white"
                   />
