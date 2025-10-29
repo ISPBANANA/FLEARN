@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { useParams, notFound, useRouter } from 'next/navigation';
 import { useAuth } from '@/hooks/useAuth';
 import { useUserProfile } from '@/hooks/useUserProfile';
@@ -20,6 +20,8 @@ import {
   Pie,
   Cell
 } from 'recharts';
+import html2canvas from 'html2canvas';
+import jsPDF from 'jspdf';
 
 // Subject colors matching common subjects
 const SUBJECT_COLORS: { [key: string]: string } = {
@@ -81,6 +83,14 @@ export default function BacklogAnalyticsPage() {
   const userId = params.uuid as string;
   const { isAuthenticated, isLoading: authLoading } = useAuth();
   const { profile, isLoading: profileLoading } = useUserProfile();
+
+  // Refs for chart elements
+  const dailyTasksChartRef = useRef<HTMLDivElement>(null);
+  const accuracyChartRef = useRef<HTMLDivElement>(null);
+  const dailyExpChartRef = useRef<HTMLDivElement>(null);
+
+  // PDF generation state
+  const [isGeneratingPDF, setIsGeneratingPDF] = useState(false);
 
   // Date range states
   const [dateRange, setDateRange] = useState<'7' | '14' | '28' | 'custom'>('7');
@@ -300,6 +310,210 @@ export default function BacklogAnalyticsPage() {
     ]);
   };
 
+  // Generate PDF Report using jsPDF and html2canvas
+  const generatePDFReport = async () => {
+    if (isGeneratingPDF || !dailyTasksChartRef.current || !accuracyChartRef.current || !dailyExpChartRef.current) {
+      console.log('PDF generation cancelled: refs not available or already generating');
+      return;
+    }
+
+    setIsGeneratingPDF(true);
+
+    try {
+      // Wait a bit to ensure charts are fully rendered
+      await new Promise(resolve => setTimeout(resolve, 100));
+
+      // Pre-process all chart elements to remove LAB colors BEFORE html2canvas
+      const preprocessColors = (element: HTMLElement) => {
+        try {
+          const allElements = element.querySelectorAll('*');
+          allElements.forEach((el) => {
+            if (el instanceof HTMLElement) {
+              const computedStyle = window.getComputedStyle(el);
+              
+              // Check and fix color
+              const color = computedStyle.color;
+              if (color && (color.includes('lab') || color.includes('lch'))) {
+                el.style.color = '#000000';
+              }
+              
+              // Check and fix background color
+              const bgColor = computedStyle.backgroundColor;
+              if (bgColor && (bgColor.includes('lab') || bgColor.includes('lch'))) {
+                el.style.backgroundColor = 'transparent';
+              }
+              
+              // Check and fix border color
+              const borderColor = computedStyle.borderColor;
+              if (borderColor && (borderColor.includes('lab') || borderColor.includes('lch'))) {
+                el.style.borderColor = '#000000';
+              }
+              
+              // Fix SVG elements
+              if (el instanceof SVGElement) {
+                const fill = el.getAttribute('fill');
+                if (fill && (fill.includes('lab') || fill.includes('lch'))) {
+                  el.setAttribute('fill', '#000000');
+                }
+                const stroke = el.getAttribute('stroke');
+                if (stroke && (stroke.includes('lab') || stroke.includes('lch'))) {
+                  el.setAttribute('stroke', '#000000');
+                }
+              }
+            }
+          });
+        } catch (e) {
+          console.warn('Error preprocessing colors:', e);
+        }
+      };
+
+      // Preprocess all chart containers
+      if (dailyTasksChartRef.current) {
+        preprocessColors(dailyTasksChartRef.current);
+      }
+      if (accuracyChartRef.current) {
+        preprocessColors(accuracyChartRef.current);
+      }
+      if (dailyExpChartRef.current) {
+        preprocessColors(dailyExpChartRef.current);
+      }
+
+      // Create PDF document (A4 size: 210mm x 297mm)
+      const pdf = new jsPDF('p', 'mm', 'a4');
+      const pageWidth = pdf.internal.pageSize.getWidth();
+      const pageHeight = pdf.internal.pageSize.getHeight();
+      const margin = 15;
+      const contentWidth = pageWidth - (2 * margin);
+      
+      let yPosition = margin;
+
+      // Add title
+      pdf.setFontSize(24);
+      pdf.setTextColor(147, 51, 234); // Purple color
+      pdf.text('Learning Analytics Report', margin, yPosition);
+      yPosition += 10;
+
+      // Add date range
+      pdf.setFontSize(11);
+      pdf.setTextColor(107, 114, 128); // Gray color
+      const { start, end } = getDateRange();
+      const dateRangeText = `Date Range: ${formatDateForDisplay(start)} to ${formatDateForDisplay(end)}`;
+      pdf.text(dateRangeText, margin, yPosition);
+      yPosition += 12;
+
+      // Simplified html2canvas options (colors already preprocessed)
+      const canvasOptions = {
+        scale: 2,
+        backgroundColor: '#ffffff',
+        logging: false,
+        allowTaint: true,
+        useCORS: true,
+      };
+
+      // Capture and add Daily Completed Tasks chart
+      console.log('Capturing Daily Completed Tasks chart...');
+      if (!dailyTasksChartRef.current) {
+        throw new Error('Daily tasks chart reference is null');
+      }
+      
+      const dailyTasksCanvas = await html2canvas(dailyTasksChartRef.current, canvasOptions);
+      const dailyTasksImgData = dailyTasksCanvas.toDataURL('image/png');
+      const chartHeight = (dailyTasksCanvas.height * contentWidth) / dailyTasksCanvas.width;
+      
+      // Check if we need a new page
+      if (yPosition + chartHeight > pageHeight - margin) {
+        pdf.addPage();
+        yPosition = margin;
+      }
+      
+      pdf.addImage(dailyTasksImgData, 'PNG', margin, yPosition, contentWidth, chartHeight);
+      yPosition += chartHeight + 10;
+
+      // Capture and add Accuracy Overview chart
+      console.log('Capturing Accuracy Overview chart...');
+      if (!accuracyChartRef.current) {
+        throw new Error('Accuracy chart reference is null');
+      }
+      
+      const accuracyCanvas = await html2canvas(accuracyChartRef.current, canvasOptions);
+      const accuracyImgData = accuracyCanvas.toDataURL('image/png');
+      const accuracyHeight = (accuracyCanvas.height * contentWidth) / accuracyCanvas.width;
+      
+      // Check if we need a new page
+      if (yPosition + accuracyHeight > pageHeight - margin) {
+        pdf.addPage();
+        yPosition = margin;
+      }
+      
+      pdf.addImage(accuracyImgData, 'PNG', margin, yPosition, contentWidth, accuracyHeight);
+      yPosition += accuracyHeight + 10;
+
+      // Capture and add Daily EXP Earned chart
+      console.log('Capturing Daily EXP Earned chart...');
+      if (!dailyExpChartRef.current) {
+        throw new Error('Daily EXP chart reference is null');
+      }
+      
+      const dailyExpCanvas = await html2canvas(dailyExpChartRef.current, canvasOptions);
+      const dailyExpImgData = dailyExpCanvas.toDataURL('image/png');
+      const dailyExpHeight = (dailyExpCanvas.height * contentWidth) / dailyExpCanvas.width;
+      
+      // Check if we need a new page
+      if (yPosition + dailyExpHeight > pageHeight - margin) {
+        pdf.addPage();
+        yPosition = margin;
+      }
+      
+      pdf.addImage(dailyExpImgData, 'PNG', margin, yPosition, contentWidth, dailyExpHeight);
+
+      // Add footer with generation date
+      const totalPages = pdf.getNumberOfPages();
+      for (let i = 1; i <= totalPages; i++) {
+        pdf.setPage(i);
+        pdf.setFontSize(8);
+        pdf.setTextColor(156, 163, 175); // Light gray
+        pdf.text(
+          `Generated on ${new Date().toLocaleDateString()} | Page ${i} of ${totalPages}`,
+          pageWidth / 2,
+          pageHeight - 10,
+          { align: 'center' }
+        );
+      }
+
+      // Save the PDF with sanitized filename
+      const sanitizedStart = start.replace(/[/:]/g, '-');
+      const sanitizedEnd = end.replace(/[/:]/g, '-');
+      const fileName = `Learning_Analytics_${sanitizedStart}_to_${sanitizedEnd}.pdf`;
+      
+      console.log('Saving PDF as:', fileName);
+      pdf.save(fileName);
+      
+      console.log('PDF generated successfully!');
+
+    } catch (error) {
+      console.error('Error generating PDF:', error);
+      
+      // Provide more specific error message
+      let errorMessage = 'Failed to generate PDF. Please try again.';
+      if (error instanceof Error) {
+        console.error('Error details:', error.message);
+        if (error.message.includes('color')) {
+          errorMessage = 'Failed to generate PDF due to color rendering issues. Please try again or contact support if the problem persists.';
+        } else if (error.message.includes('timeout')) {
+          errorMessage = 'PDF generation timed out. Please try again with a smaller date range.';
+        } else if (error.message.includes('reference is null')) {
+          errorMessage = 'Charts are not ready. Please wait a moment and try again.';
+        } else {
+          errorMessage = `Failed to generate PDF: ${error.message}`;
+        }
+      }
+      
+      alert(errorMessage);
+    } finally {
+      setIsGeneratingPDF(false);
+    }
+  };
+
   // Custom tooltip for line charts
   const CustomTooltip = ({ active, payload, label }: any) => {
     if (active && payload && payload.length) {
@@ -335,6 +549,15 @@ export default function BacklogAnalyticsPage() {
     return null;
   };
 
+  // Helper function to format date for display
+  const formatDateForDisplay = (dateString: string) => {
+    const date = new Date(dateString);
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    const year = date.getFullYear();
+    return `${month}/${day}/${year}`;
+  };
+
   if (authLoading || profileLoading || !isMounted) {
     return (
       <div className="min-h-screen bg-white flex items-center justify-center">
@@ -350,9 +573,9 @@ export default function BacklogAnalyticsPage() {
     <div className="min-h-screen bg-gray-50">
       <Nav />
 
-      <div className="max-w-7xl mx-auto px-4 py-8">
+      <div className="max-w-7xl mx-auto px-4 py-8 print:px-0 print:py-4">
         {/* Header with Return Button */}
-        <div className="mb-8">
+        <div className="mb-8 no-print">
           <button
             onClick={() => router.push(`/profile/${userId}`)}
             className="flex items-center gap-2 mb-4 text-gray-600 hover:text-purple-600 transition-colors"
@@ -381,31 +604,53 @@ export default function BacklogAnalyticsPage() {
           </p>
         </div>
 
+        {/* Print-only header */}
+        <div className="hidden print:block mb-4">
+          <h1 className="text-3xl font-bold text-purple-600 mb-1">
+            Learning Analytics Report
+          </h1>
+          <p className="text-sm text-gray-600">
+            Date Range: {formatDateForDisplay(getDateRange().start)} to {formatDateForDisplay(getDateRange().end)}
+          </p>
+        </div>
+
         {/* Date Range Selector */}
-        <div className="bg-white rounded-lg shadow-md p-6 mb-8">
+        <div className="bg-white rounded-lg shadow-md p-6 mb-8 no-print">
           <div className="flex justify-between items-center mb-4">
             <h2 className="text-xl font-semibold text-gray-800">Date Range</h2>
             <button
-              onClick={() => {
-                // TODO: Implement download report functionality
-                alert('Download report feature coming soon!');
-              }}
-              className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors flex items-center gap-2"
+              onClick={generatePDFReport}
+              disabled={isLoading || isGeneratingPDF}
+              className={`px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors flex items-center gap-2 ${
+                (isLoading || isGeneratingPDF) ? 'opacity-50 cursor-not-allowed' : ''
+              }`}
             >
-              <svg
-                className="w-5 h-5"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
-                />
-              </svg>
-              Download Report
+              {isGeneratingPDF ? (
+                <>
+                  <svg className="animate-spin h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                  </svg>
+                  Generating PDF...
+                </>
+              ) : (
+                <>
+                  <svg
+                    className="w-5 h-5"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+                    />
+                  </svg>
+                  Download PDF
+                </>
+              )}
             </button>
           </div>
           
@@ -470,10 +715,10 @@ export default function BacklogAnalyticsPage() {
             <p className="text-gray-600">Loading analytics...</p>
           </div>
         ) : (
-          <div className="space-y-8">
+          <div className="space-y-8 print:space-y-3">
             {/* Debug info - check if there's actual data, not just empty date entries */}
             {dailyTasksData.length === 0 || (dailyTasksData.every(d => d.All === 0)) ? (
-              <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-4">
+              <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-4 no-print">
                 <p className="text-yellow-800 text-sm">
                   No data available for the selected date range. Complete some tasks to see your analytics!
                 </p>
@@ -481,16 +726,16 @@ export default function BacklogAnalyticsPage() {
             ) : null}
 
             {/* Graph 1: Daily Completed Tasks */}
-            <div className="bg-white rounded-lg shadow-md p-6">
-              <h2 className="text-2xl font-bold text-gray-800 mb-4">
+            <div ref={dailyTasksChartRef} className="bg-white rounded-lg shadow-md p-6 print:p-4 print:mb-3 avoid-break">
+              <h2 className="text-2xl font-bold text-gray-800 mb-4 print:text-lg print:mb-2">
                 Daily Completed Tasks
               </h2>
-              <p className="text-gray-600 mb-6">
+              <p className="text-gray-600 mb-6 print:text-sm print:mb-2">
                 Track how many tasks you complete each day across different subjects
               </p>
               
               {dailyTasksData.length > 0 ? (
-                <ResponsiveContainer width="100%" height={400}>
+                <ResponsiveContainer width="100%" height={400} className="print:!h-[250px]">
                   <LineChart data={dailyTasksData} margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
                     <CartesianGrid strokeDasharray="3 3" stroke="#E5E7EB" />
                     <XAxis 
@@ -563,16 +808,16 @@ export default function BacklogAnalyticsPage() {
             </div>
 
             {/* Graph 2: Correct vs Incorrect Donut Chart */}
-            <div className="bg-white rounded-lg shadow-md p-6">
-              <h2 className="text-2xl font-bold text-gray-800 mb-4">
+            <div ref={accuracyChartRef} className="bg-white rounded-lg shadow-md p-6 print:p-4 print:mb-3 avoid-break">
+              <h2 className="text-2xl font-bold text-gray-800 mb-4 print:text-lg print:mb-2">
                 Accuracy Overview
               </h2>
-              <p className="text-gray-600 mb-6">
+              <p className="text-gray-600 mb-6 print:text-sm print:mb-2">
                 Your overall performance across all attempts
               </p>
 
-              <div className="flex flex-col md:flex-row items-center justify-center gap-8">
-                <ResponsiveContainer width="100%" height={300}>
+              <div className="flex flex-col md:flex-row items-center justify-center gap-8 print:gap-4">
+                <ResponsiveContainer width="100%" height={300} className="print:!h-[200px]">
                   <PieChart>
                     <Pie
                       data={donutData}
@@ -597,28 +842,28 @@ export default function BacklogAnalyticsPage() {
                 </ResponsiveContainer>
 
                 {/* Stats summary */}
-                <div className="space-y-4">
-                  <div className="flex items-center gap-4">
-                    <div className="w-4 h-4 rounded-full" style={{ backgroundColor: DONUT_COLORS.correct }}></div>
+                <div className="space-y-4 print:space-y-2">
+                  <div className="flex items-center gap-4 print:gap-2">
+                    <div className="w-4 h-4 rounded-full print:w-3 print:h-3" style={{ backgroundColor: DONUT_COLORS.correct }}></div>
                     <div>
-                      <p className="text-sm text-gray-600">Correct Answers</p>
-                      <p className="text-2xl font-bold text-green-600">
+                      <p className="text-sm text-gray-600 print:text-xs">Correct Answers</p>
+                      <p className="text-2xl font-bold text-green-600 print:text-lg">
                         {donutData.find(d => d.name === 'Correct')?.value || 0}
                       </p>
                     </div>
                   </div>
-                  <div className="flex items-center gap-4">
-                    <div className="w-4 h-4 rounded-full" style={{ backgroundColor: DONUT_COLORS.incorrect }}></div>
+                  <div className="flex items-center gap-4 print:gap-2">
+                    <div className="w-4 h-4 rounded-full print:w-3 print:h-3" style={{ backgroundColor: DONUT_COLORS.incorrect }}></div>
                     <div>
-                      <p className="text-sm text-gray-600">Incorrect Answers</p>
-                      <p className="text-2xl font-bold text-red-600">
+                      <p className="text-sm text-gray-600 print:text-xs">Incorrect Answers</p>
+                      <p className="text-2xl font-bold text-red-600 print:text-lg">
                         {donutData.find(d => d.name === 'Incorrect')?.value || 0}
                       </p>
                     </div>
                   </div>
-                  <div className="pt-4 border-t border-gray-200">
-                    <p className="text-sm text-gray-600">Total Attempts</p>
-                    <p className="text-3xl font-bold text-purple-600">
+                  <div className="pt-4 border-t border-gray-200 print:pt-2">
+                    <p className="text-sm text-gray-600 print:text-xs">Total Attempts</p>
+                    <p className="text-3xl font-bold text-purple-600 print:text-xl">
                       {donutData.reduce((sum, item) => sum + item.value, 0)}
                     </p>
                   </div>
@@ -627,16 +872,16 @@ export default function BacklogAnalyticsPage() {
             </div>
 
             {/* Graph 3: Daily EXP Earned */}
-            <div className="bg-white rounded-lg shadow-md p-6">
-              <h2 className="text-2xl font-bold text-gray-800 mb-4">
+            <div ref={dailyExpChartRef} className="bg-white rounded-lg shadow-md p-6 print:p-4 print:mb-3 avoid-break">
+              <h2 className="text-2xl font-bold text-gray-800 mb-4 print:text-lg print:mb-2">
                 Daily Experience Points Earned
               </h2>
-              <p className="text-gray-600 mb-6">
+              <p className="text-gray-600 mb-6 print:text-sm print:mb-2">
                 Track your EXP gains from correct answers across different subjects
               </p>
               
               {dailyExpData.length > 0 ? (
-                <ResponsiveContainer width="100%" height={400}>
+                <ResponsiveContainer width="100%" height={400} className="print:!h-[250px]">
                   <LineChart data={dailyExpData} margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
                     <CartesianGrid strokeDasharray="3 3" stroke="#E5E7EB" />
                     <XAxis 
