@@ -613,6 +613,14 @@ export const backlogAPI = {
     const queryString = params.toString();
     return apiCall(`/api/backlog/user/${userId}${queryString ? `?${queryString}` : ''}`);
   },
+
+  // Get analytics data for charts
+  async getAnalytics(userId: string, startDate: string, endDate: string) {
+    const params = new URLSearchParams();
+    params.append('start_date', startDate);
+    params.append('end_date', endDate);
+    return apiCall(`/api/backlog/analytics/${userId}?${params.toString()}`);
+  },
 };
 
 export const questionsAPI = {

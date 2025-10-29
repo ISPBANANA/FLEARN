@@ -232,6 +232,73 @@ class Backlog {
     }
     
     // ============================================
+    // Get analytics data for graphs
+    // ============================================
+    static async getAnalytics(user_id, start_date, end_date) {
+        try {
+            // Get daily task completion by subject
+            const dailyTasksQuery = `
+                SELECT 
+                    DATE(b.do_date) as date,
+                    s.name as subject_name,
+                    COUNT(*) as completed_tasks
+                FROM backlog b
+                LEFT JOIN subject s ON b.subject_id = s.subject_id
+                WHERE b.user_id = $1
+                    AND b.do_date >= $2
+                    AND b.do_date <= $3
+                GROUP BY DATE(b.do_date), s.name
+                ORDER BY date ASC, s.name
+            `;
+            
+            // Get overall correct/incorrect breakdown
+            const correctnessQuery = `
+                SELECT 
+                    SUM(CASE WHEN correctness = true THEN 1 ELSE 0 END) as correct_count,
+                    SUM(CASE WHEN correctness = false THEN 1 ELSE 0 END) as incorrect_count
+                FROM backlog
+                WHERE user_id = $1
+                    AND do_date >= $2
+                    AND do_date <= $3
+            `;
+            
+            // Get daily exp earned (assuming 10 points per correct answer as base)
+            const dailyExpQuery = `
+                SELECT 
+                    DATE(b.do_date) as date,
+                    s.name as subject_name,
+                    SUM(CASE 
+                        WHEN b.correctness = true 
+                        THEN 10
+                        ELSE 0 
+                    END) as exp_earned
+                FROM backlog b
+                LEFT JOIN subject s ON b.subject_id = s.subject_id
+                WHERE b.user_id = $1
+                    AND b.do_date >= $2
+                    AND b.do_date <= $3
+                GROUP BY DATE(b.do_date), s.name
+                ORDER BY date ASC, s.name
+            `;
+            
+            const [dailyTasksResult, correctnessResult, dailyExpResult] = await Promise.all([
+                pgPool.query(dailyTasksQuery, [user_id, start_date, end_date]),
+                pgPool.query(correctnessQuery, [user_id, start_date, end_date]),
+                pgPool.query(dailyExpQuery, [user_id, start_date, end_date])
+            ]);
+            
+            return {
+                dailyTasks: dailyTasksResult.rows,
+                correctness: correctnessResult.rows[0] || { correct_count: 0, incorrect_count: 0 },
+                dailyExp: dailyExpResult.rows
+            };
+        } catch (error) {
+            console.error('Error getting analytics data:', error);
+            throw error;
+        }
+    }
+    
+    // ============================================
     // Delete backlog entry by ID
     // ============================================
     static async delete(row_id) {

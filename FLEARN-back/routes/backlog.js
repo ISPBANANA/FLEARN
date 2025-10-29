@@ -203,6 +203,31 @@ router.get('/stats/topic/:user_id', checkJwt, async (req, res) => {
 });
 
 // ============================================
+// Get analytics data for a user
+// ============================================
+// GET /api/backlog/analytics/:user_id?start_date=&end_date=
+router.get('/analytics/:user_id', checkJwt, async (req, res) => {
+    try {
+        const { user_id } = req.params;
+        const { start_date, end_date } = req.query;
+        
+        const analytics = await Backlog.getAnalytics(user_id, start_date, end_date);
+        
+        res.json({
+            message: 'Analytics data retrieved successfully',
+            data: analytics
+        });
+        
+    } catch (error) {
+        console.error('Error retrieving analytics:', error);
+        res.status(500).json({
+            error: 'Internal server error',
+            message: 'Failed to retrieve analytics'
+        });
+    }
+});
+
+// ============================================
 // Delete a backlog entry
 // ============================================
 // DELETE /api/backlog/:row_id
