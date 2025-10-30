@@ -305,7 +305,7 @@ export default function Home() {
       <div className="min-h-screen bg-white">
         <Nav />
 
-        <div className="flex h-[calc(100vh-80px)]">
+        <div className="flex h-[calc(100vh-60px)]">
           {/* Left column - Subjects */}
           <aside className="flex flex-col bg-white py-4 px-4 w-60 h-full z-0 relative" style={{boxShadow: '0px 0px 5px rgba(0, 0, 0, 0.25)' }}>
             <h3 className="text-base font-semibold text-gray-600 mb-4">Subjects</h3>

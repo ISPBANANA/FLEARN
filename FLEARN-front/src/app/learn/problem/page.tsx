@@ -564,7 +564,7 @@ function ProblemPageContent() {
       <div className="min-h-screen bg-gradient-to-b from-purple-50 to-white">
         <Nav />
         
-        <div className="max-w-4xl mx-auto px-4 py-8">
+        <div className="max-w-4xl mx-auto px-4 py-8 min-h-[calc(100vh-60px)]">
           {/* Progress indicator */}
           <div className="mb-6">
             <div className="flex justify-between items-center mb-2">
