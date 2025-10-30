@@ -76,6 +76,9 @@ function ProblemPageContent() {
   // Shuffled data for current question
   const [shuffledOptions, setShuffledOptions] = useState<ShuffledOption[]>([]);
   const [shuffledRightOptions, setShuffledRightOptions] = useState<string[]>([]);
+  
+  // Track if user has clicked "Back to Learning" to prevent spam
+  const [isRedirecting, setIsRedirecting] = useState(false);
 
   // Validate URL parameters on mount - prevent URL manipulation
   useEffect(() => {
@@ -434,6 +437,10 @@ function ProblemPageContent() {
     if (currentQuestionIndex < questions.length - 1) {
       setCurrentQuestionIndex(currentQuestionIndex + 1);
     } else {
+      // Prevent spam clicking
+      if (isRedirecting) return;
+      setIsRedirecting(true);
+      
       // All questions completed, save all results to backlog and update experience
       if (currentUserId && sessionResults.length === questions.length && topicId && subjectId) {
         try {
@@ -750,12 +757,18 @@ function ProblemPageContent() {
               ) : (
                 <button
                   onClick={handleNext}
-                  className="flex-1 py-4 px-6 bg-purple-600 text-white rounded-xl font-semibold hover:bg-purple-700 transition flex items-center justify-center gap-2"
+                  disabled={isRedirecting}
+                  className="flex-1 py-4 px-6 bg-purple-600 text-white rounded-xl font-semibold hover:bg-purple-700 transition flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   {currentQuestionIndex < questions.length - 1 ? (
                     <>
                       Next Question
                       <ArrowRight size={20} />
+                    </>
+                  ) : isRedirecting ? (
+                    <>
+                      <Loader2 className="animate-spin" size={20} />
+                      Redirecting...
                     </>
                   ) : (
                     'Back to Learning'
