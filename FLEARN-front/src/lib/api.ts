@@ -582,6 +582,7 @@ export const backlogAPI = {
     subject_id: number;
     topic_id?: number;
     correctness: boolean;
+    points_earned?: number;
   }) {
     return apiCall('/api/backlog', {
       method: 'POST',

@@ -9,10 +9,10 @@ const router = express.Router();
 // Create a new backlog entry
 // ============================================
 // POST /api/backlog
-// Body: { user_id, subject_id, topic_id (optional), correctness }
+// Body: { user_id, subject_id, topic_id (optional), correctness, points_earned (optional) }
 router.post('/', checkJwt, async (req, res) => {
     try {
-        const { user_id, subject_id, topic_id, correctness } = req.body;
+        const { user_id, subject_id, topic_id, correctness, points_earned } = req.body;
         
         // Validate required fields
         if (!user_id || !subject_id || correctness === undefined) {
@@ -30,11 +30,20 @@ router.post('/', checkJwt, async (req, res) => {
             });
         }
         
+        // Validate points_earned if provided (must be non-negative integer)
+        if (points_earned !== undefined && (typeof points_earned !== 'number' || points_earned < 0 || !Number.isInteger(points_earned))) {
+            return res.status(400).json({
+                error: 'Bad request',
+                message: 'points_earned must be a non-negative integer'
+            });
+        }
+        
         const backlogEntry = await Backlog.create({
             user_id,
             subject_id,
             topic_id,
-            correctness
+            correctness,
+            points_earned
         });
         
         res.status(201).json({

@@ -6,14 +6,14 @@ class Backlog {
     // Create a new backlog entry
     // ============================================
     static async create(backlogData) {
-        const { user_id, subject_id, topic_id, correctness } = backlogData;
+        const { user_id, subject_id, topic_id, correctness, points_earned } = backlogData;
         
         try {
             const result = await pgPool.query(
-                `INSERT INTO backlog (user_id, subject_id, topic_id, correctness, do_date)
-                 VALUES ($1, $2, $3, $4, NOW())
+                `INSERT INTO backlog (user_id, subject_id, topic_id, correctness, points_earned, do_date)
+                 VALUES ($1, $2, $3, $4, $5, NOW())
                  RETURNING *`,
-                [user_id, subject_id || null, topic_id || null, correctness]
+                [user_id, subject_id || null, topic_id || null, correctness, points_earned || 0]
             );
             
             return result.rows[0];
@@ -262,16 +262,12 @@ class Backlog {
                     AND do_date <= $3
             `;
             
-            // Get daily exp earned (assuming 10 points per correct answer as base)
+            // Get daily exp earned (sum actual points_earned from each backlog entry)
             const dailyExpQuery = `
                 SELECT 
                     DATE(b.do_date) as date,
                     s.name as subject_name,
-                    SUM(CASE 
-                        WHEN b.correctness = true 
-                        THEN 10
-                        ELSE 0 
-                    END) as exp_earned
+                    SUM(b.points_earned) as exp_earned
                 FROM backlog b
                 LEFT JOIN subject s ON b.subject_id = s.subject_id
                 WHERE b.user_id = $1
