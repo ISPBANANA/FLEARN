@@ -30,6 +30,10 @@ router.get('/profile', checkJwt, async (req, res) => {
         
         const userId = result.rows[0].user_id;
         
+        // Check and reset streak/daily exp if needed FIRST (before updating anything)
+        // This must be done before updating updated_at timestamp
+        const user = await checkAndResetUserStreak(pgPool, userId);
+        
         // Count completed tasks from backlog
         const countQuery = `
             SELECT COUNT(*) as completed_count
@@ -39,16 +43,13 @@ router.get('/profile', checkJwt, async (req, res) => {
         const countResult = await pgPool.query(countQuery, [userId]);
         const completedCount = parseInt(countResult.rows[0].completed_count);
         
-        // Update the completed_task column
+        // Update the completed_task column (without updating updated_at to preserve exp tracking)
         const updateQuery = `
             UPDATE "user"
-            SET completed_task = $1, updated_at = NOW()
+            SET completed_task = $1
             WHERE user_id = $2
         `;
         await pgPool.query(updateQuery, [completedCount, userId]);
-        
-        // Check and reset streak if needed (if uptime_streak - todayDate >= 2 days)
-        const user = await checkAndResetUserStreak(pgPool, userId);
         
         res.json({
             message: 'User profile retrieved successfully',
@@ -90,6 +91,10 @@ router.get('/profilebyid', checkJwt, async (req, res) => {
             });
         }
         
+        // Check and reset streak/daily exp if needed FIRST (before updating anything)
+        // This must be done before updating updated_at timestamp
+        const user = await checkAndResetUserStreak(pgPool, userId);
+        
         // Count completed tasks from backlog
         const countQuery = `
             SELECT COUNT(*) as completed_count
@@ -99,16 +104,13 @@ router.get('/profilebyid', checkJwt, async (req, res) => {
         const countResult = await pgPool.query(countQuery, [userId]);
         const completedCount = parseInt(countResult.rows[0].completed_count);
         
-        // Update the completed_task column
+        // Update the completed_task column (without updating updated_at to preserve exp tracking)
         const updateQuery = `
             UPDATE "user"
-            SET completed_task = $1, updated_at = NOW()
+            SET completed_task = $1
             WHERE user_id = $2
         `;
         await pgPool.query(updateQuery, [completedCount, userId]);
-        
-        // Check and reset streak if needed (if uptime_streak - todayDate >= 2 days)
-        const user = await checkAndResetUserStreak(pgPool, userId);
         
         res.json({
             message: 'User profile retrieved successfully',
@@ -466,6 +468,8 @@ router.post('/preferences', checkJwt, async (req, res) => {
 //   "bio_exp": 60,
 //   "chem_exp": 80
 // }
+// Note: Values sent will be SET as absolute values (not incremented)
+// The frontend should calculate: current_value + increment_value before sending
 router.patch('/experience', checkJwt, async (req, res) => {
     try {
         const googleId = req.user.sub || req.user.id;
@@ -484,11 +488,18 @@ router.patch('/experience', checkJwt, async (req, res) => {
         
         const currentUser = userResult.rows[0];
         
+        // IMPORTANT: Check and reset daily exp if not updated today (before updating)
+        // This ensures daily_exp is 0 if it's a new day
+        const resetUser = await checkAndResetUserStreak(pgPool, currentUser.user_id);
+        
+        // Use the reset user data if available, otherwise use current user
+        const userToUpdate = resetUser || currentUser;
+        
         // Calculate new experience values
-        const newMathExp = math_exp !== undefined ? math_exp : currentUser.math_exp;
-        const newPhyExp = phy_exp !== undefined ? phy_exp : currentUser.phy_exp;
-        const newBioExp = bio_exp !== undefined ? bio_exp : currentUser.bio_exp;
-        const newChemExp = chem_exp !== undefined ? chem_exp : currentUser.chem_exp;
+        const newMathExp = math_exp !== undefined ? math_exp : userToUpdate.math_exp;
+        const newPhyExp = phy_exp !== undefined ? phy_exp : userToUpdate.phy_exp;
+        const newBioExp = bio_exp !== undefined ? bio_exp : userToUpdate.bio_exp;
+        const newChemExp = chem_exp !== undefined ? chem_exp : userToUpdate.chem_exp;
         
         // Calculate new rank based on total subject experience
         const newRank = calculateRank(newMathExp, newPhyExp, newBioExp, newChemExp);
