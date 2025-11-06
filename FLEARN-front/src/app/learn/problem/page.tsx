@@ -459,7 +459,8 @@ function ProblemPageContent() {
               user_id: currentUserId,
               subject_id: parseInt(subjectId),
               topic_id: parseInt(topicId),
-              correctness: result.correct
+              correctness: result.correct,
+              points_earned: result.correct ? (result.question.points || 0) : 0
             });
           }
 
