@@ -199,11 +199,11 @@ export default function Home() {
         </div>
 
         {/* no.16 */}
-        <div className="text-lg text-start text-[#454545] mb-4 py-2 w-full">
+        <div className="text-base sm:text-lg text-left text-[#454545] py-6 w-full leading-relaxed">
           <h2 className="text-lg sm:text-xl font-semibold mb-2">
             16&#41; Termination:
           </h2>
-          <p className="px-5">
+          <p className="px-5 sm:px-5">
             You may stop using the Service at any time. We may suspend or terminate your account for violations or risks to users or the platform. 
             Upon termination, your license ends; sections that by nature should survive (e.g., IP, disclaimers, limits, indemnity) will survive.<br></br>
           </p>
