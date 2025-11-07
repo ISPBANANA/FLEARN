@@ -12,7 +12,8 @@ export default function Home() {
           <p className="text-3xl sm:text-4xl md:text-5xl text-center text-[#9A41FF] font-bold leading-tight">
             Terms of Service
           </p>
-{/* no.1 */}
+
+        {/* no.1 */}
         <div className="text-base sm:text-lg text-left text-[#454545] py-6 w-full leading-relaxed">
           <h2 className="text-lg sm:text-xl font-semibold mb-2">
             1&#41; Who we are:
@@ -24,7 +25,8 @@ export default function Home() {
             By creating an account or using the Service, you agree to these Terms and to our Privacy Policy. If you don&rsquo;t agree, do not use the Service.
           </p>
         </div>
-{/* no.2 */}
+
+        {/* no.2 */}
         <div className="text-base sm:text-lg text-left text-[#454545] py-6 w-full leading-relaxed">
           <h2 className="text-lg sm:text-xl font-semibold mb-2">
             2&#41; Registration:
@@ -39,15 +41,20 @@ export default function Home() {
             </p>
           </p>
         </div>
-{/* no.3 */}
-        <div className="text-lg text-start text-[#454545] mb-4 py-5 w-full">
-          3&#41; Educational purpose (no professional advice):<br></br>
+
+        {/* no.3 */}
+        <div className="text-base sm:text-lg text-left text-[#454545] py-6 w-full leading-relaxed">
+          <h2 className="text-lg sm:text-xl font-semibold mb-2">
+            3&#41; Educational purpose (no professional advice):
+          </h2>
             <p className="px-5">
               The Service teaches math, and science for study and practice. <br></br>
               The Service does not provide professional, financial, medical, or legal advice and must not be used for high-stakes decisions or as a substitute for a qualified teacher/tutor.<br></br>
             </p>
         </div>
-        <div className="text-lg text-start text-[#454545] mb-4 py-2 w-full">
+
+        {/* no.4 */}  
+        <div className="text-lg text-start text-[#454545] mb-4 py-2 w-full">        
           4&#41; License & ownership:<br></br>
             <p className="px-5">
               ■ We grant you a limited, personal, non-transferable, revocable license to use the Service for learning.<br></br>
@@ -55,6 +62,8 @@ export default function Home() {
               ■ You may not copy, scrape, sell, reverse-engineer, or create derivative works except as allowed by law or these Terms.<br></br>
             </p>
         </div>
+
+        {/* no.5 */}
         <div className="text-lg text-start text-[#454545] mb-4 py-2 w-full">
           5&#41; Your content:<br></br>
           <p className="px-5">
@@ -63,6 +72,8 @@ export default function Home() {
             You retain ownership of your User Content.<br></br>
           </p>
         </div>
+
+        {/* no.6 */}
         <div className="text-lg text-start text-[#454545] mb-4 py-2 w-full">
           6&#41; Acceptable use:<br></br>
             You agree not to:<br></br>
@@ -74,6 +85,8 @@ export default function Home() {
               ■ We may remove content or suspend accounts that violate these rules.<br></br>
             </p>
         </div>
+
+        {/* no.7 */}
         <div className="text-lg text-start text-[#454545] mb-4 py-2 w-full">
           7&#41; Subscriptions, payments, and refunds (if applicable):<br></br>
             <p className="px-5">
@@ -84,6 +97,8 @@ export default function Home() {
               ■ Trials/promotions may be changed or ended at any time.<br></br>
             </p>
         </div>
+
+        {/* no.8*/}
         <div className="text-lg text-start text-[#454545] mb-4 py-2 w-full">
           8&#41; Classroom & minors:<br></br>
             <p className="px-5">
@@ -92,6 +107,8 @@ export default function Home() {
               ■ Schools/Teachers: You confirm you have authority to create student accounts and to share the minimal data needed for classroom features. We act as a processor of that data.<br></br>
             </p>
         </div>
+
+        {/* no.9 */}
         <div className="text-lg text-start text-[#454545] mb-4 py-2 w-full">
           9&#41; Privacy & data:<br></br>
             <p className="px-5">
@@ -101,6 +118,8 @@ export default function Home() {
               We may use de-identified, aggregated learning data for analytics and research.<br></br>
             </p>
         </div>
+
+        {/* no.10 */}
         <div className="text-lg text-start text-[#454545] mb-4 py-2 w-full">
           10&#41; Third-party links & services:<br></br>
             <p className="px-5">
@@ -109,6 +128,8 @@ export default function Home() {
               We&rsquo;re not responsible for their content or practices.<br></br>
             </p>
         </div>
+
+        {/* no.11 */}
         <div className="text-lg text-start text-[#454545] mb-4 py-2 w-full">
           11&#41; Beta features & changes:<br></br>
             <p className="px-5">
@@ -117,6 +138,8 @@ export default function Home() {
               We may also update lessons (e.g., to fix errors or improve alignment).<br></br>
             </p>
         </div>
+
+        {/* no.12 */}
         <div className="text-lg text-start text-[#454545] mb-4 py-2 w-full">
           12&#41; DMCA / copyright complaints:<br></br>
             If you believe content infringes your copyright, send a notice to us with: <br></br>
@@ -127,6 +150,8 @@ export default function Home() {
               (d) A good-faith statement and signature. We may remove content and, when appropriate, terminate repeat infringes.<br></br>
             </p>
         </div>
+
+        {/* no.13 */}
         <div className="text-lg text-start text-[#454545] mb-4 py-2 w-full">
           13&#41; Disclaimers:<br></br>
             <p className="px-5">
@@ -135,6 +160,8 @@ export default function Home() {
               We do not warrant accuracy, reliability, or availability, and learning outcomes may vary.<br></br>
             </p>
         </div>
+
+        {/* no.14 */}
         <div className="text-lg text-start text-[#454545] mb-4 py-2 w-full">
           14&#41; Limitation of liability:<br></br>
             <p className="px-5">
@@ -143,12 +170,16 @@ export default function Home() {
               OUR TOTAL LIABILITY FOR ANY CLAIM RELATING TO THE SERVICE WILL NOT EXCEED THE AMOUNT YOU PAID US IN THE 12 MONTHS BEFORE THE EVENT (OR USD 50 IF YOU PAID NOTHING).<br></br>
             </p>
         </div>
+
+        {/* no.15 */}
         <div className="text-lg text-start text-[#454545] mb-4 py-2 w-full">
           15&#41; Indemnity:<br></br>
             <p className="px-5">
               You agree to indemnify and hold us harmless from claims, damages, and costs arising from your misuse of the Service or violation of these Terms.<br></br>
             </p>
         </div>
+
+        {/* no.16 */}
         <div className="text-lg text-start text-[#454545] mb-4 py-2 w-full">
           16&#41; Termination:<br></br>
           <p className="px-5">
@@ -156,6 +187,8 @@ export default function Home() {
             Upon termination, your license ends; sections that by nature should survive (e.g., IP, disclaimers, limits, indemnity) will survive.<br></br>
           </p>
         </div>
+
+        {/* no.17 */}
         <div className="text-lg text-start text-[#454545] mb-4 py-2 w-full">
           17&#41; Governing law & dispute resolution:<br></br>
             <p className="px-5">
@@ -164,6 +197,8 @@ export default function Home() {
               Consumers may also have non-waivable local rights.<br></br>
             </p>
         </div>
+
+        {/* no.18 */}
         <div className="text-lg text-start text-[#454545] mb-4 py-2 w-full">
           18&#41; Changes to these Terms:<br></br>
             <p className="px-5">
@@ -172,6 +207,8 @@ export default function Home() {
               Continued use after the effective date means you accept the new Terms.
             </p>
         </div>
+
+        {/* Contact */}
         <div className="text-lg text-start text-[#454545] mb-4 py-20 w-full">
             Ispbanana (Flearn Team)<br></br>
             ■ Email: ispbanana.contact@gmail.com<br></br>
