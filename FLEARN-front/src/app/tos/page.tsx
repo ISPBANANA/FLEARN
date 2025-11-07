@@ -223,7 +223,9 @@ export default function Home() {
 
         {/* no.18 */}
         <div className="text-lg text-start text-[#454545] mb-4 py-2 w-full">
-          18&#41; Changes to these Terms:<br></br>
+          <h2 className="text-lg sm:text-xl font-semibold mb-2">
+            18&#41; Changes to these Terms:
+          </h2>
             <p className="px-5">
               We may update these Terms. If changes are material, we’ll provide notice (e.g., in-app or email). 
               We may update these Terms. If changes are material, we&rsquo;ll provide notice (e.g., in-app or email). 
