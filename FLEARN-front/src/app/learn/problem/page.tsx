@@ -565,9 +565,9 @@ function ProblemPageContent() {
       <div className="min-h-screen bg-gradient-to-b from-purple-50 to-white">
         <Nav />
         
-        <div className="max-w-4xl mx-auto px-4 py-8 min-h-[calc(100vh-60px)]">
+        <div className="max-w-4xl mx-auto px-4 lg:px-8 py-4 lg:py-8 min-h-[calc(100vh-60px)]">
           {/* Progress indicator */}
-          <div className="mb-6">
+          <div className="mb-4 lg:mb-6">
             <div className="flex justify-between items-center mb-2">
               <span className="text-sm font-medium text-gray-600">
                 Question {currentQuestionIndex + 1} of {questions.length}
@@ -582,13 +582,13 @@ function ProblemPageContent() {
           </div>
 
           {/* Question Card */}
-          <div className="bg-white rounded-2xl shadow-xl p-8 mb-6">
+          <div className="bg-white rounded-2xl shadow-xl p-4 lg:p-8 mb-4 lg:mb-6">
             {/* Question Text */}
-            <div className="mb-8">
-              <h2 className="text-2xl font-bold text-gray-800 mb-4">
+            <div className="mb-6 lg:mb-8">
+              <h2 className="text-xl lg:text-2xl font-bold text-gray-800 mb-3 lg:mb-4">
                 {currentQuestion.topic_name}
               </h2>
-              <div className="prose prose-lg max-w-none text-gray-700">
+              <div className="prose prose-sm lg:prose-lg max-w-none text-gray-700">
                 <ReactMarkdown
                   remarkPlugins={[remarkMath]}
                   rehypePlugins={[rehypeKatex]}
@@ -608,17 +608,17 @@ function ProblemPageContent() {
                       key={option.id}
                       onClick={() => !showResult && setSelectedAnswer(option.id)}
                       disabled={showResult}
-                      className={`w-full text-left p-4 rounded-xl border-2 transition-all ${
+                      className={`w-full text-left p-3 lg:p-4 rounded-xl border-2 transition-all ${
                         selectedAnswer === option.id
                           ? 'border-purple-600 bg-purple-50'
                           : 'border-gray-200 hover:border-purple-300 hover:bg-gray-50'
                       } ${showResult ? 'cursor-not-allowed opacity-75' : 'cursor-pointer'}`}
                     >
-                      <div className="flex items-start gap-3">
-                        <span className="flex-shrink-0 w-8 h-8 rounded-full bg-purple-100 text-purple-600 flex items-center justify-center font-semibold">
+                      <div className="flex items-start gap-2 lg:gap-3">
+                        <span className="flex-shrink-0 w-7 h-7 lg:w-8 lg:h-8 rounded-full bg-purple-100 text-purple-600 flex items-center justify-center font-semibold text-sm lg:text-base">
                           {option.id}
                         </span>
-                        <div className="flex-1 prose prose-sm text-gray-700">
+                        <div className="flex-1 prose prose-sm lg:prose-sm text-gray-700">
                           <ReactMarkdown
                             remarkPlugins={[remarkMath]}
                             rehypePlugins={[rehypeKatex]}
@@ -634,11 +634,11 @@ function ProblemPageContent() {
 
               {/* True/False */}
               {currentQuestion.type_name === 'true_false' && (
-                <div className="flex gap-4">
+                <div className="flex flex-col sm:flex-row gap-3 lg:gap-4">
                   <button
                     onClick={() => !showResult && setFillBlankAnswer('true')}
                     disabled={showResult}
-                    className={`flex-1 p-6 rounded-xl border-2 transition-all font-semibold ${
+                    className={`flex-1 p-4 lg:p-6 rounded-xl border-2 transition-all font-semibold ${
                       fillBlankAnswer === 'true'
                         ? 'border-purple-600 bg-purple-50 text-purple-600'
                         : 'border-gray-200 hover:border-purple-300 hover:bg-gray-50 text-gray-700'
@@ -649,7 +649,7 @@ function ProblemPageContent() {
                   <button
                     onClick={() => !showResult && setFillBlankAnswer('false')}
                     disabled={showResult}
-                    className={`flex-1 p-6 rounded-xl border-2 transition-all font-semibold ${
+                    className={`flex-1 p-4 lg:p-6 rounded-xl border-2 transition-all font-semibold ${
                       fillBlankAnswer === 'false'
                         ? 'border-purple-600 bg-purple-50 text-purple-600'
                         : 'border-gray-200 hover:border-purple-300 hover:bg-gray-50 text-gray-700'
@@ -669,7 +669,7 @@ function ProblemPageContent() {
                     onChange={(e) => !showResult && setFillBlankAnswer(e.target.value)}
                     disabled={showResult}
                     placeholder="Type your answer here..."
-                    className="w-full p-4 rounded-xl border-2 border-gray-200 focus:border-purple-600 focus:outline-none text-gray-700 disabled:opacity-75 disabled:cursor-not-allowed"
+                    className="w-full p-3 lg:p-4 rounded-xl border-2 border-gray-200 focus:border-purple-600 focus:outline-none text-gray-700 disabled:opacity-75 disabled:cursor-not-allowed"
                   />
                 </div>
               )}
@@ -678,8 +678,8 @@ function ProblemPageContent() {
               {currentQuestion.type_name === 'matching' && currentQuestion.content.pairs && (
                 <div className="space-y-4">
                   {currentQuestion.content.pairs.map((pair, idx) => (
-                    <div key={idx} className="flex items-center gap-4">
-                      <div className="flex-1 p-4 rounded-xl bg-purple-50 border-2 border-purple-200 prose prose-sm text-gray-700">
+                    <div key={idx} className="flex flex-col sm:flex-row items-center gap-3 lg:gap-4">
+                      <div className="flex-1 w-full p-3 lg:p-4 rounded-xl bg-purple-50 border-2 border-purple-200 prose prose-sm text-gray-700">
                         <ReactMarkdown
                           remarkPlugins={[remarkMath]}
                           rehypePlugins={[rehypeKatex]}
@@ -687,7 +687,7 @@ function ProblemPageContent() {
                           {pair.left}
                         </ReactMarkdown>
                       </div>
-                      <ArrowRight className="text-purple-600 flex-shrink-0" size={24} />
+                      <ArrowRight className="text-purple-600 flex-shrink-0 rotate-90 sm:rotate-0" size={24} />
                       <select
                         value={matchingAnswers[idx] || ''}
                         onChange={(e) => !showResult && setMatchingAnswers({
@@ -695,7 +695,7 @@ function ProblemPageContent() {
                           [idx]: e.target.value
                         })}
                         disabled={showResult}
-                        className="flex-1 p-4 rounded-xl border-2 border-gray-200 focus:border-purple-600 focus:outline-none text-gray-700 disabled:opacity-75 disabled:cursor-not-allowed"
+                        className="flex-1 w-full p-3 lg:p-4 rounded-xl border-2 border-gray-200 focus:border-purple-600 focus:outline-none text-gray-700 disabled:opacity-75 disabled:cursor-not-allowed"
                       >
                         <option value="">Select match...</option>
                         {shuffledRightOptions.map((rightOpt, rightIdx) => (
@@ -712,7 +712,7 @@ function ProblemPageContent() {
 
             {/* Result Display */}
             {showResult && (
-              <div className={`mt-6 p-6 rounded-xl ${
+              <div className={`mt-4 lg:mt-6 p-4 lg:p-6 rounded-xl ${
                 isCorrect 
                   ? 'bg-green-50 border-2 border-green-200' 
                   : 'bg-red-50 border-2 border-red-200'
@@ -720,13 +720,13 @@ function ProblemPageContent() {
                 <div className="flex items-center gap-3 mb-2">
                   {isCorrect ? (
                     <>
-                      <CheckCircle className="text-green-600" size={32} />
-                      <h3 className="text-2xl font-bold text-green-800">Correct!</h3>
+                      <CheckCircle className="text-green-600" size={24} />
+                      <h3 className="text-xl lg:text-2xl font-bold text-green-800">Correct!</h3>
                     </>
                   ) : (
                     <>
-                      <XCircle className="text-red-600" size={32} />
-                      <h3 className="text-2xl font-bold text-red-800">Incorrect</h3>
+                      <XCircle className="text-red-600" size={24} />
+                      <h3 className="text-xl lg:text-2xl font-bold text-red-800">Incorrect</h3>
                     </>
                   )}
                 </div>
@@ -739,40 +739,49 @@ function ProblemPageContent() {
             )}
 
             {/* Action Buttons */}
-            <div className="mt-8 flex gap-4">
+            <div className="mt-6 lg:mt-8 flex gap-4">
               {!showResult ? (
                 <button
                   onClick={handleSubmit}
                   disabled={isSubmitting || !canSubmit()}
-                  className="flex-1 py-4 px-6 bg-purple-600 text-white rounded-xl font-semibold hover:bg-purple-700 transition disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                  className="flex-1 py-3 lg:py-4 px-4 lg:px-6 bg-purple-600 text-white rounded-xl font-semibold hover:bg-purple-700 transition disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                 >
                   {isSubmitting ? (
                     <>
                       <Loader2 className="animate-spin" size={20} />
-                      Submitting...
+                      <span className="hidden sm:inline">Submitting...</span>
+                      <span className="sm:hidden">...</span>
                     </>
                   ) : (
-                    'Submit Answer'
+                    <>
+                      <span className="hidden sm:inline">Submit Answer</span>
+                      <span className="sm:hidden">Submit</span>
+                    </>
                   )}
                 </button>
               ) : (
                 <button
                   onClick={handleNext}
                   disabled={isRedirecting}
-                  className="flex-1 py-4 px-6 bg-purple-600 text-white rounded-xl font-semibold hover:bg-purple-700 transition flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="flex-1 py-3 lg:py-4 px-4 lg:px-6 bg-purple-600 text-white rounded-xl font-semibold hover:bg-purple-700 transition flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   {currentQuestionIndex < questions.length - 1 ? (
                     <>
-                      Next Question
+                      <span className="hidden sm:inline">Next Question</span>
+                      <span className="sm:hidden">Next</span>
                       <ArrowRight size={20} />
                     </>
                   ) : isRedirecting ? (
                     <>
                       <Loader2 className="animate-spin" size={20} />
-                      Redirecting...
+                      <span className="hidden sm:inline">Redirecting...</span>
+                      <span className="sm:hidden">...</span>
                     </>
                   ) : (
-                    'Back to Learning'
+                    <>
+                      <span className="hidden sm:inline">Back to Learning</span>
+                      <span className="sm:hidden">Back</span>
+                    </>
                   )}
                 </button>
               )}
