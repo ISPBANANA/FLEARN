@@ -13,9 +13,9 @@ export default function Home() {
             Privacy Policy
           </p>
 
-          <div className="text-lg text-start text-[#454545] mb-4 py-10 w-full">
-            Effective Date<br></br>
-            September 2025
+          <div className="text-base sm:text-lg text-left text-[#454545] py-6 w-full leading-relaxed">
+            <b style={{ fontWeight:550 }}>Effective Date: </b><br></br>
+            <u>September 2025</u>
           </div>
 
           <div className="text-lg text-start text-[#454545] mb-4 w-full">
