@@ -14,12 +14,11 @@ export default function Home() {
           </p>
 
         <div className="text-base sm:text-lg text-left text-[#454545] py-6 w-full leading-relaxed">
-          <h2 className="text-lg sm:text-xl font-semibold mb-2">
-            1&#41; Who we are:</h2>
-          <p className="px-0 sm:px-5">
+            1&#41; Who we are:
+          <p className="px-5 sm:px-5">
             These Terms of Service (&ldquo;Terms&rdquo;) govern your use of the FLEARN website, mobile apps, and services (collectively, the &ldquo;Service&rdquo;) operated by ISPBanana. 
           </p>
-          <p className="px-0 sm:px-5">
+          <p className="px-5 sm:px-5">
             By creating an account or using the Service, you agree to these Terms and to our Privacy Policy. If you don&rsquo;t agree, do not use the Service.
           </p>
         </div>
