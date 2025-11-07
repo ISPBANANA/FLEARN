@@ -110,7 +110,6 @@ export default function Home() {
             8&#41; Classroom & minors:
           </h2>
             <p className="px-5">
-              ■ Parents/Guardians: You consent to your child’s use and to our processing of necessary learning data as described in the Privacy Policy.<br></br>
               ■ Parents/Guardians: You consent to your child&rsquo;s use and to our processing of necessary learning data as described in the Privacy Policy.<br></br>
               ■ Schools/Teachers: You confirm you have authority to create student accounts and to share the minimal data needed for classroom features. We act as a processor of that data.<br></br>
             </p>
@@ -123,7 +122,6 @@ export default function Home() {
           </h2>
             <p className="px-5">
               We collect only the data needed to run the Service (e.g., account info, device data, learning activity). 
-              See the Privacy Policy for details on what we collect, why, retention, children’s data, international transfers, and your rights (access, deletion, objection). 
               See the Privacy Policy for details on what we collect, why, retention, children&rsquo;s data, international transfers, and your rights (access, deletion, objection). 
               We may use de-identified, aggregated learning data for analytics and research.<br></br>
             </p>
@@ -136,14 +134,15 @@ export default function Home() {
           </h2>
             <p className="px-5">
               The Service may link to third-party websites or use third-party libraries (e.g., analytics, payments). 
-              We’re not responsible for their content or practices.<br></br>
               We&rsquo;re not responsible for their content or practices.<br></br>
             </p>
         </div>
 
         {/* no.11 */}
         <div className="text-lg text-start text-[#454545] mb-4 py-2 w-full">
-          11&#41; Beta features & changes:<br></br>
+          <h2 className="text-lg sm:text-xl font-semibold mb-2">
+            11&#41; Beta features & changes:
+          </h2>
             <p className="px-5">
               We may test new or experimental features (“Beta”). 
               Beta is provided as-is and may change or stop at any time. 
