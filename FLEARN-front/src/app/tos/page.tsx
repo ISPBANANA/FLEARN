@@ -177,11 +177,11 @@ export default function Home() {
         </div>
 
         {/* no.14 */}
-        <div className="text-lg text-start text-[#454545] mb-4 py-2 w-full">
+        <div className="text-base sm:text-lg text-left text-[#454545] py-6 w-full leading-relaxed">
           <h2 className="text-lg sm:text-xl font-semibold mb-2">
             14&#41; Limitation of liability:
           </h2>
-            <p className="px-5">
+            <p className="px-5 sm:px-5">
               TO THE MAXIMUM EXTENT PERMITTED BY LAW, WE AND OUR AFFILIATES WILL NOT BE LIABLE FOR INDIRECT, INCIDENTAL, SPECIAL, 
               CONSEQUENTIAL, EXEMPLARY, OR PUNITIVE DAMAGES; 
               OUR TOTAL LIABILITY FOR ANY CLAIM RELATING TO THE SERVICE WILL NOT EXCEED THE AMOUNT YOU PAID US IN THE 12 MONTHS BEFORE THE EVENT (OR USD 50 IF YOU PAID NOTHING).<br></br>
