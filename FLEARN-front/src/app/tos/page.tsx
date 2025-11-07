@@ -234,7 +234,7 @@ export default function Home() {
         </div>
 
         {/* Contact */}
-        <div className="text-lg text-start text-[#454545] mb-4 py-20 w-full">
+        <div className="text-lg text-start text-[#454545] mb-4 py-15 w-full">
             Ispbanana (Flearn Team)<br></br>
             ■ Email: ispbanana.contact@gmail.com<br></br>
             ■ Website: hongrocker49.thddns.net:2725
