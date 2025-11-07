@@ -131,7 +131,9 @@ export default function Home() {
 
         {/* no.10 */}
         <div className="text-lg text-start text-[#454545] mb-4 py-2 w-full">
-          10&#41; Third-party links & services:<br></br>
+          <h2 className="text-lg sm:text-xl font-semibold mb-2">
+            10&#41; Third-party links & services:
+          </h2>
             <p className="px-5">
               The Service may link to third-party websites or use third-party libraries (e.g., analytics, payments). 
               We’re not responsible for their content or practices.<br></br>
