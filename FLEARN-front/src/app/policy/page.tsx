@@ -20,9 +20,9 @@ export default function Home() {
 
           <div className="text-base sm:text-lg text-left text-[#454545] py-6 w-full leading-relaxed">
             <b style={{ fontWeight:550 }}>Introduction: </b><br></br>
-            <p className="px-5">
-              Flearn, created by Ispbanana, is committed to protecting your privacy. 
-              This Privacy Policy explains what information we collect, why we collect it, how it is used, and the choices available to you. 
+            <p className="px-5 sm:px-5">
+              Flearn, created by Ispbanana, is committed to protecting your privacy. <br></br>
+              This Privacy Policy explains what information we collect, why we collect it, how it is used, and the choices available to you. <br></br>
               By using our app, you agree to the practices described in this policy.<br></br>
             </p>
           </div>
