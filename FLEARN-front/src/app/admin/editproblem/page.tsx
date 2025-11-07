@@ -483,10 +483,10 @@ function EditProblemContent() {
       <div className="min-h-screen bg-white" style={{ minHeight: '100vh', backgroundColor: '#ffffff' }}>
         <Nav />
         
-        <div className="max-w-4xl mx-auto p-8 my-8" style={{ maxWidth: '56rem', margin: '2rem auto', padding: '2rem' }}>
+        <div className="max-w-4xl mx-auto p-4 lg:p-8 my-4 lg:my-8 px-4 lg:px-0" style={{ maxWidth: '56rem', margin: '1rem auto', padding: '1rem' }}>
           {/* Header */}
-          <div className="mb-8">
-            <h1 className="text-3xl font-bold text-purple-600">
+          <div className="mb-6 lg:mb-8">
+            <h1 className="text-2xl lg:text-3xl font-bold text-purple-600">
               {isEditMode ? 'Edit Problem' : 'Add New Problem'}
             </h1>
             <p className="text-[#454545] mt-2">
@@ -495,9 +495,9 @@ function EditProblemContent() {
           </div>
 
           {/* Form */}
-          <div className="bg-white rounded-lg shadow-md p-6 space-y-6" style={{ backgroundColor: '#ffffff', borderRadius: '0.5rem', padding: '1.5rem' }}>
+          <div className="bg-white rounded-lg shadow-md p-4 lg:p-6 space-y-6" style={{ backgroundColor: '#ffffff', borderRadius: '0.5rem', padding: '1rem' }}>
           {/* Row 1: Subject, Sub-Topic */}
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
             {/* Subject */}
             <div>
               <label className="block text-sm font-medium text-[#454545] mb-2">
@@ -542,7 +542,7 @@ function EditProblemContent() {
           </div>
 
           {/* Row 2: Question Type, Status, Difficulty */}
-          <div className="grid grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
             {/* Question Type */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -797,26 +797,26 @@ function EditProblemContent() {
                 <span className="text-red-500">*</span> Select the Correct Answer:
               </label>
               
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
                 {/* True Button */}
                 <button
                   type="button"
                   onClick={() => setTrueFalseAnswer('true')}
-                  className={`relative p-8 rounded-lg border-2 transition-all ${
+                  className={`relative p-6 lg:p-8 rounded-lg border-2 transition-all ${
                     trueFalseAnswer === 'true'
                       ? 'border-green-500 bg-green-50 shadow-lg'
                       : 'border-gray-300 bg-white hover:border-green-400 hover:bg-green-50'
                   }`}
                 >
                   <div className="flex flex-col items-center gap-3">
-                    <div className={`w-12 h-12 rounded-full flex items-center justify-center ${
+                    <div className={`w-10 h-10 lg:w-12 lg:h-12 rounded-full flex items-center justify-center ${
                       trueFalseAnswer === 'true' ? 'bg-green-500' : 'bg-gray-300'
                     }`}>
-                      <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <svg className="w-6 h-6 lg:w-8 lg:h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
                       </svg>
                     </div>
-                    <span className={`text-xl font-bold ${
+                    <span className={`text-lg lg:text-xl font-bold ${
                       trueFalseAnswer === 'true' ? 'text-green-600' : 'text-[#454545]'
                     }`}>
                       TRUE
@@ -837,21 +837,21 @@ function EditProblemContent() {
                 <button
                   type="button"
                   onClick={() => setTrueFalseAnswer('false')}
-                  className={`relative p-8 rounded-lg border-2 transition-all ${
+                  className={`relative p-6 lg:p-8 rounded-lg border-2 transition-all ${
                     trueFalseAnswer === 'false'
                       ? 'border-red-500 bg-red-50 shadow-lg'
                       : 'border-gray-300 bg-white hover:border-red-400 hover:bg-red-50'
                   }`}
                 >
                   <div className="flex flex-col items-center gap-3">
-                    <div className={`w-12 h-12 rounded-full flex items-center justify-center ${
+                    <div className={`w-10 h-10 lg:w-12 lg:h-12 rounded-full flex items-center justify-center ${
                       trueFalseAnswer === 'false' ? 'bg-red-500' : 'bg-gray-300'
                     }`}>
-                      <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <svg className="w-6 h-6 lg:w-8 lg:h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M6 18L18 6M6 6l12 12" />
                       </svg>
                     </div>
-                    <span className={`text-xl font-bold ${
+                    <span className={`text-lg lg:text-xl font-bold ${
                       trueFalseAnswer === 'false' ? 'text-red-600' : 'text-[#454545]'
                     }`}>
                       FALSE
@@ -966,12 +966,12 @@ function EditProblemContent() {
           )}
 
           {/* Action Buttons */}
-          <div className="flex justify-between items-center pt-4 border-t">
+          <div className="flex flex-col-reverse lg:flex-row justify-between items-stretch lg:items-center pt-4 border-t gap-3 lg:gap-0">
             <button
               type="button"
               onClick={handleCancel}
               disabled={isSaving}
-              className="px-6 py-2 border-2 border-red-500 text-red-500 rounded-md hover:bg-red-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              className="px-6 py-3 lg:py-2 border-2 border-red-500 text-red-500 rounded-md hover:bg-red-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed w-full lg:w-auto"
             >
               Cancel
             </button>
@@ -980,7 +980,7 @@ function EditProblemContent() {
               type="button"
               onClick={() => handleSave(true)}
               disabled={isSaving}
-              className="px-6 py-2 bg-purple-500 text-white rounded-md hover:bg-purple-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              className="px-6 py-3 lg:py-2 bg-purple-500 text-white rounded-md hover:bg-purple-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed w-full lg:w-auto"
             >
               {isSaving ? 'Saving...' : 'Save & Exit'}
             </button>

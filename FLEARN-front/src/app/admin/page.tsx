@@ -103,6 +103,14 @@ export default function AdminPage() {
   const [lastQuestionsRefresh, setLastQuestionsRefresh] = useState<Date | null>(null);
   const [questionsSearchTerm, setQuestionsSearchTerm] = useState('');
   const [filteredQuestions, setFilteredQuestions] = useState<Question[]>([]);
+  
+  // Pagination states
+  const [userPage, setUserPage] = useState(1);
+  const [questionPage, setQuestionPage] = useState(1);
+  const [usersPerPage] = useState(20); // Show 20 users per page
+  const [questionsPerPage] = useState(25); // Show 25 questions per page
+  const [totalUsers, setTotalUsers] = useState(0);
+  const [totalQuestions, setTotalQuestions] = useState(0);
   const [newTopicDialog, setNewTopicDialog] = useState<{
     isOpen: boolean;
     subjectId: number | null;
@@ -142,7 +150,14 @@ export default function AdminPage() {
     }, 60000); // 60 seconds
 
     return () => clearInterval(interval);
-  }, [isAuthenticated, profile]);
+  }, [isAuthenticated, profile, userPage, usersPerPage]);
+
+  // Fetch users when page changes
+  useEffect(() => {
+    if (isAuthenticated && profile && (profile.role === 'admin' || profile.role === 'teacher')) {
+      fetchUsers();
+    }
+  }, [userPage]);
 
   // Auto-refresh subjects every 60 seconds
   useEffect(() => {
@@ -171,8 +186,9 @@ export default function AdminPage() {
     try {
       setIsLoadingUsers(true);
       setError(null);
-      const response = await userAPI.getAllUsersAdmin(100, 0);
+      const response = await userAPI.getAllUsersAdmin(usersPerPage, (userPage - 1) * usersPerPage);
       setUsers(response.users || []);
+      setTotalUsers(response.total || 0);
       setLastRefresh(new Date());
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Failed to fetch users';
@@ -223,7 +239,9 @@ export default function AdminPage() {
       setIsLoadingQuestions(true);
       setQuestionsError(null);
       const response = await questionsAPI.getQuestions();
-      setQuestions(response.data || []);
+      const allQuestions = response.data || [];
+      setQuestions(allQuestions);
+      setTotalQuestions(allQuestions.length);
       setLastQuestionsRefresh(new Date());
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Failed to fetch questions';
@@ -631,21 +649,31 @@ export default function AdminPage() {
     }
   }, [users, searchTerm]);
 
-  // Filter questions based on search term
+  // Filter questions based on search term and paginate
   useEffect(() => {
-    if (!questionsSearchTerm.trim()) {
-      setFilteredQuestions(questions);
-    } else {
-      const filtered = questions.filter(question => 
+    let filtered = questions;
+    
+    if (questionsSearchTerm.trim()) {
+      filtered = questions.filter(question => 
         question.question_id?.toLowerCase().includes(questionsSearchTerm.toLowerCase()) ||
         question.subject_name?.toLowerCase().includes(questionsSearchTerm.toLowerCase()) ||
         question.topic_name?.toLowerCase().includes(questionsSearchTerm.toLowerCase()) ||
         question.type_name?.toLowerCase().includes(questionsSearchTerm.toLowerCase()) ||
         question.created_by_name?.toLowerCase().includes(questionsSearchTerm.toLowerCase())
       );
-      setFilteredQuestions(filtered);
     }
-  }, [questions, questionsSearchTerm]);
+    
+    // Reset to page 1 when search changes
+    if (questionsSearchTerm.trim() && questionPage !== 1) {
+      setQuestionPage(1);
+    }
+    
+    // Paginate the filtered results
+    const startIndex = (questionPage - 1) * questionsPerPage;
+    const endIndex = startIndex + questionsPerPage;
+    setFilteredQuestions(filtered.slice(startIndex, endIndex));
+    setTotalQuestions(filtered.length);
+  }, [questions, questionsSearchTerm, questionPage, questionsPerPage]);
 
   // Toggle subject expansion
   const toggleSubject = (subjectId: number) => {
@@ -721,27 +749,27 @@ export default function AdminPage() {
       <Nav />
 
       {/* Information here */}
-      <div className="my-2 p-4 h-auto w-full flex items-center z-1 bg-white flex-col min-h-screen">
+      <div className="my-2 p-4 h-auto w-full flex items-center z-1 bg-white flex-col min-h-screen px-4 lg:px-0">
 
         {profile?.role === 'admin' && (
           /* User Management */
-          <div className="w-full max-w-[1320px] h-[500px] items-center flex flex-col px-25 py-2 rounded-lg" style={{boxShadow: '0px 0px 5px rgba(0, 0, 0, 0.25)' }}>
+          <div className="w-full max-w-[1320px] min-h-[500px] lg:h-[500px] items-center flex flex-col px-4 lg:px-25 py-2 rounded-lg" style={{boxShadow: '0px 0px 5px rgba(0, 0, 0, 0.25)' }}>
             {/* header */}
-            <div className="w-full flex flex-row justify-between items-center mb-4 my-4 w-full">
+            <div className="w-full flex flex-col lg:flex-row justify-between items-start lg:items-center mb-4 my-4 gap-4 lg:gap-0">
               <div className="flex flex-col">
-                <h2 className="text-2xl font-bold text-[#454545]">User Dashboard</h2>
+                <h2 className="text-xl lg:text-2xl font-bold text-[#454545]">User Dashboard</h2>
                 {lastRefresh && (
-                  <p className="text-sm text-gray-500">
+                  <p className="text-xs lg:text-sm text-gray-500">
                     Last updated: {lastRefresh.toLocaleTimeString()}
                   </p>
                 )}
               </div>
-              <div className="flex flex-row gap-4 items-center">
+              <div className="flex flex-col lg:flex-row gap-2 lg:gap-4 items-stretch lg:items-center w-full lg:w-auto">
                 {/* Manual Refresh Button */}
                 <button 
                   onClick={handleManualRefresh}
                   disabled={isLoadingUsers}
-                  className="bg-white border border-blue-400 text-blue-800 py-1 px-4 rounded hover:border-blue-500 transition disabled:opacity-50 flex items-center gap-2"
+                  className="bg-white border border-blue-400 text-blue-800 py-2 lg:py-1 px-4 rounded hover:border-blue-500 transition disabled:opacity-50 flex items-center gap-2 justify-center"
                 >
                   <RefreshCw size={16} className={isLoadingUsers ? 'animate-spin' : ''} />
                   Refresh
@@ -752,7 +780,7 @@ export default function AdminPage() {
                   placeholder="Search users..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  className="border border-gray-300 rounded px-4 py-1 w-60 focus:outline-none focus:ring-2 focus:ring-purple-500 text-[#454545]"
+                  className="border border-gray-300 rounded px-4 py-2 lg:py-1 w-full lg:w-60 focus:outline-none focus:ring-2 focus:ring-purple-500 text-[#454545]"
                 />
               </div>
             </div>
@@ -765,9 +793,9 @@ export default function AdminPage() {
             )}
 
             {/* Show */}
-            <div className="flex flex-col overflow-y-auto w-full h-max-[400px] gap-1">
-              {/* Table Header */}
-              <div className="grid gap-4 py-1 px-4 m-1 bg-gray-50 border-b border-gray-200 font-semibold text-gray-700 rounded-lg" style={{gridTemplateColumns: '2fr 1.5fr 2.5fr 1fr 1fr 1fr', boxShadow: '0px 0px 5px rgba(0, 0, 0, 0.25)' }}>
+            <div className="flex flex-col overflow-y-auto w-full max-h-[400px] gap-1">
+              {/* Desktop Table Header - Hidden on Mobile */}
+              <div className="hidden lg:grid gap-4 py-1 px-4 m-1 bg-gray-50 border-b border-gray-200 font-semibold text-gray-700 rounded-lg sticky top-0 z-10" style={{gridTemplateColumns: '2fr 1.5fr 2.5fr 1fr 1fr 1fr', boxShadow: '0px 0px 5px rgba(0, 0, 0, 0.25)' }}>
                 <div className="text-left">UUID</div>
                 <div className="text-left">Username</div>
                 <div className="text-left">Email</div>
@@ -792,67 +820,178 @@ export default function AdminPage() {
               )}
 
               {!isLoadingUsers && filteredUsers.map((user) => (
-                <div key={user.user_id} className="grid gap-4 py-1 px-4 m-1 border-b border-gray-100 hover:bg-gray-50 rounded-lg" style={{gridTemplateColumns: '2fr 1.5fr 2.5fr 1fr 1fr 1fr', boxShadow: '0px 0px 5px rgba(0, 0, 0, 0.25)' }}>
-                  <div
-                    className="text-gray-900 flex items-center relative overflow-hidden whitespace-nowrap"
-                    title={user.user_id}
-                    style={{
-                      background: 'linear-gradient(to right, currentColor 0%, currentColor 70%, transparent 100%)',
-                      WebkitBackgroundClip: 'text',
-                      backgroundClip: 'text',
-                      WebkitTextFillColor: 'transparent'
-                    }}
-                  >
-                    <span className="text-gray-900">{user.user_id}</span>
-                    <div className="absolute right-0 top-0 bottom-0 w-8 bg-gradient-to-l from-white to-transparent pointer-events-none"></div>
-                  </div>
-                  <div className="text-gray-900 flex items-center">{user.name || 'N/A'}</div>
-                  <div className="text-gray-900 flex items-center">{user.email || 'N/A'}</div>
-                  <div className="text-gray-900 flex items-center">{formatDate(user.created_at)}</div>
-                  <div className="text-gray-900 flex items-center">
-                    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getRoleBadgeColor(user.role)}`}>
-                      {user.role ? user.role.charAt(0).toUpperCase() + user.role.slice(1) : 'User'}
-                    </span>
-                  </div>
-                  <div className="flex gap-2 items-center justify-center">
-                    <button 
-                      onClick={() => handleEditUser(user)}
-                      className="text-blue-500 hover:text-blue-600 p-2 rounded transition-colors flex items-center justify-center"
+                <div key={user.user_id}>
+                  {/* Desktop Layout */}
+                  <div className="hidden lg:grid gap-4 py-1 px-4 m-1 border-b border-gray-100 hover:bg-gray-50 rounded-lg" style={{gridTemplateColumns: '2fr 1.5fr 2.5fr 1fr 1fr 1fr', boxShadow: '0px 0px 5px rgba(0, 0, 0, 0.25)' }}>
+                    <div
+                      className="text-gray-900 flex items-center relative overflow-hidden whitespace-nowrap"
+                      title={user.user_id}
+                      style={{
+                        background: 'linear-gradient(to right, currentColor 0%, currentColor 70%, transparent 100%)',
+                        WebkitBackgroundClip: 'text',
+                        backgroundClip: 'text',
+                        WebkitTextFillColor: 'transparent'
+                      }}
                     >
-                      <Edit size={20} />
-                    </button>
-                    <button 
-                      onClick={() => handleDeleteUser(user)}
-                      className="text-red-500 hover:text-red-600 p-2 rounded transition-colors flex items-center justify-center"
-                    >
-                      <Trash2 size={20} />
-                    </button>
+                      <span className="text-gray-900">{user.user_id}</span>
+                      <div className="absolute right-0 top-0 bottom-0 w-8 bg-gradient-to-l from-white to-transparent pointer-events-none"></div>
+                    </div>
+                    <div className="text-gray-900 flex items-center">{user.name || 'N/A'}</div>
+                    <div className="text-gray-900 flex items-center">{user.email || 'N/A'}</div>
+                    <div className="text-gray-900 flex items-center">{formatDate(user.created_at)}</div>
+                    <div className="text-gray-900 flex items-center">
+                      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getRoleBadgeColor(user.role)}`}>
+                        {user.role ? user.role.charAt(0).toUpperCase() + user.role.slice(1) : 'User'}
+                      </span>
+                    </div>
+                    <div className="flex gap-2 items-center justify-center">
+                      <button 
+                        onClick={() => handleEditUser(user)}
+                        className="text-blue-500 hover:text-blue-600 p-2 rounded transition-colors flex items-center justify-center"
+                      >
+                        <Edit size={20} />
+                      </button>
+                      <button 
+                        onClick={() => handleDeleteUser(user)}
+                        className="text-red-500 hover:text-red-600 p-2 rounded transition-colors flex items-center justify-center"
+                      >
+                        <Trash2 size={20} />
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Mobile Layout */}
+                  <div className="lg:hidden m-1 p-4 border border-gray-200 rounded-lg bg-white" style={{boxShadow: '0px 0px 5px rgba(0, 0, 0, 0.25)'}}>
+                    <div className="space-y-3">
+                      <div>
+                        <div className="text-sm font-medium text-gray-500">Username</div>
+                        <div className="text-gray-900 font-medium">{user.name || 'N/A'}</div>
+                      </div>
+                      <div>
+                        <div className="text-sm font-medium text-gray-500">Email</div>
+                        <div className="text-gray-900 text-sm break-all">{user.email || 'N/A'}</div>
+                      </div>
+                      <div className="flex justify-between items-center">
+                        <div>
+                          <div className="text-sm font-medium text-gray-500">Role</div>
+                          <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getRoleBadgeColor(user.role)}`}>
+                            {user.role ? user.role.charAt(0).toUpperCase() + user.role.slice(1) : 'User'}
+                          </span>
+                        </div>
+                        <div>
+                          <div className="text-sm font-medium text-gray-500">Created</div>
+                          <div className="text-gray-900 text-sm">
+                            {formatDate(user.created_at)}
+                          </div>
+                        </div>
+                      </div>
+                      <div>
+                        <div className="text-sm font-medium text-gray-500 mb-2">UUID</div>
+                        <div className="text-gray-900 text-xs font-mono break-all bg-gray-50 p-2 rounded">
+                          {user.user_id}
+                        </div>
+                      </div>
+                      <div className="flex gap-2 pt-2 border-t border-gray-100">
+                        <button 
+                          onClick={() => handleEditUser(user)}
+                          className="flex-1 bg-blue-500 text-white py-2 px-4 rounded hover:bg-blue-600 transition-colors flex items-center justify-center gap-2"
+                        >
+                          <Edit size={16} />
+                          Edit
+                        </button>
+                        <button 
+                          onClick={() => handleDeleteUser(user)}
+                          className="flex-1 bg-red-500 text-white py-2 px-4 rounded hover:bg-red-600 transition-colors flex items-center justify-center gap-2"
+                        >
+                          <Trash2 size={16} />
+                          Delete
+                        </button>
+                      </div>
+                    </div>
                   </div>
                 </div>
               ))}
             </div>
+            
+            {/* Pagination Controls for Users */}
+            {!isLoadingUsers && totalUsers > usersPerPage && (
+              <div className="flex flex-col lg:flex-row justify-between items-center mt-4 pt-4 border-t border-gray-200 gap-4">
+                <div className="text-sm text-gray-600">
+                  Showing {Math.min((userPage - 1) * usersPerPage + 1, totalUsers)} to{' '}
+                  {Math.min(userPage * usersPerPage, totalUsers)} of {totalUsers} users
+                </div>
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={() => setUserPage(Math.max(1, userPage - 1))}
+                    disabled={userPage === 1}
+                    className="px-3 py-1 border border-gray-300 rounded hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    Previous
+                  </button>
+                  
+                  <div className="flex items-center gap-1">
+                    {Array.from({ length: Math.min(5, Math.ceil(totalUsers / usersPerPage)) }, (_, i) => {
+                      const totalPages = Math.ceil(totalUsers / usersPerPage);
+                      let pageNumber;
+                      
+                      if (totalPages <= 5) {
+                        pageNumber = i + 1;
+                      } else if (userPage <= 3) {
+                        pageNumber = i + 1;
+                      } else if (userPage >= totalPages - 2) {
+                        pageNumber = totalPages - 4 + i;
+                      } else {
+                        pageNumber = userPage - 2 + i;
+                      }
+                      
+                      return (
+                        <button
+                          key={pageNumber}
+                          onClick={() => setUserPage(pageNumber)}
+                          className={`px-3 py-1 border rounded ${
+                            userPage === pageNumber
+                              ? 'bg-purple-500 text-white border-purple-500'
+                              : 'border-gray-300 hover:bg-gray-50'
+                          }`}
+                        >
+                          {pageNumber}
+                        </button>
+                      );
+                    })}
+                  </div>
+                  
+                  <button
+                    onClick={() => setUserPage(Math.min(Math.ceil(totalUsers / usersPerPage), userPage + 1))}
+                    disabled={userPage >= Math.ceil(totalUsers / usersPerPage)}
+                    className="px-3 py-1 border border-gray-300 rounded hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    Next
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
         )}
         
         {/* Subject Management */}
         {(profile?.role === 'admin' || profile?.role === 'teacher') && (
-          <div className="w-full max-w-[1320px] min-h-[500px] items-center flex flex-col px-25 py-2 rounded-lg mt-8" style={{boxShadow: '0px 0px 5px rgba(0, 0, 0, 0.25)' }}>
+          <div className="w-full max-w-[1320px] min-h-[500px] items-center flex flex-col px-4 lg:px-25 py-2 rounded-lg mt-8" style={{boxShadow: '0px 0px 5px rgba(0, 0, 0, 0.25)' }}>
             {/* header */}
-            <div className="w-full flex flex-row justify-between items-center mb-4 my-4">
+            <div className="w-full flex flex-col lg:flex-row justify-between items-start lg:items-center mb-4 my-4 gap-4 lg:gap-0">
               <div className="flex flex-col">
-                <h2 className="text-2xl font-bold text-[#454545]">Subject Topic Management</h2>
+                <h2 className="text-xl lg:text-2xl font-bold text-[#454545]">Subject Topic Management</h2>
                 {lastSubjectsRefresh && (
-                  <p className="text-sm text-gray-500">
+                  <p className="text-xs lg:text-sm text-gray-500">
                     Last updated: {lastSubjectsRefresh.toLocaleTimeString()}
                   </p>
                 )}
               </div>
-              <div className="flex flex-row gap-4 items-center">
+              <div className="flex flex-row gap-4 items-center w-full lg:w-auto">
                 {/* Manual Refresh Button */}
                 <button 
                   onClick={handleManualSubjectsRefresh}
                   disabled={isLoadingSubjects}
-                  className="bg-white border border-blue-400 text-blue-800 py-1 px-4 rounded hover:border-blue-500 transition disabled:opacity-50 flex items-center gap-2"
+                  className="bg-white border border-blue-400 text-blue-800 py-2 lg:py-1 px-4 rounded hover:border-blue-500 transition disabled:opacity-50 flex items-center gap-2 justify-center flex-1 lg:flex-none"
                 >
                   <RefreshCw size={16} className={isLoadingSubjects ? 'animate-spin' : ''} />
                   Refresh
@@ -917,11 +1056,11 @@ export default function AdminPage() {
                       
                       {/* Search and Add New for this subject - always visible */}
                       {subject.isExpanded && (
-                        <div className="flex flex-row gap-4 items-center">
+                        <div className="flex flex-col lg:flex-row gap-2 lg:gap-4 items-stretch lg:items-center w-full lg:w-auto mt-2 lg:mt-0">
                           {/* Add New Button - Only for Admin */}
                           {profile?.role === 'admin' && (
                             <button 
-                              className="bg-purple-500 text-white py-1 px-4 rounded hover:bg-purple-600 transition flex items-center gap-2"
+                              className="bg-purple-500 text-white py-2 lg:py-1 px-4 rounded hover:bg-purple-600 transition flex items-center gap-2 justify-center order-2 lg:order-1"
                               onClick={(e) => {
                                 e.stopPropagation();
                                 handleOpenNewTopicDialog(subject.subject_id, subject.name);
@@ -932,17 +1071,17 @@ export default function AdminPage() {
                             </button>
                           )}
                           {/* Search bar for topics */}
-                          <div className="relative">
+                          <div className="relative order-1 lg:order-2">
                             <input
                               type="text"
-                              placeholder="Name"
+                              placeholder="Search topics..."
                               value={topicSearchTerms[subject.subject_id] || ''}
                               onChange={(e) => {
                                 e.stopPropagation();
                                 updateTopicSearchTerm(subject.subject_id, e.target.value);
                               }}
                               onClick={(e) => e.stopPropagation()}
-                              className="border border-gray-300 rounded px-4 py-1 w-60 focus:outline-none focus:ring-2 focus:ring-purple-500 text-[#454545]"
+                              className="border border-gray-300 rounded px-4 py-2 lg:py-1 w-full lg:w-60 focus:outline-none focus:ring-2 focus:ring-purple-500 text-[#454545]"
                             />
                             <Search size={18} className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 pointer-events-none" />
                           </div>
@@ -952,10 +1091,10 @@ export default function AdminPage() {
 
                     {/* Topics (shown when expanded) */}
                     {subject.isExpanded && (
-                      <div className="ml-12 mt-2 mb-2 border-l-2 border-purple-200 pl-4">
+                      <div className="ml-4 lg:ml-12 mt-2 mb-2 border-l-2 border-purple-200 pl-4">
 
-                        {/* Topics Header */}
-                        <div className={`grid gap-4 py-2 px-4 bg-purple-50 border border-purple-200 rounded-lg font-semibold text-gray-700 text-sm mb-2`} style={{gridTemplateColumns: profile?.role === 'admin' ? '2fr 1fr 1fr 100px' : '2fr 1fr 1fr' }}>
+                        {/* Desktop Topics Header - Hidden on Mobile */}
+                        <div className={`hidden lg:grid gap-4 py-2 px-4 bg-purple-50 border border-purple-200 rounded-lg font-semibold text-gray-700 text-sm mb-2`} style={{gridTemplateColumns: profile?.role === 'admin' ? '2fr 1fr 1fr 100px' : '2fr 1fr 1fr' }}>
                           <div className="text-left">Topic Name</div>
                           <div className="text-center">Total Question</div>
                           <div className="text-center">Status</div>
@@ -967,73 +1106,141 @@ export default function AdminPage() {
                         {/* Topics List - with scrollbar when more than 3 items */}
                         <div className={filteredTopics.length > 3 ? 'overflow-y-auto' : ''} style={filteredTopics.length > 3 ? { maxHeight: '240px' } : {}}>
                           {filteredTopics.length === 0 && (
-                            <div className="text-center py-2 text-gray-500 text-sm">
+                            <div className="text-center py-4 lg:py-2 text-gray-500 text-sm">
                               {topicSearchTerms[subject.subject_id] ? 'No topics found matching your search.' : 'No topics available.'}
                             </div>
                           )}
 
                           {filteredTopics.map((topic) => (
-                          <div 
-                            key={topic.topic_id} 
-                            className={`grid gap-4 py-2 px-4 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors mb-2`}
-                            style={{gridTemplateColumns: profile?.role === 'admin' ? '2fr 1fr 1fr 100px' : '2fr 1fr 1fr', boxShadow: '0px 0px 2px rgba(0, 0, 0, 0.1)' }}
-                          >
-                            <div className="text-gray-900 flex items-center">
-                              {topic.name}
-                            </div>
-                            <div className="text-gray-700 flex items-center justify-center">
-                              {topic.question_count}
-                            </div>
-                            <div className="flex items-center justify-center">
-                              {profile?.role === 'admin' ? (
-                                <button
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    const newStatus = topic.status === 'public' ? 'private' : 'public';
-                                    handleTopicStatusChange(topic.topic_id, newStatus);
-                                  }}
-                                  className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium cursor-pointer transition-colors ${
+                          <div key={topic.topic_id}>
+                            {/* Desktop Layout */}
+                            <div 
+                              className={`hidden lg:grid gap-4 py-2 px-4 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors mb-2`}
+                              style={{gridTemplateColumns: profile?.role === 'admin' ? '2fr 1fr 1fr 100px' : '2fr 1fr 1fr', boxShadow: '0px 0px 2px rgba(0, 0, 0, 0.1)' }}
+                            >
+                              <div className="text-gray-900 flex items-center">
+                                {topic.name}
+                              </div>
+                              <div className="text-gray-700 flex items-center justify-center">
+                                {topic.question_count}
+                              </div>
+                              <div className="flex items-center justify-center">
+                                {profile?.role === 'admin' ? (
+                                  <button
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      const newStatus = topic.status === 'public' ? 'private' : 'public';
+                                      handleTopicStatusChange(topic.topic_id, newStatus);
+                                    }}
+                                    className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium cursor-pointer transition-colors ${
+                                      topic.status === 'public' 
+                                        ? 'bg-green-100 text-green-800 hover:bg-green-200' 
+                                        : 'bg-gray-100 text-gray-800 hover:bg-gray-200'
+                                    }`}
+                                  >
+                                    {topic.status === 'public' ? 'Public' : 'Private'}
+                                  </button>
+                                ) : (
+                                  <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium ${
                                     topic.status === 'public' 
-                                      ? 'bg-green-100 text-green-800 hover:bg-green-200' 
-                                      : 'bg-gray-100 text-gray-800 hover:bg-gray-200'
-                                  }`}
-                                >
-                                  {topic.status === 'public' ? 'Public' : 'Private'}
-                                </button>
-                              ) : (
-                                <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium ${
-                                  topic.status === 'public' 
-                                    ? 'bg-green-100 text-green-800' 
-                                    : 'bg-gray-100 text-gray-800'
-                                }`}>
-                                  {topic.status === 'public' ? 'Public' : 'Private'}
-                                </span>
+                                      ? 'bg-green-100 text-green-800' 
+                                      : 'bg-gray-100 text-gray-800'
+                                  }`}>
+                                    {topic.status === 'public' ? 'Public' : 'Private'}
+                                  </span>
+                                )}
+                              </div>
+                              {profile?.role === 'admin' && (
+                                <div className="flex gap-2 items-center justify-center">
+                                  <button 
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      handleOpenEditTopicDialog(topic);
+                                    }}
+                                    className="text-blue-500 hover:text-blue-600 p-1 rounded transition-colors"
+                                    title="Edit topic"
+                                  >
+                                    <Edit size={18} />
+                                  </button>
+                                  <button 
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      handleDeleteTopic(topic);
+                                    }}
+                                    className="text-red-500 hover:text-red-600 p-1 rounded transition-colors"
+                                    title="Delete topic"
+                                  >
+                                    <Trash2 size={18} />
+                                  </button>
+                                </div>
                               )}
                             </div>
-                            {profile?.role === 'admin' && (
-                              <div className="flex gap-2 items-center justify-center">
-                                <button 
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    handleOpenEditTopicDialog(topic);
-                                  }}
-                                  className="text-blue-500 hover:text-blue-600 p-1 rounded transition-colors"
-                                  title="Edit topic"
-                                >
-                                  <Edit size={18} />
-                                </button>
-                                <button 
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    handleDeleteTopic(topic);
-                                  }}
-                                  className="text-red-500 hover:text-red-600 p-1 rounded transition-colors"
-                                  title="Delete topic"
-                                >
-                                  <Trash2 size={18} />
-                                </button>
+
+                            {/* Mobile Layout */}
+                            <div className="lg:hidden bg-white border border-gray-200 rounded-lg p-4 mb-2" style={{boxShadow: '0px 0px 2px rgba(0, 0, 0, 0.1)'}}>
+                              <div className="space-y-3">
+                                <div className="flex justify-between items-start">
+                                  <div>
+                                    <div className="text-sm font-medium text-gray-500">Topic Name</div>
+                                    <div className="text-gray-900 font-medium">{topic.name}</div>
+                                  </div>
+                                  <div className="flex gap-2 items-center">
+                                    <div className="text-center">
+                                      <div className="text-xs text-gray-500">Questions</div>
+                                      <div className="text-gray-700 font-medium">{topic.question_count}</div>
+                                    </div>
+                                    {profile?.role === 'admin' ? (
+                                      <button
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          const newStatus = topic.status === 'public' ? 'private' : 'public';
+                                          handleTopicStatusChange(topic.topic_id, newStatus);
+                                        }}
+                                        className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium cursor-pointer transition-colors ${
+                                          topic.status === 'public' 
+                                            ? 'bg-green-100 text-green-800 hover:bg-green-200' 
+                                            : 'bg-gray-100 text-gray-800 hover:bg-gray-200'
+                                        }`}
+                                      >
+                                        {topic.status === 'public' ? 'Public' : 'Private'}
+                                      </button>
+                                    ) : (
+                                      <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium ${
+                                        topic.status === 'public' 
+                                          ? 'bg-green-100 text-green-800' 
+                                          : 'bg-gray-100 text-gray-800'
+                                      }`}>
+                                        {topic.status === 'public' ? 'Public' : 'Private'}
+                                      </span>
+                                    )}
+                                  </div>
+                                </div>
+                                {profile?.role === 'admin' && (
+                                  <div className="flex gap-2 pt-2 border-t border-gray-100">
+                                    <button 
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        handleOpenEditTopicDialog(topic);
+                                      }}
+                                      className="flex-1 bg-blue-500 text-white py-2 px-4 rounded hover:bg-blue-600 transition-colors flex items-center justify-center gap-2"
+                                    >
+                                      <Edit size={16} />
+                                      Edit
+                                    </button>
+                                    <button 
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        handleDeleteTopic(topic);
+                                      }}
+                                      className="flex-1 bg-red-500 text-white py-2 px-4 rounded hover:bg-red-600 transition-colors flex items-center justify-center gap-2"
+                                    >
+                                      <Trash2 size={16} />
+                                      Delete
+                                    </button>
+                                  </div>
+                                )}
                               </div>
-                            )}
+                            </div>
                           </div>
                           ))}
                         </div>
@@ -1048,22 +1255,22 @@ export default function AdminPage() {
 
         {/* Questions Management */}
         {(profile?.role === 'admin' || profile?.role === 'teacher') && (
-          <div className="w-full max-w-[1320px] h-[500px] items-center flex flex-col px-25 py-2 rounded-lg mt-8" style={{boxShadow: '0px 0px 5px rgba(0, 0, 0, 0.25)' }}>
+          <div className="w-full max-w-[1320px] min-h-[500px] lg:h-[500px] items-center flex flex-col px-4 lg:px-25 py-2 rounded-lg mt-8" style={{boxShadow: '0px 0px 5px rgba(0, 0, 0, 0.25)' }}>
             {/* header */}
-            <div className="w-full flex flex-row justify-between items-center mb-4 my-4 w-full">
+            <div className="w-full flex flex-col lg:flex-row justify-between items-start lg:items-center mb-4 my-4 gap-4 lg:gap-0">
               <div className="flex flex-col">
-                <h2 className="text-2xl font-bold text-[#454545]">Problems Management</h2>
+                <h2 className="text-xl lg:text-2xl font-bold text-[#454545]">Problems Management</h2>
                 {lastQuestionsRefresh && (
-                  <p className="text-sm text-gray-500">
+                  <p className="text-xs lg:text-sm text-gray-500">
                     Last updated: {lastQuestionsRefresh.toLocaleTimeString()}
                   </p>
                 )}
               </div>
-              <div className="flex flex-row gap-4 items-center">
+              <div className="flex flex-col lg:flex-row gap-2 lg:gap-4 items-stretch lg:items-center w-full lg:w-auto">
                 {/* Add Problems Button */}
                 <button 
                   onClick={() => router.push('/admin/editproblem?from=add')}
-                  className="bg-purple-500 text-white py-1 px-4 rounded hover:bg-purple-600 transition flex items-center gap-2"
+                  className="bg-purple-500 text-white py-2 lg:py-1 px-4 rounded hover:bg-purple-600 transition flex items-center gap-2 justify-center"
                 >
                   <Edit size={16} />
                   Add Problems
@@ -1072,7 +1279,7 @@ export default function AdminPage() {
                 <button 
                   onClick={handleManualQuestionsRefresh}
                   disabled={isLoadingQuestions}
-                  className="bg-white border border-blue-400 text-blue-800 py-1 px-4 rounded hover:border-blue-500 transition disabled:opacity-50 flex items-center gap-2"
+                  className="bg-white border border-blue-400 text-blue-800 py-2 lg:py-1 px-4 rounded hover:border-blue-500 transition disabled:opacity-50 flex items-center gap-2 justify-center"
                 >
                   <RefreshCw size={16} className={isLoadingQuestions ? 'animate-spin' : ''} />
                   Refresh
@@ -1083,7 +1290,7 @@ export default function AdminPage() {
                   placeholder="Search questions..."
                   value={questionsSearchTerm}
                   onChange={(e) => setQuestionsSearchTerm(e.target.value)}
-                  className="border border-gray-300 rounded px-4 py-1 w-60 focus:outline-none focus:ring-2 focus:ring-purple-500 text-[#454545]"
+                  className="border border-gray-300 rounded px-4 py-2 lg:py-1 w-full lg:w-60 focus:outline-none focus:ring-2 focus:ring-purple-500 text-[#454545]"
                 />
               </div>
             </div>
@@ -1096,9 +1303,9 @@ export default function AdminPage() {
             )}
 
             {/* Show */}
-            <div className="flex flex-col overflow-y-auto w-full h-max-[400px] gap-1">
-              {/* Table Header */}
-              <div className="grid gap-4 py-1 px-4 m-1 bg-gray-50 border-b border-gray-200 font-semibold text-gray-700 rounded-lg" style={{gridTemplateColumns: '2fr 1.5fr 1.5fr 1fr 1fr 1fr 1fr', boxShadow: '0px 0px 5px rgba(0, 0, 0, 0.25)' }}>
+            <div className="flex flex-col overflow-y-auto w-full max-h-[400px] gap-1">
+              {/* Desktop Table Header - Hidden on Mobile */}
+              <div className="hidden lg:grid gap-4 py-1 px-4 m-1 bg-gray-50 border-b border-gray-200 font-semibold text-gray-700 rounded-lg sticky top-0 z-10" style={{gridTemplateColumns: '2fr 1.5fr 1.5fr 1fr 1fr 1fr 1fr', boxShadow: '0px 0px 5px rgba(0, 0, 0, 0.25)' }}>
                 <div className="text-left">UUID</div>
                 <div className="text-left">Subject</div>
                 <div className="text-left">Topic</div>
@@ -1124,62 +1331,185 @@ export default function AdminPage() {
               )}
 
               {!isLoadingQuestions && filteredQuestions.map((question) => (
-                <div key={question.question_id} className="grid gap-4 py-1 px-4 m-1 border-b border-gray-100 hover:bg-gray-50 rounded-lg" style={{gridTemplateColumns: '2fr 1.5fr 1.5fr 1fr 1fr 1fr 1fr', boxShadow: '0px 0px 5px rgba(0, 0, 0, 0.25)' }}>
-                  <div
-                    className="text-gray-900 flex items-center relative overflow-hidden whitespace-nowrap"
-                    title={question.question_id}
-                    style={{
-                      background: 'linear-gradient(to right, currentColor 0%, currentColor 70%, transparent 100%)',
-                      WebkitBackgroundClip: 'text',
-                      backgroundClip: 'text',
-                      WebkitTextFillColor: 'transparent'
-                    }}
-                  >
-                    <span className="text-gray-900">{question.question_id}</span>
-                    <div className="absolute right-0 top-0 bottom-0 w-8 bg-gradient-to-l from-white to-transparent pointer-events-none"></div>
-                  </div>
-                  <div className="text-gray-900 flex items-center">{question.subject_name || 'N/A'}</div>
-                  <div className="text-gray-900 flex items-center">{question.topic_name || 'N/A'}</div>
-                  <div className="text-gray-900 flex items-center">{question.type_name || 'N/A'}</div>
-                  <div className="text-gray-900 flex items-center justify-center">
-                    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-                      {question.difficulty}
-                    </span>
-                  </div>
-                  <div className="flex items-center justify-center">
-                    <button
-                      onClick={() => {
-                        const newStatus = question.status === 'public' ? 'private' : 'public';
-                        handleQuestionStatusChange(question.question_id, newStatus);
+                <div key={question.question_id}>
+                  {/* Desktop Layout */}
+                  <div className="hidden lg:grid gap-4 py-1 px-4 m-1 border-b border-gray-100 hover:bg-gray-50 rounded-lg" style={{gridTemplateColumns: '2fr 1.5fr 1.5fr 1fr 1fr 1fr 1fr', boxShadow: '0px 0px 5px rgba(0, 0, 0, 0.25)' }}>
+                    <div
+                      className="text-gray-900 flex items-center relative overflow-hidden whitespace-nowrap"
+                      title={question.question_id}
+                      style={{
+                        background: 'linear-gradient(to right, currentColor 0%, currentColor 70%, transparent 100%)',
+                        WebkitBackgroundClip: 'text',
+                        backgroundClip: 'text',
+                        WebkitTextFillColor: 'transparent'
                       }}
-                      className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium cursor-pointer transition-colors ${
-                        question.status === 'public' 
-                          ? 'bg-green-100 text-green-800 hover:bg-green-200' 
-                          : 'bg-gray-100 text-gray-800 hover:bg-gray-200'
-                      }`}
                     >
-                      {question.status === 'public' ? 'Public' : 'Private'}
-                    </button>
+                      <span className="text-gray-900">{question.question_id}</span>
+                      <div className="absolute right-0 top-0 bottom-0 w-8 bg-gradient-to-l from-white to-transparent pointer-events-none"></div>
+                    </div>
+                    <div className="text-gray-900 flex items-center">{question.subject_name || 'N/A'}</div>
+                    <div className="text-gray-900 flex items-center">{question.topic_name || 'N/A'}</div>
+                    <div className="text-gray-900 flex items-center">{question.type_name || 'N/A'}</div>
+                    <div className="text-gray-900 flex items-center justify-center">
+                      <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                        {question.difficulty}
+                      </span>
+                    </div>
+                    <div className="flex items-center justify-center">
+                      <button
+                        onClick={() => {
+                          const newStatus = question.status === 'public' ? 'private' : 'public';
+                          handleQuestionStatusChange(question.question_id, newStatus);
+                        }}
+                        className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium cursor-pointer transition-colors ${
+                          question.status === 'public' 
+                            ? 'bg-green-100 text-green-800 hover:bg-green-200' 
+                            : 'bg-gray-100 text-gray-800 hover:bg-gray-200'
+                        }`}
+                      >
+                        {question.status === 'public' ? 'Public' : 'Private'}
+                      </button>
+                    </div>
+                    <div className="flex gap-2 items-center justify-center">
+                      <button 
+                        onClick={() => router.push(`/admin/editproblem?id=${question.question_id}`)}
+                        className="text-blue-500 hover:text-blue-600 p-2 rounded transition-colors flex items-center justify-center"
+                        title="Edit question"
+                      >
+                        <Edit size={20} />
+                      </button>
+                      <button 
+                        onClick={() => handleDeleteQuestion(question)}
+                        className="text-red-500 hover:text-red-600 p-2 rounded transition-colors flex items-center justify-center"
+                        title="Delete question"
+                      >
+                        <Trash2 size={20} />
+                      </button>
+                    </div>
                   </div>
-                  <div className="flex gap-2 items-center justify-center">
-                    <button 
-                      onClick={() => router.push(`/admin/editproblem?id=${question.question_id}`)}
-                      className="text-blue-500 hover:text-blue-600 p-2 rounded transition-colors flex items-center justify-center"
-                      title="Edit question"
-                    >
-                      <Edit size={20} />
-                    </button>
-                    <button 
-                      onClick={() => handleDeleteQuestion(question)}
-                      className="text-red-500 hover:text-red-600 p-2 rounded transition-colors flex items-center justify-center"
-                      title="Delete question"
-                    >
-                      <Trash2 size={20} />
-                    </button>
+
+                  {/* Mobile Layout */}
+                  <div className="lg:hidden m-1 p-4 border border-gray-200 rounded-lg bg-white" style={{boxShadow: '0px 0px 5px rgba(0, 0, 0, 0.25)'}}>
+                    <div className="space-y-3">
+                      <div className="flex justify-between items-start">
+                        <div>
+                          <div className="text-sm font-medium text-gray-500">Subject</div>
+                          <div className="text-gray-900 font-medium">{question.subject_name || 'N/A'}</div>
+                        </div>
+                        <div className="flex gap-2">
+                          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                            Level {question.difficulty}
+                          </span>
+                          <button
+                            onClick={() => {
+                              const newStatus = question.status === 'public' ? 'private' : 'public';
+                              handleQuestionStatusChange(question.question_id, newStatus);
+                            }}
+                            className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium cursor-pointer transition-colors ${
+                              question.status === 'public' 
+                                ? 'bg-green-100 text-green-800 hover:bg-green-200' 
+                                : 'bg-gray-100 text-gray-800 hover:bg-gray-200'
+                            }`}
+                          >
+                            {question.status === 'public' ? 'Public' : 'Private'}
+                          </button>
+                        </div>
+                      </div>
+                      <div className="grid grid-cols-2 gap-4">
+                        <div>
+                          <div className="text-sm font-medium text-gray-500">Topic</div>
+                          <div className="text-gray-900 text-sm">{question.topic_name || 'N/A'}</div>
+                        </div>
+                        <div>
+                          <div className="text-sm font-medium text-gray-500">Type</div>
+                          <div className="text-gray-900 text-sm">{question.type_name || 'N/A'}</div>
+                        </div>
+                      </div>
+                      <div>
+                        <div className="text-sm font-medium text-gray-500 mb-2">Question ID</div>
+                        <div className="text-gray-900 text-xs font-mono break-all bg-gray-50 p-2 rounded">
+                          {question.question_id}
+                        </div>
+                      </div>
+                      <div className="flex gap-2 pt-2 border-t border-gray-100">
+                        <button 
+                          onClick={() => router.push(`/admin/editproblem?id=${question.question_id}`)}
+                          className="flex-1 bg-blue-500 text-white py-2 px-4 rounded hover:bg-blue-600 transition-colors flex items-center justify-center gap-2"
+                        >
+                          <Edit size={16} />
+                          Edit
+                        </button>
+                        <button 
+                          onClick={() => handleDeleteQuestion(question)}
+                          className="flex-1 bg-red-500 text-white py-2 px-4 rounded hover:bg-red-600 transition-colors flex items-center justify-center gap-2"
+                        >
+                          <Trash2 size={16} />
+                          Delete
+                        </button>
+                      </div>
+                    </div>
                   </div>
                 </div>
               ))}
             </div>
+            
+            {/* Pagination Controls for Questions */}
+            {!isLoadingQuestions && totalQuestions > questionsPerPage && (
+              <div className="flex flex-col lg:flex-row justify-between items-center mt-4 pt-4 border-t border-gray-200 gap-4">
+                <div className="text-sm text-gray-600">
+                  Showing {Math.min((questionPage - 1) * questionsPerPage + 1, totalQuestions)} to{' '}
+                  {Math.min(questionPage * questionsPerPage, totalQuestions)} of {totalQuestions} questions
+                </div>
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={() => setQuestionPage(Math.max(1, questionPage - 1))}
+                    disabled={questionPage === 1}
+                    className="px-3 py-1 border border-gray-300 rounded hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    Previous
+                  </button>
+                  
+                  <div className="flex items-center gap-1">
+                    {Array.from({ length: Math.min(5, Math.ceil(totalQuestions / questionsPerPage)) }, (_, i) => {
+                      const totalPages = Math.ceil(totalQuestions / questionsPerPage);
+                      let pageNumber;
+                      
+                      if (totalPages <= 5) {
+                        pageNumber = i + 1;
+                      } else if (questionPage <= 3) {
+                        pageNumber = i + 1;
+                      } else if (questionPage >= totalPages - 2) {
+                        pageNumber = totalPages - 4 + i;
+                      } else {
+                        pageNumber = questionPage - 2 + i;
+                      }
+                      
+                      return (
+                        <button
+                          key={pageNumber}
+                          onClick={() => setQuestionPage(pageNumber)}
+                          className={`px-3 py-1 border rounded ${
+                            questionPage === pageNumber
+                              ? 'bg-purple-500 text-white border-purple-500'
+                              : 'border-gray-300 hover:bg-gray-50'
+                          }`}
+                        >
+                          {pageNumber}
+                        </button>
+                      );
+                    })}
+                  </div>
+                  
+                  <button
+                    onClick={() => setQuestionPage(Math.min(Math.ceil(totalQuestions / questionsPerPage), questionPage + 1))}
+                    disabled={questionPage >= Math.ceil(totalQuestions / questionsPerPage)}
+                    className="px-3 py-1 border border-gray-300 rounded hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    Next
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
         )}
 
