@@ -78,11 +78,11 @@ export default function Home() {
 
           <div className="text-base sm:text-lg text-left text-[#454545] py-6 w-full leading-relaxed">
             <b style={{ fontWeight:550 }}>Children&rsquo;s Privacy: </b>
-            <p className="px-5">
-              Flearn is intended for educational use by students. 
-              We do not knowingly collect personal data from children under 13 (or under the minimum legal age in your region) without parental consent. 
-              If we become aware of such data, we will delete it immediately.
-              </p>
+            <p className="px-5 sm:px-5">
+              Flearn is intended for educational use by students. <br></br>
+              We do not knowingly collect personal data from children under 13 (or under the minimum legal age in your region) without parental consent. <br></br>
+              If we become aware of such data, we will delete it immediately.<br></br>
+            </p>
           </div>
 
           <div className="text-lg text-start text-[#454545] mb-4 py-3 w-full">
