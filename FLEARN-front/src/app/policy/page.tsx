@@ -39,7 +39,7 @@ export default function Home() {
           </div>
 
           <div className="text-lg text-start text-[#454545] mb-4 py-3 w-full">
-            Sharing of Information: <br></br>
+            <b style={{ fontWeight:550 }}>Sharing of Information:</b> <br></br>
             We respect your privacy and do not sell your personal information to third parties. 
             We may share information only under limited circumstances: <br></br>
             <p className="px-5">
