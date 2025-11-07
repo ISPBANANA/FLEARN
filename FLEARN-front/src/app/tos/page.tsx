@@ -77,7 +77,9 @@ export default function Home() {
 
         {/* no.6 */}
         <div className="text-lg text-start text-[#454545] mb-4 py-2 w-full">
-          6&#41; Acceptable use:<br></br>
+          <h2 className="text-lg sm:text-xl font-semibold mb-2">
+            6&#41; Acceptable use:<br></br>
+          </h2>
             You agree not to:<br></br>
             <p className="px-5">
               ■ Upload malware, spam, or content that is unlawful, infringing, or harassing;<br></br>
