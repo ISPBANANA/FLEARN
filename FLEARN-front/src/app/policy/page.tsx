@@ -28,7 +28,7 @@ export default function Home() {
           </div>
 
           <div className="text-lg text-start text-[#454545] mb-4 py-3 w-full">
-            Information We Collect: <br></br>
+            <b style={{ fontWeight:550 }}>Information We Collect: </b><br></br>
             We may collect several types of information to provide and improve our services: <br></br>
             <p className="px-5">
               ■ Personal Information: Includes name, email, and login details you provide during sign-up. <br></br>
