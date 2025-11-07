@@ -101,9 +101,9 @@ export default function Home() {
             </p>
           </div>
 
-          <div className="text-lg text-start text-[#454545] mb-4 py-3 w-full">
+          <div className="text-base sm:text-lg text-left text-[#454545] py-6 w-full leading-relaxed">
             <b style={{ fontWeight:550 }}>Contact Us: </b>
-            <p className="px-5">
+            <p className="px-5 sm:px-5">
               If you have any questions, concerns, or requests regarding this Privacy Policy, please reach out to us:
             </p>
           </div>
