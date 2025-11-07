@@ -190,7 +190,9 @@ export default function Home() {
 
         {/* no.15 */}
         <div className="text-lg text-start text-[#454545] mb-4 py-2 w-full">
-          15&#41; Indemnity:<br></br>
+          <h2 className="text-lg sm:text-xl font-semibold mb-2">
+            15&#41; Indemnity:
+          </h2>
             <p className="px-5">
               You agree to indemnify and hold us harmless from claims, damages, and costs arising from your misuse of the Service or violation of these Terms.<br></br>
             </p>
