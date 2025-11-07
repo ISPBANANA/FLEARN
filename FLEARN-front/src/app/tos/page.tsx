@@ -178,7 +178,9 @@ export default function Home() {
 
         {/* no.14 */}
         <div className="text-lg text-start text-[#454545] mb-4 py-2 w-full">
-          14&#41; Limitation of liability:<br></br>
+          <h2 className="text-lg sm:text-xl font-semibold mb-2">
+            14&#41; Limitation of liability:
+          </h2>
             <p className="px-5">
               TO THE MAXIMUM EXTENT PERMITTED BY LAW, WE AND OUR AFFILIATES WILL NOT BE LIABLE FOR INDIRECT, INCIDENTAL, SPECIAL, 
               CONSEQUENTIAL, EXEMPLARY, OR PUNITIVE DAMAGES; 
