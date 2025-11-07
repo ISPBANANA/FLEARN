@@ -166,7 +166,9 @@ export default function Home() {
 
         {/* no.13 */}
         <div className="text-lg text-start text-[#454545] mb-4 py-2 w-full">
-          13&#41; Disclaimers:<br></br>
+          <h2 className="text-lg sm:text-xl font-semibold mb-2">
+            13&#41; Disclaimers:
+          </h2>
             <p className="px-5">
               THE SERVICE AND CONTENT ARE PROVIDED “AS IS” AND “AS AVAILABLE.” 
               WE DISCLAIM ALL WARRANTIES, EXPRESS OR IMPLIED (INCLUDING MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE, AND NON-INFRINGEMENT). 
