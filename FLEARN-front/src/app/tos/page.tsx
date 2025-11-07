@@ -116,11 +116,11 @@ export default function Home() {
         </div>
 
         {/* no.9 */}
-        <div className="text-lg text-start text-[#454545] mb-4 py-2 w-full">
+        <div className="text-base sm:text-lg text-left text-[#454545] py-6 w-full leading-relaxed">
           <h2 className="text-lg sm:text-xl font-semibold mb-2">
             9&#41; Privacy & data:
           </h2>
-            <p className="px-5">
+            <p className="px-5 sm:px-5">
               We collect only the data needed to run the Service (e.g., account info, device data, learning activity). 
               See the Privacy Policy for details on what we collect, why, retention, children&rsquo;s data, international transfers, and your rights (access, deletion, objection). 
               We may use de-identified, aggregated learning data for analytics and research.<br></br>
