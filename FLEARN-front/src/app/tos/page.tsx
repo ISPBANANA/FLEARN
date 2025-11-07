@@ -128,11 +128,11 @@ export default function Home() {
         </div>
 
         {/* no.10 */}
-        <div className="text-lg text-start text-[#454545] mb-4 py-2 w-full">
+        <div className="text-base sm:text-lg text-left text-[#454545] py-6 w-full leading-relaxed">
           <h2 className="text-lg sm:text-xl font-semibold mb-2">
             10&#41; Third-party links & services:
           </h2>
-            <p className="px-5">
+            <p className="px-5 sm:px-5">
               The Service may link to third-party websites or use third-party libraries (e.g., analytics, payments). 
               We&rsquo;re not responsible for their content or practices.<br></br>
             </p>
