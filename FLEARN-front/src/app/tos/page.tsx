@@ -1,7 +1,5 @@
-import Image from "next/image";
 import { Nav } from "@/components/nav";
 import { Footer } from "@/components/footer";
-import SplitText from "@/components/SplitText";
 
 export default function Home() {
   return (
@@ -9,9 +7,9 @@ export default function Home() {
       <Nav />
 
       {/* Infomation here */}
-      <div className="my-2 p-4 h-auto w-full flex items-center z-1 bg-white flex-col min-h-screen">
-        <div className="w-full max-w-[1620px] items-center flex flex-col px-25 py-7">
-          <p className="text-5xl text-center text-[#9A41FF] font-bold">
+      <div className="my-2 p-4 h-auto w-full flex items-center z-10 bg-white flex-col min-h-screen">
+        <div className="w-full max-w-[1200px] mx-auto items-center flex flex-col px-6 sm:px-8 md:px-12 lg:px-24 py-7">
+          <p className="text-3xl sm:text-4xl md:text-5xl text-center text-[#9A41FF] font-bold leading-tight">
             Terms of Service
           </p>
         <div className="text-lg text-start text-[#454545] py-10 w-full">
