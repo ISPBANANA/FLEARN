@@ -8,7 +8,7 @@ export default function Home() {
 
       {/* Infomation here */}
       <div className="my-2 p-4 h-auto w-full flex items-center z-10 bg-white flex-col min-h-screen">
-        <div className="w-full max-w-5xl mx-auto items-center flex flex-col px-6 sm:px-8 md:px-12 lg:px-24 py-7">
+        <div className="w-full max-w-none mx-auto items-center flex flex-col px-6 sm:px-8 md:px-12 lg:px-24 py-7">
           <p className="text-3xl sm:text-4xl md:text-5xl text-center text-[#9A41FF] font-bold leading-tight">
             Terms of Service
           </p>
@@ -31,11 +31,11 @@ export default function Home() {
           </h2>
           <p className="px-5 sm:px-5">
             In connection with registering for and using the Service, you agree: <br></br>
-            <p className="px-2 sm:px-5">
-              (a.) To provide FLearn with accurate, current, and complete information about yourself and/or your organization as requested during the registration process.<br></br>          
-              (b.) To maintain the confidentiality of your password and any other information related to the security of your account.<br></br>
-              (c.) To promptly update any registration information you provide to FLearn to ensure that it remains accurate, current, and complete.<br></br>
-              (d.) To accept full responsibility for all usage of your account and for any actions that occur through your account.<br></br>
+            <p className="px-5 sm:px-5">
+              <b style={{ fontWeight:550 }}>(a.)</b> To provide FLearn with accurate, current, and complete information about yourself and/or your organization as requested during the registration process.<br></br>          
+              <b style={{ fontWeight:550 }}>(b.)</b> To maintain the confidentiality of your password and any other information related to the security of your account.<br></br>
+              <b style={{ fontWeight:550 }}>(c.)</b> To promptly update any registration information you provide to FLearn to ensure that it remains accurate, current, and complete.<br></br>
+              <b style={{ fontWeight:550 }}>(d.)</b> To accept full responsibility for all usage of your account and for any actions that occur through your account.<br></br>
             </p>
           </p>
         </div>
@@ -43,7 +43,7 @@ export default function Home() {
         {/* no.3 */}
         <div className="text-base sm:text-lg text-left text-[#454545] py-6 w-full leading-relaxed">
           <h2 className="text-lg sm:text-xl font-semibold mb-2">
-            3&#41; Educational purpose (no professional advice):
+            3&#41; Educational purpose (No professional advice):
           </h2>
             <p className="px-5 sm:px-5">
               The Service teaches math, and science for study and practice. <br></br>
@@ -144,7 +144,7 @@ export default function Home() {
             11&#41; Beta features & changes:
           </h2>
             <p className="px-5">
-              We may test new or experimental features (“Beta”). 
+              We may test new or experimental features (“Beta”).  
               Beta is provided as-is and may change or stop at any time. 
               We may also update lessons (e.g., to fix errors or improve alignment).<br></br>
             </p>
@@ -157,10 +157,10 @@ export default function Home() {
           </h2>
             If you believe content infringes your copyright, send a notice to us with: <br></br>
             <p className="px-5">
-              (a) Identification of the work.<br></br>
-              (b) The allegedly infringing material/URL.<br></br>
-              (c) Your contact.<br></br>
-              (d) A good-faith statement and signature. We may remove content and, when appropriate, terminate repeat infringes.<br></br>
+              <b style={{ fontWeight:550 }}>(a.)</b> Identification of the work.<br></br>
+              <b style={{ fontWeight:550 }}>(b.)</b> The allegedly infringing material/URL.<br></br>
+              <b style={{ fontWeight:550 }}>(c.)</b> Your contact.<br></br>
+              <b style={{ fontWeight:550 }}>(d.)</b> A good-faith statement and signature. We may remove content and, when appropriate, terminate repeat infringes.<br></br>
             </p>
         </div>
 
@@ -171,7 +171,7 @@ export default function Home() {
           </h2>
             <p className="px-5">
               THE SERVICE AND CONTENT ARE PROVIDED “AS IS” AND “AS AVAILABLE.” 
-              WE DISCLAIM ALL WARRANTIES, EXPRESS OR IMPLIED (INCLUDING MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE, AND NON-INFRINGEMENT). 
+              WE DISCLAIM ALL WARRANTIES, EXPRESS OR IMPLIED (INCLUDING MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE, AND NON-INFRINGEMENT). <br></br>
               We do not warrant accuracy, reliability, or availability, and learning outcomes may vary.<br></br>
             </p>
         </div>
