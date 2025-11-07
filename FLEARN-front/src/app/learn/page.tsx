@@ -305,9 +305,9 @@ export default function Home() {
       <div className="min-h-screen bg-white">
         <Nav />
 
-        <div className="flex h-[calc(100vh-60px)]">
+        <div className="flex flex-col lg:flex-row lg:h-[calc(100vh-60px)] min-h-[calc(100vh-60px)]">
           {/* Left column - Subjects */}
-          <aside className="flex flex-col bg-white py-4 px-4 w-60 h-full z-0 relative" style={{boxShadow: '0px 0px 5px rgba(0, 0, 0, 0.25)' }}>
+          <aside className="flex flex-col bg-white py-4 px-4 w-full lg:w-60 h-auto lg:h-full z-0 relative" style={{boxShadow: '0px 0px 5px rgba(0, 0, 0, 0.25)' }}>
             <h3 className="text-base font-semibold text-gray-600 mb-4">Subjects</h3>
 
             {isLoadingSubjects ? (
@@ -325,7 +325,7 @@ export default function Home() {
                     <button
                       key={s.subject_id}
                       onClick={() => handleSubjectClick(s)}
-                      className={`w-full flex items-center justify-between px-3 py-2 rounded-xl transition-all duration-200 focus:outline-none ${
+                      className={`w-full flex items-center justify-between px-3 py-3 lg:py-2 rounded-xl transition-all duration-200 focus:outline-none ${
                         active
                           ? "bg-purple-600 text-white shadow hover:bg-purple-700"
                           : "bg-white text-gray-700 border border-gray-200 hover:border-purple-400 hover:shadow-md hover:scale-105"
@@ -360,11 +360,11 @@ export default function Home() {
           {/* Middle column - Sub-Topics (slides in when subject is selected) */}
           <div
             className={`transition-all duration-150 ease-in-out overflow-hidden ${
-              selectedSubject && !isAnimating ? "w-64 opacity-100" : "w-0 opacity-0"
+              selectedSubject && !isAnimating ? "w-full lg:w-64 opacity-100 block" : "w-0 opacity-0 lg:block hidden"
             }`}
           >
             {selectedSubject && (
-              <section className="flex flex-col px-4 py-4 w-64 bg-gray-100 h-full">
+              <section className="flex flex-col px-4 py-4 w-full lg:w-64 bg-gray-100 h-auto lg:h-full">
                 <div className="mb-4">
                   <h4 className="text-base font-semibold text-gray-600 mb-3">Sub-Topics</h4>
                   <div className="relative w-full">
@@ -374,7 +374,7 @@ export default function Home() {
                       onChange={(e) => setSearchValue(e.target.value)}
                       onFocus={() => setIsSearchFocused(true)}
                       onBlur={() => setIsSearchFocused(false)}
-                      className="w-full px-3 py-1 text-gray-400 text-sm rounded-md border border-gray-300 bg-white focus:outline-none focus:border-gray-300 focus:bg-white"
+                      className="w-full px-3 py-2 lg:py-1 text-gray-400 text-sm rounded-md border border-gray-300 bg-white focus:outline-none focus:border-gray-300 focus:bg-white"
                       placeholder={isSearchFocused ? "" : "Search..."}
                     />
                     <div className="absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none">
@@ -392,14 +392,14 @@ export default function Home() {
                     {searchValue ? "No topics found" : "No topics available"}
                   </div>
                 ) : (
-                  <div className="space-y-2 max-h-[calc(100vh-250px)] overflow-y-auto pr-2 pl-1 py-1">
+                  <div className="space-y-2 max-h-[calc(50vh)] lg:max-h-[calc(100vh-250px)] overflow-y-auto pr-2 pl-1 py-1">
                     {filteredTopics.map((topic) => {
                       const active = topic.topic_id === selectedTopic?.topic_id;
                       return (
                         <button
                           key={topic.topic_id}
                           onClick={() => handleSubtopicClick(topic)}
-                          className={`w-full text-left flex items-center gap-3 px-3 py-2 rounded-md transition-all duration-200 ${
+                          className={`w-full text-left flex items-center gap-3 px-3 py-3 lg:py-2 rounded-md transition-all duration-200 ${
                             active
                               ? "bg-purple-600 text-white hover:bg-purple-700"
                               : "bg-white text-gray-700 border border-gray-200 hover:border-purple-400 hover:shadow-md hover:scale-[1.02]"
@@ -422,13 +422,13 @@ export default function Home() {
 
           {/* Vertical divider line between Sub-Topics and main content */}
           {selectedSubject && (
-            <div className="border-l-2 border-gray-200 shadow-sm transition-opacity duration-300"></div>
+            <div className="border-l-2 border-gray-200 shadow-sm transition-opacity duration-300 hidden lg:block"></div>
           )}
 
           {/* Main content area - shown when subtopic is selected */}
           <div
             className={`transition-all duration-150 ease-in-out overflow-hidden ${
-              selectedTopic && !isContentAnimating ? "flex-1 opacity-100" : "w-0 opacity-0"
+              selectedTopic && !isContentAnimating ? "flex-1 opacity-100 block" : "w-0 opacity-0 lg:block hidden"
             }`}
           >
             {selectedTopic && (() => {
@@ -456,111 +456,117 @@ export default function Home() {
               const hasLevelsBelow = true; // Always true since levels are infinite
 
               return (
-                <div className="flex flex-col w-full h-[calc(100vh-92px)] overflow-hidden relative bg-gradient-to-b from-purple-50 via-white to-purple-50">
+                <div className="flex flex-col w-full h-auto lg:h-[calc(100vh-92px)] min-h-[500px] overflow-y-auto lg:overflow-hidden relative bg-gradient-to-b from-purple-50 via-white to-purple-50">
                   {/* Title - with smooth gradient transition to content */}
-                  <div className="absolute top-0 left-0 right-0 py-8 z-20">
-                    <h1 className="text-5xl font-bold text-purple-600 text-center">{selectedTopic.name}</h1>
+                  <div className="relative lg:absolute top-0 left-0 right-0 py-4 lg:py-8 z-20">
+                    <h1 className="text-3xl lg:text-5xl font-bold text-purple-600 text-center px-4">{selectedTopic.name}</h1>
                   </div>
 
                   {/* Fade overlay at top - only show if there are levels above */}
                   {hasLevelsAbove && (
                     <>
-                      <div className="absolute top-24 left-0 right-0 h-32 bg-gradient-to-b from-purple-50/30 via-white/50 to-transparent z-10 pointer-events-none"></div>
+                      <div className="absolute top-16 lg:top-24 left-0 right-0 h-16 lg:h-32 bg-gradient-to-b from-purple-50/30 via-white/50 to-transparent z-10 pointer-events-none hidden lg:block"></div>
                       {/* Fading line before first level to suggest continuation upward */}
-                      <div className="absolute top-28 left-1/2 -translate-x-1/2 w-2 h-24 bg-gradient-to-t from-green-400 via-green-300 to-transparent rounded-full opacity-60 z-5"></div>
+                      <div className="absolute top-20 lg:top-28 left-1/2 -translate-x-1/2 w-2 h-12 lg:h-24 bg-gradient-to-t from-green-400 via-green-300 to-transparent rounded-full opacity-60 z-5 hidden lg:block"></div>
                     </>
                   )}
 
                   {/* Centered container for levels */}
-                  <div className="flex-1 flex items-center justify-center pt-24 pb-8">
+                  <div className="flex-1 flex items-center justify-center pt-4 lg:pt-0 pb-4 lg:pb-0 lg:absolute lg:inset-0 lg:top-24">
                     {/* Vertical timeline with numbered circles - always centered */}
-                    <div className="flex flex-col items-center gap-0 relative">
-                      {levelsToShow.map((level, index) => {
-                        const isCurrentLevel = level === currentLevel;
-                        const isPastLevel = level < currentLevel;
-                        const distanceFromCurrent = Math.abs(level - currentLevel);
+                    <div className="flex flex-col items-center gap-0 relative lg:justify-center lg:h-full">
+                      {/* Calculate current level index for proper centering */}
+                      {(() => {
+                        const currentLevelIndex = levelsToShow.findIndex(level => level === currentLevel);
+                        const totalLevels = levelsToShow.length;
                         
-                        // Calculate size and opacity based on distance from current level
-                        let sizeClass, textSize, opacity, shadowClass;
-                        
-                        if (isCurrentLevel) {
-                          sizeClass = 'w-48 h-28';
-                          textSize = 'text-5xl';
-                          opacity = 'opacity-100';
-                          shadowClass = 'shadow-2xl';
-                        } else if (distanceFromCurrent === 1) {
-                          sizeClass = 'w-36 h-22';
-                          textSize = 'text-3xl';
-                          opacity = 'opacity-90';
-                          shadowClass = 'shadow-lg';
-                        } else {
-                          sizeClass = 'w-28 h-18';
-                          textSize = 'text-2xl';
-                          opacity = 'opacity-70';
-                          shadowClass = 'shadow-md';
-                        }
+                        return levelsToShow.map((level, index) => {
+                          const isCurrentLevel = level === currentLevel;
+                          const isPastLevel = level < currentLevel;
+                          const distanceFromCurrent = Math.abs(level - currentLevel);
+                          
+                          // Calculate size and opacity based on distance from current level
+                          let sizeClass, textSize, opacity, shadowClass;
+                          
+                          if (isCurrentLevel) {
+                            sizeClass = 'w-32 h-20 lg:w-48 lg:h-28';
+                            textSize = 'text-3xl lg:text-5xl';
+                            opacity = 'opacity-100';
+                            shadowClass = 'shadow-2xl';
+                          } else if (distanceFromCurrent === 1) {
+                            sizeClass = 'w-24 h-16 lg:w-36 lg:h-22';
+                            textSize = 'text-2xl lg:text-3xl';
+                            opacity = 'opacity-90';
+                            shadowClass = 'shadow-lg';
+                          } else {
+                            sizeClass = 'w-20 h-14 lg:w-28 lg:h-18';
+                            textSize = 'text-xl lg:text-2xl';
+                            opacity = 'opacity-70';
+                            shadowClass = 'shadow-md';
+                          }
 
-                        // Determine color scheme
-                        let colorClass;
-                        if (isCurrentLevel) {
-                          colorClass = 'bg-gradient-to-br from-yellow-400 via-yellow-500 to-orange-400 ring-4 ring-yellow-200';
-                        } else if (isPastLevel) {
-                          colorClass = 'bg-gradient-to-br from-green-400 via-green-500 to-emerald-500';
-                        } else {
-                          colorClass = 'bg-gradient-to-br from-gray-400 via-gray-500 to-gray-600';
-                        }
-                        
-                        return (
-                          <div key={level} className={`flex flex-col items-center ${opacity} transition-all duration-300`}>
-                            {/* Level node - only current level is clickable */}
-                            <button
-                              onClick={() => {
-                                // Only allow navigation to current level
-                                if (isCurrentLevel && selectedSubject && selectedTopic) {
-                                  window.location.href = `/learn/problem?topic_id=${selectedTopic.topic_id}&level=${level}&subject_id=${selectedSubject.subject_id}`;
-                                }
-                              }}
-                              disabled={!isCurrentLevel}
-                              className={`${sizeClass} ${colorClass} ${textSize} ${shadowClass} rounded-[50px] text-white font-bold flex items-center justify-center ${
-                                isCurrentLevel 
-                                  ? 'cursor-pointer transform hover:scale-110' 
-                                  : 'cursor-not-allowed opacity-60'
-                              } transition-all duration-200 relative focus:outline-none ${
-                                isCurrentLevel ? 'focus:ring-4 focus:ring-purple-300' : ''
-                              }`}
-                              title={isCurrentLevel ? 'Click to start this level' : isPastLevel ? 'Level completed' : 'Complete current level to unlock'}
-                            >
-                              {level}
-                              {/* Pulse animation for current level */}
-                              {isCurrentLevel && (
-                                <div className="absolute inset-0 rounded-[50px] bg-yellow-400 animate-ping opacity-20"></div>
+                          // Determine color scheme
+                          let colorClass;
+                          if (isCurrentLevel) {
+                            colorClass = 'bg-gradient-to-br from-yellow-400 via-yellow-500 to-orange-400 ring-4 ring-yellow-200';
+                          } else if (isPastLevel) {
+                            colorClass = 'bg-gradient-to-br from-green-400 via-green-500 to-emerald-500';
+                          } else {
+                            colorClass = 'bg-gradient-to-br from-gray-400 via-gray-500 to-gray-600';
+                          }
+                          
+                          return (
+                            <div key={level} className={`flex flex-col items-center ${opacity} transition-all duration-300`}>
+                              {/* Level node - only current level is clickable */}
+                              <button
+                                onClick={() => {
+                                  // Only allow navigation to current level
+                                  if (isCurrentLevel && selectedSubject && selectedTopic) {
+                                    window.location.href = `/learn/problem?topic_id=${selectedTopic.topic_id}&level=${level}&subject_id=${selectedSubject.subject_id}`;
+                                  }
+                                }}
+                                disabled={!isCurrentLevel}
+                                className={`${sizeClass} ${colorClass} ${textSize} ${shadowClass} rounded-[50px] text-white font-bold flex items-center justify-center ${
+                                  isCurrentLevel 
+                                    ? 'cursor-pointer transform hover:scale-110' 
+                                    : 'cursor-not-allowed opacity-60'
+                                } transition-all duration-200 relative focus:outline-none ${
+                                  isCurrentLevel ? 'focus:ring-4 focus:ring-purple-300' : ''
+                                }`}
+                                title={isCurrentLevel ? 'Click to start this level' : isPastLevel ? 'Level completed' : 'Complete current level to unlock'}
+                              >
+                                {level}
+                                {/* Pulse animation for current level */}
+                                {isCurrentLevel && (
+                                  <div className="absolute inset-0 rounded-[50px] bg-yellow-400 animate-ping opacity-20"></div>
+                                )}
+                              </button>
+                              
+                              {/* Connector line with gradient */}
+                              {index < levelsToShow.length - 1 && (
+                                <div className={`w-2 h-8 lg:h-16 ${
+                                  isPastLevel 
+                                    ? 'bg-gradient-to-b from-green-400 to-green-500' 
+                                    : isCurrentLevel 
+                                    ? 'bg-gradient-to-b from-yellow-400 to-purple-500'
+                                    : 'bg-gradient-to-b from-gray-500 to-gray-600'
+                                } rounded-full ${shadowClass}`}></div>
                               )}
-                            </button>
-                            
-                            {/* Connector line with gradient */}
-                            {index < levelsToShow.length - 1 && (
-                              <div className={`w-2 h-16 ${
-                                isPastLevel 
-                                  ? 'bg-gradient-to-b from-green-400 to-green-500' 
-                                  : isCurrentLevel 
-                                  ? 'bg-gradient-to-b from-yellow-400 to-purple-500'
-                                  : 'bg-gradient-to-b from-gray-500 to-gray-600'
-                              } rounded-full ${shadowClass}`}></div>
-                            )}
-                          </div>
-                        );
-                      })}
+                            </div>
+                          );
+                        });
+                      })()}
                       
                       {/* Fading line after the last level to suggest continuation downward */}
                       {hasLevelsBelow && (
-                        <div className="w-2 h-32 bg-gradient-to-b from-purple-600 via-purple-400 to-transparent rounded-full opacity-60"></div>
+                        <div className="w-2 h-16 lg:h-32 bg-gradient-to-b from-purple-600 via-purple-400 to-transparent rounded-full opacity-60 hidden lg:block"></div>
                       )}
                     </div>
                   </div>
 
                   {/* Fade overlay at bottom - only show if there are levels below */}
                   {hasLevelsBelow && (
-                    <div className="absolute bottom-0 left-0 right-0 h-32 bg-gradient-to-t from-white via-white/80 to-transparent z-10 pointer-events-none"></div>
+                    <div className="absolute bottom-0 left-0 right-0 h-16 lg:h-32 bg-gradient-to-t from-white via-white/80 to-transparent z-10 pointer-events-none hidden lg:block"></div>
                   )}
 
                   {/* Decorative elements to enhance depth - with patrol animations */}
