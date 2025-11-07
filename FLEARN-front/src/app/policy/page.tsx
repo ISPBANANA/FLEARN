@@ -59,24 +59,26 @@ export default function Home() {
 
           <div className="text-base sm:text-lg text-left text-[#454545] py-6 w-full leading-relaxed">
             <b style={{ fontWeight:550 }}>Your Rights:</b> <br></br>
-            Depending on your location, you may have certain rights under Thailand&rsquo;s Personal Data Protection Act (PDPA):<br></br>
             <p className="px-5 sm;px-5">
-              ■ Access, correct, or delete your personal information.<br></br>
-              ■ Request a copy of your data in portable format.<br></br>
-              ■ Restrict or object to how your data is processed.<br></br>
-              ■ Withdraw consent for non-essential data usage.<br></br>
-              ■ File a complaint with the Personal Data Protection Committee (PDPC).<br></br>
+              Depending on your location, you may have certain rights under Thailand&rsquo;s Personal Data Protection Act (PDPA):<br></br>
+              <p className="px-5 sm;px-5">
+                ■ Access, correct, or delete your personal information.<br></br>
+                ■ Request a copy of your data in portable format.<br></br>
+                ■ Restrict or object to how your data is processed.<br></br>
+                ■ Withdraw consent for non-essential data usage.<br></br>
+                ■ File a complaint with the Personal Data Protection Committee (PDPC).<br></br>
+              </p>
+              You can exercise these rights by contacting us at the email provided below.
             </p>
-            You can exercise these rights by contacting us at the email provided below.
           </div>
 
           <div className="text-lg text-start text-[#454545] mb-4 py-3 w-full">
             Children&rsquo;s Privacy: <br></br>
             <p className="px-5">
-            Flearn is intended for educational use by students. 
-            We do not knowingly collect personal data from children under 13 (or under the minimum legal age in your region) without parental consent. 
-            If we become aware of such data, we will delete it immediately.
-            </p>
+              Flearn is intended for educational use by students. 
+              We do not knowingly collect personal data from children under 13 (or under the minimum legal age in your region) without parental consent. 
+              If we become aware of such data, we will delete it immediately.
+              </p>
           </div>
 
           <div className="text-lg text-start text-[#454545] mb-4 py-3 w-full">
