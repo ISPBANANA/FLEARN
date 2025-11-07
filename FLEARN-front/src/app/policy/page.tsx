@@ -29,13 +29,15 @@ export default function Home() {
 
           <div className="text-base sm:text-lg text-left text-[#454545] py-6 w-full leading-relaxed">
             <b style={{ fontWeight:550 }}>Information We Collect: </b><br></br>
-            We may collect several types of information to provide and improve our services: <br></br>
-            <p className="px-5 sm:px-5">
-              ■ Personal Information: Includes name, email, and login details you provide during sign-up. <br></br>
-              ■ Usage Data: Records of quizzes taken, topics studied, progress, and learning streaks. <br></br>
-              ■ Device & Technical Data: Such as browser type, IP address, operating system, and cookies used to analyze performance and security. <br></br>
-              ■ Optional Information: Such as profile picture, education institution, or friends list connections.<br></br>
-            </p>
+              <p className="px-5 sm:px-5">
+                We may collect several types of information to provide and improve our services: <br></br>
+                <p className="px-5 sm:px-5">
+                  ■ Personal Information: Includes name, email, and login details you provide during sign-up. <br></br>
+                  ■ Usage Data: Records of quizzes taken, topics studied, progress, and learning streaks. <br></br>
+                  ■ Device & Technical Data: Such as browser type, IP address, operating system, and cookies used to analyze performance and security. <br></br>
+                  ■ Optional Information: Such as profile picture, education institution, or friends list connections.<br></br>
+                </p>
+              </p>
           </div>
 
           <div className="text-base sm:text-lg text-left text-[#454545] py-6 w-full leading-relaxed">
@@ -59,9 +61,9 @@ export default function Home() {
 
           <div className="text-base sm:text-lg text-left text-[#454545] py-6 w-full leading-relaxed">
             <b style={{ fontWeight:550 }}>Your Rights:</b> <br></br>
-            <p className="px-5 sm;px-5">
+            <p className="px-5 sm:px-5">
               Depending on your location, you may have certain rights under Thailand&rsquo;s Personal Data Protection Act (PDPA):<br></br>
-              <p className="px-5 sm;px-5">
+              <p className="px-5 sm:px-5">
                 ■ Access, correct, or delete your personal information.<br></br>
                 ■ Request a copy of your data in portable format.<br></br>
                 ■ Restrict or object to how your data is processed.<br></br>
