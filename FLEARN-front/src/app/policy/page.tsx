@@ -58,7 +58,7 @@ export default function Home() {
           </div>
 
           <div className="text-lg text-start text-[#454545] mb-4 py-3 w-full">
-            Your Rights: <br></br>
+            <b style={{ fontWeight:550 }}>Your Rights:</b> <br></br>
             Depending on your location, you may have certain rights under Thailand&rsquo;s Personal Data Protection Act (PDPA):<br></br>
             <p className="px-5">
               ■ Access, correct, or delete your personal information.<br></br>
