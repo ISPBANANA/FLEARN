@@ -42,7 +42,7 @@ export default function Home() {
             <b style={{ fontWeight:550 }}>Sharing of Information:</b> <br></br>
             We respect your privacy and do not sell your personal information to third parties. 
             We may share information only under limited circumstances: <br></br>
-            <p className="px-5">
+            <p className="px-5 sm:px-5">
               ■ With trusted service providers who help operate the platform (e.g., hosting, analytics). <br></br>
               ■ To comply with legal obligations, enforce our Terms of Service, or protect rights and safety. <br></br>
               ■ In case of a merger, acquisition, or restructuring, user information may be transferred.<br></br>
