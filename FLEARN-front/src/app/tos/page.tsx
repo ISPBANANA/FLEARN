@@ -106,7 +106,9 @@ export default function Home() {
 
         {/* no.8*/}
         <div className="text-lg text-start text-[#454545] mb-4 py-2 w-full">
-          8&#41; Classroom & minors:<br></br>
+          <h2 className="text-lg sm:text-xl font-semibold mb-2">            
+            8&#41; Classroom & minors:
+          </h2>
             <p className="px-5">
               ■ Parents/Guardians: You consent to your child’s use and to our processing of necessary learning data as described in the Privacy Policy.<br></br>
               ■ Parents/Guardians: You consent to your child&rsquo;s use and to our processing of necessary learning data as described in the Privacy Policy.<br></br>
