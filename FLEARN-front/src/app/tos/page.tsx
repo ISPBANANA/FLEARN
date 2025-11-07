@@ -8,19 +8,24 @@ export default function Home() {
 
       {/* Infomation here */}
       <div className="my-2 p-4 h-auto w-full flex items-center z-10 bg-white flex-col min-h-screen">
-        <div className="w-full max-w-[1200px] mx-auto items-center flex flex-col px-6 sm:px-8 md:px-12 lg:px-24 py-7">
+        <div className="w-full max-w-5xl mx-auto items-center flex flex-col px-6 sm:px-8 md:px-12 lg:px-24 py-7">
           <p className="text-3xl sm:text-4xl md:text-5xl text-center text-[#9A41FF] font-bold leading-tight">
             Terms of Service
           </p>
-        <div className="text-lg text-start text-[#454545] py-10 w-full">
-          1&#41; Who we are:<br></br>
-          <p className="px-5">
-            These Terms of Service (“Terms”) govern your use of the FLEARN website, mobile apps, and services (collectively, the “Service”) operated by ISPBanana.<br></br>
-            By creating an account or using the Service, you agree to these Terms and to our Privacy Policy. If you don&rsquo;t agree, do not use the Service.<br></br>
+
+        <div className="text-base sm:text-lg text-left text-[#454545] py-6 w-full leading-relaxed">
+          <h2 className="text-lg sm:text-xl font-semibold mb-2">
+            1&#41; Who we are:</h2>
+          <p className="px-0 sm:px-5">
+            These Terms of Service (&ldquo;Terms&rdquo;) govern your use of the FLEARN website, mobile apps, and services (collectively, the &ldquo;Service&rdquo;) operated by ISPBanana. 
+          </p>
+          <p className="px-0 sm:px-5">
+            By creating an account or using the Service, you agree to these Terms and to our Privacy Policy. If you don&rsquo;t agree, do not use the Service.
           </p>
         </div>
+
         <div className="text-lg text-start text-[#454545] mb-4 w-full">
-            2&#41; Registration:<br></br>
+            2&#41; Registration: <br></br>
           <p className="px-5">
             In connection with registering for and using the Service, you agree<br></br>
             (a.) to provide FLearn with accurate, current, and complete information about yourself and/or your organization as requested during the registration process.<br></br>
@@ -76,6 +81,7 @@ export default function Home() {
         <div className="text-lg text-start text-[#454545] mb-4 py-2 w-full">
           8&#41; Classroom & minors:<br></br>
             <p className="px-5">
+              ■ Parents/Guardians: You consent to your child’s use and to our processing of necessary learning data as described in the Privacy Policy.<br></br>
               ■ Parents/Guardians: You consent to your child&rsquo;s use and to our processing of necessary learning data as described in the Privacy Policy.<br></br>
               ■ Schools/Teachers: You confirm you have authority to create student accounts and to share the minimal data needed for classroom features. We act as a processor of that data.<br></br>
             </p>
@@ -84,6 +90,7 @@ export default function Home() {
           9&#41; Privacy & data:<br></br>
             <p className="px-5">
               We collect only the data needed to run the Service (e.g., account info, device data, learning activity). 
+              See the Privacy Policy for details on what we collect, why, retention, children’s data, international transfers, and your rights (access, deletion, objection). 
               See the Privacy Policy for details on what we collect, why, retention, children&rsquo;s data, international transfers, and your rights (access, deletion, objection). 
               We may use de-identified, aggregated learning data for analytics and research.<br></br>
             </p>
@@ -92,6 +99,7 @@ export default function Home() {
           10&#41; Third-party links & services:<br></br>
             <p className="px-5">
               The Service may link to third-party websites or use third-party libraries (e.g., analytics, payments). 
+              We’re not responsible for their content or practices.<br></br>
               We&rsquo;re not responsible for their content or practices.<br></br>
             </p>
         </div>
@@ -153,6 +161,7 @@ export default function Home() {
         <div className="text-lg text-start text-[#454545] mb-4 py-2 w-full">
           18&#41; Changes to these Terms:<br></br>
             <p className="px-5">
+              We may update these Terms. If changes are material, we’ll provide notice (e.g., in-app or email). 
               We may update these Terms. If changes are material, we&rsquo;ll provide notice (e.g., in-app or email). 
               Continued use after the effective date means you accept the new Terms.
             </p>
