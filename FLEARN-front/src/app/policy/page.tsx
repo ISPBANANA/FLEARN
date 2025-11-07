@@ -51,9 +51,9 @@ export default function Home() {
 
           <div className="text-base sm:text-lg text-left text-[#454545] py-6 w-full leading-relaxed">
             <b style={{ fontWeight:550 }}>Data Security:</b> <br></br>
-            <p className="px-5">
-              We take reasonable measures, including encryption and secure servers, to protect your data. 
-              However, no internet-based service can be fully secure, and we cannot guarantee absolute protection.
+            <p className="px-5 sm:px-5">
+              We take reasonable measures, including encryption and secure servers, to protect your data. <br></br>
+              However, no internet-based service can be fully secure, and we cannot guarantee absolute protection.<br></br>
             </p>
           </div>
 
