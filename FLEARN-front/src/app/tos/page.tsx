@@ -210,11 +210,11 @@ export default function Home() {
         </div>
 
         {/* no.17 */}
-        <div className="text-lg text-start text-[#454545] mb-4 py-2 w-full">
+        <div className="text-base sm:text-lg text-left text-[#454545] py-6 w-full leading-relaxed">
           <h2 className="text-lg sm:text-xl font-semibold mb-2">
             17&#41; Governing law & dispute resolution:
           </h2>
-            <p className="px-5">
+            <p className="px-5 smLpx-5">
               These Terms are governed by the laws of [Jurisdiction], without regard to conflict of law rules. 
               Disputes will be resolved in the courts of [City/Country] (or by arbitration at [Institution], if you choose to add arbitration). 
               Consumers may also have non-waivable local rights.<br></br>
