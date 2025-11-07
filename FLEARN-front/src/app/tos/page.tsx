@@ -76,12 +76,12 @@ export default function Home() {
         </div>
 
         {/* no.6 */}
-        <div className="text-lg text-start text-[#454545] mb-4 py-2 w-full">
+        <div className="text-base sm:text-lg text-left text-[#454545] py-6 w-full leading-relaxed">
           <h2 className="text-lg sm:text-xl font-semibold mb-2">
             6&#41; Acceptable use:<br></br>
           </h2>
             You agree not to:<br></br>
-            <p className="px-5">
+            <p className="px-5 sm:px-5">
               ■ Upload malware, spam, or content that is unlawful, infringing, or harassing;<br></br>
               ■ Attempt to bypass security or copy our databases;<br></br>
               ■ Use automated tools to excessively query or harvest content;<br></br>
