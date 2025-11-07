@@ -238,7 +238,7 @@ export default function Home() {
 
         {/* Contact */}
         <div className="text-base sm:text-lg text-left text-[#454545] py-6 w-full leading-relaxed">
-            Ispbanana (Flearn Team)<br></br>
+            <b style={{ fontWeight:550 }}>Ispbanana (Flearn Team)</b><br></br>
             ■ Email: ispbanana.contact@gmail.com<br></br>
             ■ Website: hongrocker49.thddns.net:2725<br></br>
         </div>
