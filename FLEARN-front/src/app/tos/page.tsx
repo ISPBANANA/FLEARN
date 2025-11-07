@@ -105,11 +105,11 @@ export default function Home() {
         </div>
 
         {/* no.8*/}
-        <div className="text-lg text-start text-[#454545] mb-4 py-2 w-full">
+        <div className="text-base sm:text-lg text-left text-[#454545] py-6 w-full leading-relaxed">
           <h2 className="text-lg sm:text-xl font-semibold mb-2">            
             8&#41; Classroom & minors:
           </h2>
-            <p className="px-5">
+            <p className="px-5 sm:px-5">
               ■ Parents/Guardians: You consent to your child&rsquo;s use and to our processing of necessary learning data as described in the Privacy Policy.<br></br>
               ■ Schools/Teachers: You confirm you have authority to create student accounts and to share the minimal data needed for classroom features. We act as a processor of that data.<br></br>
             </p>
