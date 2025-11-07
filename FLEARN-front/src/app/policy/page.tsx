@@ -94,7 +94,7 @@ export default function Home() {
           </div>
 
           <div className="text-lg text-start text-[#454545] mb-4 py-3 w-full">
-            Changes to Policy: 
+            <b style={{ fontWeight:550 }}>Changes to Policy:</b> 
             <p className="px-5">
               We may update this Privacy Policy from time to time to reflect changes in our practices or legal obligations. 
               Any updates will be posted here with the revised date at the top. We encourage you to review it regularly.
