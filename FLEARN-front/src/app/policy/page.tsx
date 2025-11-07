@@ -87,9 +87,9 @@ export default function Home() {
 
           <div className="text-base sm:text-lg text-left text-[#454545] py-6 w-full leading-relaxed">
             <b style={{ fontWeight:550 }}>Cookies & Tracking: </b>
-            <p className="px-5 smLpx-5">
-              Flearn may use cookies or similar technologies to remember user preferences, maintain login sessions, and analyze site performance. 
-              You can control or disable cookies through your browser settings, though some features may not work properly without them.
+            <p className="px-5 sm:px-5">
+              Flearn may use cookies or similar technologies to remember user preferences, maintain login sessions, and analyze site performance.<br></br> 
+              You can control or disable cookies through your browser settings, though some features may not work properly without them.<br></br>
             </p>
           </div>
 
