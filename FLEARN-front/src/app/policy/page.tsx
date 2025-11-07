@@ -40,7 +40,7 @@ export default function Home() {
 
           <div className="text-base sm:text-lg text-left text-[#454545] py-6 w-full leading-relaxed">
             <b style={{ fontWeight:550 }}>Sharing of Information:</b> <br></br>
-            We respect your privacy and do not sell your personal information to third parties. 
+            We respect your privacy and do not sell your personal information to third parties. <br></br>
             We may share information only under limited circumstances: <br></br>
             <p className="px-5 sm:px-5">
               ■ With trusted service providers who help operate the platform (e.g., hosting, analytics). <br></br>
