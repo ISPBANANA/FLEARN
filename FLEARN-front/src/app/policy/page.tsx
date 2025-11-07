@@ -108,8 +108,8 @@ export default function Home() {
             </p>
           </div>
           
-          <div className="text-lg text-start text-[#454545] mb-4 py-20 w-full">
-              Ispbanana (Flearn Team)<br></br>
+          <div className="text-base sm:text-lg text-left text-[#454545] py-6 w-full leading-relaxed">
+              <b style={{ fontWeight:550 }}>Ispbanana (Flearn Team)</b><br></br>
               ■ Email: ispbanana.contact@gmail.com<br></br>
               ■ Website: hongrocker49.thddns.net:2725<br></br>
           </div>
