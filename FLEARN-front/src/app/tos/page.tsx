@@ -92,7 +92,9 @@ export default function Home() {
 
         {/* no.7 */}
         <div className="text-lg text-start text-[#454545] mb-4 py-2 w-full">
-          7&#41; Subscriptions, payments, and refunds (if applicable):<br></br>
+          <h2 className="text-lg sm:text-xl font-semibold mb-2">
+            7&#41; Subscriptions, payments, and refunds (if applicable):
+          </h2>
             <p className="px-5">
               ■ Some features may require a paid plan. Prices and features are shown at checkout and may change.<br></br>
               ■ Billing is handled by our payment processor; by purchasing, you agree to their terms.<br></br>
