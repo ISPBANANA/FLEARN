@@ -52,11 +52,11 @@ export default function Home() {
         </div>
 
         {/* no.4 */}  
-        <div className="text-lg text-start text-[#454545] mb-4 py-2 w-full">    
+        <div className="text-base sm:text-lg text-left text-[#454545] py-6 w-full leading-relaxed">  
           <h2 className="text-lg sm:text-xl font-semibold mb-2">
             4&#41; License & ownership:
           </h2>    
-            <p className="px-5">
+            <p className="px-5 sm:px-5">
               ■ We grant you a limited, personal, non-transferable, revocable license to use the Service for learning.<br></br>
               ■ All content, software, and materials are owned by us or our licensors and are protected by IP laws.<br></br>
               ■ You may not copy, scrape, sell, reverse-engineer, or create derivative works except as allowed by law or these Terms.<br></br>
