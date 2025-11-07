@@ -76,7 +76,7 @@ export default function Home() {
             </p>
           </div>
 
-          <div className="text-lg text-start text-[#454545] mb-4 py-3 w-full">
+          <div className="text-base sm:text-lg text-left text-[#454545] py-6 w-full leading-relaxed">
             <b style={{ fontWeight:550 }}>Children&rsquo;s Privacy: </b>
             <p className="px-5">
               Flearn is intended for educational use by students. 
