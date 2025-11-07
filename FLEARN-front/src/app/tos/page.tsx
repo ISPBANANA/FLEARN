@@ -207,7 +207,8 @@ export default function Home() {
             16&#41; Termination:
           </h2>
           <p className="px-5 sm:px-5">
-            You may stop using the Service at any time. We may suspend or terminate your account for violations or risks to users or the platform. 
+            You may stop using the Service at any time. <br></br>
+            We may suspend or terminate your account for violations or risks to users or the platform. <br></br>
             Upon termination, your license ends; sections that by nature should survive (e.g., IP, disclaimers, limits, indemnity) will survive.<br></br>
           </p>
         </div>
@@ -218,8 +219,8 @@ export default function Home() {
             17&#41; Governing law & dispute resolution:
           </h2>
             <p className="px-5 smLpx-5">
-              These Terms are governed by the laws of [Jurisdiction], without regard to conflict of law rules. 
-              Disputes will be resolved in the courts of [City/Country] (or by arbitration at [Institution], if you choose to add arbitration). 
+              These Terms are governed by the laws of [Jurisdiction], without regard to conflict of law rules. <br></br>
+              Disputes will be resolved in the courts of [City/Country] (or by arbitration at [Institution], if you choose to add arbitration). <br></br>
               Consumers may also have non-waivable local rights.<br></br>
             </p>
         </div>
@@ -230,9 +231,8 @@ export default function Home() {
             18&#41; Changes to these Terms:
           </h2>
             <p className="px-5 sm:px-5">
-              We may update these Terms. If changes are material, we’ll provide notice (e.g., in-app or email). 
-              We may update these Terms. If changes are material, we&rsquo;ll provide notice (e.g., in-app or email). 
-              Continued use after the effective date means you accept the new Terms.
+              We may update these Terms. If changes are material, we&rsquo;ll provide notice (e.g., in-app or email). <br></br>
+              Continued use after the effective date means you accept the new Terms.<br></br>
             </p>
         </div>
 
@@ -240,7 +240,7 @@ export default function Home() {
         <div className="text-base sm:text-lg text-left text-[#454545] py-6 w-full leading-relaxed">
             Ispbanana (Flearn Team)<br></br>
             ■ Email: ispbanana.contact@gmail.com<br></br>
-            ■ Website: hongrocker49.thddns.net:2725
+            ■ Website: hongrocker49.thddns.net:2725<br></br>
         </div>
         </div>
       </div>
