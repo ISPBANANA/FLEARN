@@ -152,7 +152,9 @@ export default function Home() {
 
         {/* no.12 */}
         <div className="text-lg text-start text-[#454545] mb-4 py-2 w-full">
-          12&#41; DMCA / copyright complaints:<br></br>
+          <h2 className="text-lg sm:text-xl font-semibold mb-2">
+            12&#41; DMCA / copyright complaints:
+          </h2>
             If you believe content infringes your copyright, send a notice to us with: <br></br>
             <p className="px-5">
               (a) Identification of the work.<br></br>
