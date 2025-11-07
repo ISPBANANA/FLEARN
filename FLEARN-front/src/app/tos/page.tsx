@@ -19,9 +19,7 @@ export default function Home() {
             1&#41; Who we are:
           </h2> 
           <p className="px-5 sm:px-5">
-            These Terms of Service (&ldquo;Terms&rdquo;) govern your use of the FLEARN website, mobile apps, and services (collectively, the &ldquo;Service&rdquo;) operated by ISPBanana. 
-          </p>
-          <p className="px-5 sm:px-5">
+            These Terms of Service (&ldquo;Terms&rdquo;) govern your use of the FLEARN website, mobile apps, and services (collectively, the &ldquo;Service&rdquo;) operated by ISPBanana. <br></br>
             By creating an account or using the Service, you agree to these Terms and to our Privacy Policy. If you don&rsquo;t agree, do not use the Service.
           </p>
         </div>
@@ -47,15 +45,17 @@ export default function Home() {
           <h2 className="text-lg sm:text-xl font-semibold mb-2">
             3&#41; Educational purpose (no professional advice):
           </h2>
-            <p className="px-5">
+            <p className="px-5 sm:px-5">
               The Service teaches math, and science for study and practice. <br></br>
               The Service does not provide professional, financial, medical, or legal advice and must not be used for high-stakes decisions or as a substitute for a qualified teacher/tutor.<br></br>
             </p>
         </div>
 
         {/* no.4 */}  
-        <div className="text-lg text-start text-[#454545] mb-4 py-2 w-full">        
-          4&#41; License & ownership:<br></br>
+        <div className="text-lg text-start text-[#454545] mb-4 py-2 w-full">    
+          <h2 className="text-lg sm:text-xl font-semibold mb-2">
+            4&#41; License & ownership:
+          </h2>    
             <p className="px-5">
               ■ We grant you a limited, personal, non-transferable, revocable license to use the Service for learning.<br></br>
               ■ All content, software, and materials are owned by us or our licensors and are protected by IP laws.<br></br>
