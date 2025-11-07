@@ -12,9 +12,10 @@ export default function Home() {
           <p className="text-3xl sm:text-4xl md:text-5xl text-center text-[#9A41FF] font-bold leading-tight">
             Terms of Service
           </p>
-
         <div className="text-base sm:text-lg text-left text-[#454545] py-6 w-full leading-relaxed">
+          <h2 className="text-lg sm:text-xl font-semibold mb-2">
             1&#41; Who we are:
+          </h2> 
           <p className="px-5 sm:px-5">
             These Terms of Service (&ldquo;Terms&rdquo;) govern your use of the FLEARN website, mobile apps, and services (collectively, the &ldquo;Service&rdquo;) operated by ISPBanana. 
           </p>
@@ -24,7 +25,9 @@ export default function Home() {
         </div>
 
         <div className="text-lg text-start text-[#454545] mb-4 w-full">
-            2&#41; Registration: <br></br>
+          <h2 className="text-lg sm:text-xl font-semibold mb-2">
+            2&#41; Registration:
+          </h2>
           <p className="px-5">
             In connection with registering for and using the Service, you agree<br></br>
             (a.) to provide FLearn with accurate, current, and complete information about yourself and/or your organization as requested during the registration process.<br></br>
