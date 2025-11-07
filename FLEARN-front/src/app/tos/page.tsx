@@ -20,7 +20,8 @@ export default function Home() {
           </h2> 
           <p className="px-5 sm:px-5">
             These Terms of Service (&ldquo;Terms&rdquo;) govern your use of the FLEARN website, mobile apps, and services (collectively, the &ldquo;Service&rdquo;) operated by ISPBanana. <br></br>
-            By creating an account or using the Service, you agree to these Terms and to our Privacy Policy. If you don&rsquo;t agree, do not use the Service.
+            By creating an account or using the Service, you agree to these Terms and to our Privacy Policy. <br></br>
+            If you don&rsquo;t agree, do not use the Service.
           </p>
         </div>
 
@@ -70,7 +71,7 @@ export default function Home() {
           </h2>         
           <p className="px-5 sm:px-5">
             If you submit text, answers, notes, images, or feedback (“User Content”), you grant us a worldwide, non-exclusive, 
-            royalty-free license to use, reproduce, modify, and display that content only to operate and improve the Service. 
+            royalty-free license to use, reproduce, modify, and display that content only to operate and improve the service. <br></br>
             You retain ownership of your User Content.<br></br>
           </p>
         </div>
@@ -78,15 +79,17 @@ export default function Home() {
         {/* no.6 */}
         <div className="text-base sm:text-lg text-left text-[#454545] py-6 w-full leading-relaxed">
           <h2 className="text-lg sm:text-xl font-semibold mb-2">
-            6&#41; Acceptable use:<br></br>
+            6&#41; Acceptable use:
           </h2>
-            You agree not to:<br></br>
             <p className="px-5 sm:px-5">
-              ■ Upload malware, spam, or content that is unlawful, infringing, or harassing;<br></br>
-              ■ Attempt to bypass security or copy our databases;<br></br>
-              ■ Use automated tools to excessively query or harvest content;<br></br>
-              ■ Misuse community features (if any). <br></br>
-              ■ We may remove content or suspend accounts that violate these rules.<br></br>
+              You agree not to:<br></br>
+              <p className="px-5 sm:px-5">
+                ■ Upload malware, spam, or content that is unlawful, infringing, or harassing;<br></br>
+                ■ Attempt to bypass security or copy our databases;<br></br>
+                ■ Use automated tools to excessively query or harvest content;<br></br>
+                ■ Misuse community features (if any). <br></br>
+                ■ We may remove content or suspend accounts that violate these rules.<br></br>
+              </p>
             </p>
         </div>
 
@@ -121,8 +124,8 @@ export default function Home() {
             9&#41; Privacy & data:
           </h2>
             <p className="px-5 sm:px-5">
-              We collect only the data needed to run the Service (e.g., account info, device data, learning activity). 
-              See the Privacy Policy for details on what we collect, why, retention, children&rsquo;s data, international transfers, and your rights (access, deletion, objection). 
+              We collect only the data needed to run the Service (e.g., account info, device data, learning activity). <br></br>
+              See the Privacy Policy for details on what we collect, why, retention, children&rsquo;s data, international transfers, and your rights (access, deletion, objection). <br></br>
               We may use de-identified, aggregated learning data for analytics and research.<br></br>
             </p>
         </div>
@@ -133,7 +136,7 @@ export default function Home() {
             10&#41; Third-party links & services:
           </h2>
             <p className="px-5 sm:px-5">
-              The Service may link to third-party websites or use third-party libraries (e.g., analytics, payments). 
+              The Service may link to third-party websites or use third-party libraries (e.g., analytics, payments). <br></br>
               We&rsquo;re not responsible for their content or practices.<br></br>
             </p>
         </div>
@@ -144,8 +147,8 @@ export default function Home() {
             11&#41; Beta features & changes:
           </h2>
             <p className="px-5 sm:px-5">
-              We may test new or experimental features (“Beta”).  
-              Beta is provided as-is and may change or stop at any time. 
+              We may test new or experimental features (“Beta”).  <br></br>
+              Beta is provided as-is and may change or stop at any time. <br></br>
               We may also update lessons (e.g., to fix errors or improve alignment).<br></br>
             </p>
         </div>
