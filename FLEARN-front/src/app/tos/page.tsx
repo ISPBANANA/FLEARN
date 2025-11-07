@@ -12,6 +12,7 @@ export default function Home() {
           <p className="text-3xl sm:text-4xl md:text-5xl text-center text-[#9A41FF] font-bold leading-tight">
             Terms of Service
           </p>
+{/* no.1 */}
         <div className="text-base sm:text-lg text-left text-[#454545] py-6 w-full leading-relaxed">
           <h2 className="text-lg sm:text-xl font-semibold mb-2">
             1&#41; Who we are:
@@ -23,19 +24,22 @@ export default function Home() {
             By creating an account or using the Service, you agree to these Terms and to our Privacy Policy. If you don&rsquo;t agree, do not use the Service.
           </p>
         </div>
-
-        <div className="text-lg text-start text-[#454545] mb-4 w-full">
+{/* no.2 */}
+        <div className="text-base sm:text-lg text-left text-[#454545] py-6 w-full leading-relaxed">
           <h2 className="text-lg sm:text-xl font-semibold mb-2">
             2&#41; Registration:
           </h2>
-          <p className="px-5">
-            In connection with registering for and using the Service, you agree<br></br>
-            (a.) to provide FLearn with accurate, current, and complete information about yourself and/or your organization as requested during the registration process.<br></br>
-            (b.) to maintain the confidentiality of your password and any other information related to the security of your account.<br></br>
-            (c.) to promptly update any registration information you provide to FLearn to ensure that it remains accurate, current, and complete.<br></br>
-            (d.) to accept full responsibility for all usage of your account and for any actions that occur through your account.<br></br>
+          <p className="px-5 sm:px-5">
+            In connection with registering for and using the Service, you agree: <br></br>
+            <p className="px-2 sm:px-5">
+              (a.) To provide FLearn with accurate, current, and complete information about yourself and/or your organization as requested during the registration process.<br></br>          
+              (b.) To maintain the confidentiality of your password and any other information related to the security of your account.<br></br>
+              (c.) To promptly update any registration information you provide to FLearn to ensure that it remains accurate, current, and complete.<br></br>
+              (d.) To accept full responsibility for all usage of your account and for any actions that occur through your account.<br></br>
+            </p>
           </p>
         </div>
+{/* no.3 */}
         <div className="text-lg text-start text-[#454545] mb-4 py-5 w-full">
           3&#41; Educational purpose (no professional advice):<br></br>
             <p className="px-5">
