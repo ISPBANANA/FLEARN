@@ -13,11 +13,13 @@ export default function Home() {
             Privacy Policy
           </p>
 
+      {/* effective date */}
           <div className="text-base sm:text-lg text-left text-[#454545] py-6 w-full leading-relaxed">
             <b style={{ fontWeight:550 }}>Effective Date: </b><br></br>
             <u>September 2025</u>
           </div>
 
+      {/* Introduction */}
           <div className="text-base sm:text-lg text-left text-[#454545] py-6 w-full leading-relaxed">
             <b style={{ fontWeight:550 }}>Introduction: </b>
             <p className="px-5 sm:px-5">
@@ -27,6 +29,7 @@ export default function Home() {
             </p>
           </div>
 
+      {/* Information collected */}
           <div className="text-base sm:text-lg text-left text-[#454545] py-6 w-full leading-relaxed">
             <b style={{ fontWeight:550 }}>Information We Collect: </b>
             <p className="px-5 sm:px-5">
@@ -40,6 +43,7 @@ export default function Home() {
             </p>
           </div>
 
+      {/* Sharing information */}
           <div className="text-base sm:text-lg text-left text-[#454545] py-6 w-full leading-relaxed">
             <b style={{ fontWeight:550 }}>Sharing of Information:</b>
             <p className="px-5 sm:px-5">
@@ -53,6 +57,7 @@ export default function Home() {
             </p>
           </div>
 
+      {/* Data security */}
           <div className="text-base sm:text-lg text-left text-[#454545] py-6 w-full leading-relaxed">
             <b style={{ fontWeight:550 }}>Data Security:</b> 
             <p className="px-5 sm:px-5">
@@ -61,6 +66,7 @@ export default function Home() {
             </p>
           </div>
 
+      {/* Your rights */}
           <div className="text-base sm:text-lg text-left text-[#454545] py-6 w-full leading-relaxed">
             <b style={{ fontWeight:550 }}>Your Rights:</b> 
             <p className="px-5 sm:px-5">
@@ -76,6 +82,7 @@ export default function Home() {
             </p>
           </div>
 
+      {/* Children's privacy */}
           <div className="text-base sm:text-lg text-left text-[#454545] py-6 w-full leading-relaxed">
             <b style={{ fontWeight:550 }}>Children&rsquo;s Privacy: </b>
             <p className="px-5 sm:px-5">
@@ -85,6 +92,7 @@ export default function Home() {
             </p>
           </div>
 
+      {/* Cookies */}
           <div className="text-base sm:text-lg text-left text-[#454545] py-6 w-full leading-relaxed">
             <b style={{ fontWeight:550 }}>Cookies & Tracking: </b>
             <p className="px-5 sm:px-5">
@@ -93,6 +101,7 @@ export default function Home() {
             </p>
           </div>
 
+      {/* Changes to policy */}
           <div className="text-base sm:text-lg text-left text-[#454545] py-6 w-full leading-relaxed">
             <b style={{ fontWeight:550 }}>Changes to Policy:</b> 
             <p className="px-5 sm:px-5">
@@ -101,18 +110,21 @@ export default function Home() {
             </p>
           </div>
 
+      {/* Contact us */}
           <div className="text-base sm:text-lg text-left text-[#454545] py-6 w-full leading-relaxed">
             <b style={{ fontWeight:550 }}>Contact Us: </b>
             <p className="px-5 sm:px-5">
               If you have any questions, concerns, or requests regarding this Privacy Policy, please reach out to us:
             </p>
           </div>
-          
+      
+      {/* Ispbananateam */}
           <div className="text-base sm:text-lg text-left text-[#454545] py-6 w-full leading-relaxed">
               <b style={{ fontWeight:550 }}>Ispbanana (Flearn Team)</b><br></br>
               ■ Email: ispbanana.contact@gmail.com<br></br>
               ■ Website: hongrocker49.thddns.net:2725<br></br>
           </div>
+
         </div>
       </div>
       <Footer />
