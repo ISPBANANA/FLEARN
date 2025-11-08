@@ -343,7 +343,7 @@ export default function ProfilePage({ params }: ProfilePageProps) {
                             setTempProfilePicture(''); // Reset temporary profile picture
                             setShowEditPopup(true);
                           }}
-                          className="text-purple-600 hover:text-purple-800 text-sm mt-1 sm:mt-0"
+                          className="cursor-pointer text-purple-600 hover:text-purple-800 text-sm mt-1 sm:mt-0"
                         >
                           <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
@@ -367,7 +367,7 @@ export default function ProfilePage({ params }: ProfilePageProps) {
                     </h2>
                     {isOwnProfile && (
                       <Link href="/search">
-                        <button className="text-purple-600 hover:text-purple-800 text-sm flex items-center gap-1">
+                        <button className="cursor-pointer text-purple-600 hover:text-purple-800 text-sm flex items-center gap-1">
                           Add Friend
                           <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
@@ -563,7 +563,7 @@ export default function ProfilePage({ params }: ProfilePageProps) {
                     {isOwnProfile && (
                       <>
                         <Link href="/search">
-                          <button className="w-full bg-purple-50 text-purple-600 py-3 px-4 rounded border border-purple-200 hover:bg-purple-100 transition-colors flex items-center justify-center gap-2 text-sm font-medium">
+                          <button className="cursor-pointer w-full bg-purple-50 text-purple-600 py-3 px-4 rounded border border-purple-200 hover:bg-purple-100 transition-colors flex items-center justify-center gap-2 text-sm font-medium">
                             <Users size={18} />
                             Find Friend
                             <svg className="w-4 h-4 ml-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -572,7 +572,7 @@ export default function ProfilePage({ params }: ProfilePageProps) {
                           </button>
                         </Link>
                         <Link href={`${pathname}/dashboard`}>
-                          <button className="w-full bg-purple-50 text-purple-600 py-3 px-4 rounded border border-purple-200 hover:bg-purple-100 transition-colors flex items-center justify-center gap-2 text-sm font-medium">
+                          <button className="cursor-pointer w-full bg-purple-50 text-purple-600 py-3 px-4 rounded border border-purple-200 hover:bg-purple-100 transition-colors flex items-center justify-center gap-2 text-sm font-medium">
                             <LayoutDashboard size={18} />
                             Learning Dashboard
                             <svg className="w-4 h-4 ml-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -584,7 +584,7 @@ export default function ProfilePage({ params }: ProfilePageProps) {
                     )}
 
                     <Link href={`${pathname}/garden`}>
-                      <button className="w-full bg-green-50 text-green-600 py-3 px-4 rounded border border-green-200 hover:bg-green-100 transition-colors flex items-center justify-center gap-2 text-sm font-medium">
+                      <button className="cursor-pointer w-full bg-green-50 text-green-600 py-3 px-4 rounded border border-green-200 hover:bg-green-100 transition-colors flex items-center justify-center gap-2 text-sm font-medium">
                         <TreePine size={18} />
                         Garden
                         <svg className="w-4 h-4 ml-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -598,7 +598,7 @@ export default function ProfilePage({ params }: ProfilePageProps) {
                 {/* Logout/Profile and Learn Buttons Section - div7 */}
                 <div className="py-4 flex gap-4 flex-col sm:flex-row justify-between lg:col-start-1 lg:col-end-6 lg:row-start-5 lg:row-end-6">
                   {isOwnProfile ? (
-                    <button type="button" onClick={handleLogout} className={`bg-[#ffffff] text-red-500 border border-red-500 hover:text-red-600 hover:border-red-600 py-2 px-4 w-full rounded transition h-10`}>
+                    <button type="button" onClick={handleLogout} className={`cursor-pointer bg-[#ffffff] text-red-500 border border-red-500 hover:text-red-600 hover:border-red-600 py-2 px-4 w-full rounded transition h-10`}>
                     Logout
                   </button>
                   ) : (
@@ -610,7 +610,7 @@ export default function ProfilePage({ params }: ProfilePageProps) {
                     </button>
                   )}
                   <Link href="/learn" className="w-full">
-                    <button className={`bg-purple-500 text-white hover:text-white hover:bg-purple-600 py-2 px-4 w-full rounded transition h-10`}>
+                    <button className={`cursor-pointer bg-purple-500 text-white hover:text-white hover:bg-purple-600 py-2 px-4 w-full rounded transition h-10`}>
                       Learn
                     </button>
                   </Link>
@@ -658,7 +658,7 @@ export default function ProfilePage({ params }: ProfilePageProps) {
                 <button 
                   onClick={() => document.getElementById('profile-pic-upload')?.click()}
                   disabled={isSaving}
-                  className="text-purple-600 hover:text-purple-800 font-medium flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed text-sm sm:text-base"
+                  className="cursor-pointer text-purple-600 hover:text-purple-800 font-medium flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed text-sm sm:text-base"
                 >
                   Upload file
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -694,14 +694,14 @@ export default function ProfilePage({ params }: ProfilePageProps) {
                     setTempProfilePicture('');
                   }}
                   disabled={isSaving}
-                  className="w-full py-2 sm:py-3 px-4 sm:px-6 border border-red-500 text-red-500 rounded-lg hover:bg-red-50 transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed text-sm sm:text-base"
+                  className="cursor-pointer w-full py-2 sm:py-3 px-4 sm:px-6 border border-red-500 text-red-500 rounded-lg hover:bg-red-50 transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed text-sm sm:text-base"
                 >
                   Cancel
                 </button>
                 <button
                   onClick={handleSaveProfile}
                   disabled={isSaving}
-                  className="w-full py-2 sm:py-3 px-4 sm:px-6 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 text-sm sm:text-base"
+                  className="cursor-pointer w-full py-2 sm:py-3 px-4 sm:px-6 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 text-sm sm:text-base"
                 >
                   {isSaving ? (
                     <>
