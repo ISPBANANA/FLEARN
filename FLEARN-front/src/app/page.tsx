@@ -149,7 +149,7 @@ export default function Home() {
         </div>
         {/* Part 2 */}
         <div className="w-full max-w-[1420px] items-center flex flex-col md:flex-row px-2 sm:px-6 py-8 mb-12">
-          <div className="w-full flex flex-col items-center md:items-start md:w-1/2 mb-6 md:mb-0">
+          <div className="w-full flex flex-col items-center md:items-start md:w-1/2">
             <SplitText
               text="Value Proposition"
               className="text-5xl text-center md:text-left text-[#9A41FF] font-bold mb-4 min-w-[340px]"
@@ -182,7 +182,7 @@ export default function Home() {
                 height={260}
                 width={300}
                 style={{ objectFit: 'cover' }}
-                className="rounded-2xl drop-shadow-lg w-[180px] sm:w-[260px] md:w-[300px] h-[180px] sm:h-[260px] md:h-[300px] mb-4 md:mb-0"
+                className="rounded-2xl drop-shadow-lg w-[180px] sm:w-[260px] md:w-[300px] h-[180px] sm:h-[260px] md:h-[300px]"
               />
           </div>
         </div>
