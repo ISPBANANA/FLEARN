@@ -54,8 +54,8 @@ export default function Home() {
             >
               <FadeContent blur={true} duration={1000} easing="ease-out" initialOpacity={0}>
                   <button
-                    className="bg-purple-400 text-white py-3 px-4 w-full max-w-xs rounded hover:bg-purple-500 transition font-semibold flex items-center justify-center group"
-                    style={{ position: 'relative', overflow: 'hidden', minWidth: '180px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                    className="bg-purple-400 text-white py-4 px-12 w-full max-w-[500px] rounded hover:bg-purple-500 transition font-semibold flex items-center justify-center group"
+                    style={{ position: 'relative', overflow: 'hidden', minWidth: '220px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
                   >
                     <p className="text-lg sm:text-xl md:text-2xl text-center w-full">{isAuthenticated && profile?.user_id ? "Go to Profile" : "Let's get started"}</p>
                   </button>
