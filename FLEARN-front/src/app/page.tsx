@@ -30,7 +30,7 @@ export default function Home() {
       <div className="w-full flex flex-col-reverse md:flex-row items-center justify-center z-0 min-h-[calc(100vh-64px)]">
         {/* Left Part */}
         <div className="w-full max-w-[1620px] flex flex-col md:flex-row items-center justify-between p-4 sm:p-8">
-          <div className="flex justify-center items-center w-full md:w-1/2 mb-8 md:mb-0 -ml-6 md:-ml-12">
+          <div className="flex justify-center items-center w-full md:w-1/2 mb-8 md:mb-0">
             <FadeContent blur={false} duration={200} easing="ease-out" initialOpacity={0}>
               <Image
                 src="/landing/hero.png"
@@ -77,32 +77,7 @@ export default function Home() {
                     <p className="text-2xl">
                       {isAuthenticated && profile?.user_id ? "Go to Profile" : "Let's get started"}
                     </p>
-                    <style jsx>{`
-                      button.group {
-                        position: relative;
-                      }
-                      button.group .text-2xl {
-                        transition: transform 0.4s cubic-bezier(0.77,0,0.175,1), text-align 0.1s;
-                        text-align: left;
-                        width: 100%;
-                        display: block;
-                        position: relative;
-                        left: 0;
-                      }
-                      button.group:hover .text-2xl {
-                        transform: translateX(16px);
-                        text-align: left;
-                      }
-                      button.group span > :global(img) {
-                        opacity: 0;
-                        transform: translateX(-20px);
-                        transition: transform 0.4s cubic-bezier(0.77,0,0.175,1), opacity 0.3s;
-                      }
-                      button.group:hover span > :global(img) {
-                        opacity: 1 !important;
-                        transform: translateX(0) !important;
-                      }
-                    `}</style>
+                    
                   </button>
               </FadeContent>
             </Link>
@@ -110,15 +85,13 @@ export default function Home() {
           </div>
         </div>
       </div>
-
-      {/* Information Section */}
-      <div className="p-2 sm:p-4 h-auto w-full flex items-center z-1 bg-white flex-col" style={{ boxShadow: '0px -4px 4px rgba(0, 0, 0, 0.25)' }}>
+      {/* Infomation here */}
+      <div className="p-4 h-auto w-full flex items-center z-1 bg-white flex-col" style={{ boxShadow: '0px -4px 4px rgba(0, 0, 0, 0.25)' }}>\
         {/* Part 1 */}
-        <br />
         <div className="w-full max-w-[1420px] items-center flex flex-col px-2 sm:px-6 py-8">
           <SplitText
             text="Fun Learning!"
-            className="text-3xl sm:text-5xl text-center text-[#9A41FF] font-bold mb-8 min-w-[200px] sm:min-w-[340px]"
+            className="text-5xl text-center text-[#9A41FF] font-bold mb-4 min-w-[340px]"
             delay={50}
             duration={0.6}
             ease="power3.out"
@@ -130,7 +103,7 @@ export default function Home() {
           />
           <SplitText
             text="Our platform turns school subjects into fun, game-like lessons with streaks, rewards, and challenges that keep you motivated."
-            className="text-base sm:text-lg text-center text-[#454545] mb-4 py-1 w-full sm:w-2/5 min-w-[180px] sm:min-w-[300px]"
+            className="text-lg text-center text-[#454545] mb-4 py-1 w-2/5 min-w-[300px]"
             delay={5}
             duration={0.1}
             ease="power3.out"
@@ -143,10 +116,10 @@ export default function Home() {
           <Image
             src="/landing/main1.png"
             alt="Fun Learning"
-            height={160}
-            width={160}
-            className="mb-4 py-1 rounded-full drop-shadow-lg w-[120px] sm:w-[200px]"
-          />
+            height={200}
+            width={200}
+            className="mb-4 py-1 rounded-full drop-shadow-lg"
+            />
         </div>
         {/* Part 2 */}
         <div className="w-full max-w-[1420px] items-center flex flex-col md:flex-row px-2 sm:px-6 py-4 justify-between">
