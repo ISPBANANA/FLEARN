@@ -442,7 +442,7 @@ export default function Home() {
                           e.stopPropagation();
                           handleAcceptRequest(req);
                         }}
-                        className="px-4 py-1 text-sm rounded-full bg-green-500 text-white hover:bg-green-600 transition-colors"
+                        className="cursor-pointer px-4 py-1 text-sm rounded-full bg-green-500 text-white hover:bg-green-600 transition-colors"
                       >
                         Accept
                       </button>
@@ -451,7 +451,7 @@ export default function Home() {
                           e.stopPropagation();
                           handleRejectRequest(req);
                         }}
-                        className="px-4 py-1 text-sm rounded-full bg-red-500 text-white hover:bg-red-600 transition-colors"
+                        className="cursor-pointer px-4 py-1 text-sm rounded-full bg-red-500 text-white hover:bg-red-600 transition-colors"
                       >
                         Reject
                       </button>
