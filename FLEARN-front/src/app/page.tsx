@@ -77,7 +77,32 @@ export default function Home() {
                     <p className="text-2xl">
                       {isAuthenticated && profile?.user_id ? "Go to Profile" : "Let's get started"}
                     </p>
-                    
+                    <style jsx>{`
+                      button.group {
+                        position: relative;
+                      }
+                      button.group .text-2xl {
+                        transition: transform 0.4s cubic-bezier(0.77,0,0.175,1), text-align 0.1s;
+                        text-align: left;
+                        width: 100%;
+                        display: block;
+                        position: relative;
+                        left: 0;
+                      }
+                      button.group:hover .text-2xl {
+                        transform: translateX(16px);
+                        text-align: left;
+                      }
+                      button.group span > :global(img) {
+                        opacity: 0;
+                        transform: translateX(-20px);
+                        transition: transform 0.4s cubic-bezier(0.77,0,0.175,1), opacity 0.3s;
+                      }
+                      button.group:hover span > :global(img) {
+                        opacity: 1 !important;
+                        transform: translateX(0) !important;
+                      }
+                    `}</style>
                   </button>
               </FadeContent>
             </Link>
@@ -85,6 +110,7 @@ export default function Home() {
           </div>
         </div>
       </div>
+      
       {/* Infomation here */}
       <div className="p-4 h-auto w-full flex items-center z-1 bg-white flex-col" style={{ boxShadow: '0px -4px 4px rgba(0, 0, 0, 0.25)' }}>\
         {/* Part 1 */}
