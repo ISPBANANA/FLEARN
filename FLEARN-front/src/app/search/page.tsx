@@ -263,7 +263,7 @@ export default function Home() {
           <div className="w-full max-w-6xl mt-8">
             <button
               onClick={() => router.push(`/profile/${currentUserProfile?.user_id}` || '/')}
-              className="flex items-center gap-2 mb-4 text-gray-600 hover:text-purple-600 transition-colors"
+              className="cursor-pointer flex items-center gap-2 mb-4 text-gray-600 hover:text-purple-600 transition-colors"
             >
               <svg
                 className="w-5 h-5"
@@ -330,8 +330,8 @@ export default function Home() {
                 }}
                 className={`px-8 py-1 bg-white rounded-xl transition-colors shadow-md ${
                   !showRequests 
-                    ? "text-purple-500 border border-purple-500 hover:border-purple-600 hover:text-purple-600" 
-                    : "text-[#454545] border border-[#454545] hover:border-gray-600 hover:text-gray-600"
+                    ? "cursor-pointer text-purple-500 border border-purple-500 hover:border-purple-600 hover:text-purple-600" 
+                    : "cursor-pointer text-[#454545] border border-[#454545] hover:border-gray-600 hover:text-gray-600"
                 }`}
               >
                 {!searchTerm.trim() ? 'All Users' : 'Search'}
@@ -340,8 +340,8 @@ export default function Home() {
                 onClick={handleShowRequests}
                 className={`px-8 py-1 bg-white rounded-xl transition-colors shadow-md ${
                   showRequests 
-                    ? "text-purple-500 border border-purple-500 hover:border-purple-600 hover:text-purple-600" 
-                    : "text-[#454545] border border-[#454545] hover:border-gray-600 hover:text-gray-600"
+                    ? "cursor-pointer text-purple-500 border border-purple-500 hover:border-purple-600 hover:text-purple-600" 
+                    : "cursor-pointer text-[#454545] border border-[#454545] hover:border-gray-600 hover:text-gray-600"
                 }`}
               >
                 Request
@@ -396,7 +396,7 @@ export default function Home() {
                             ? "bg-yellow-100 text-yellow-700 border border-yellow-300"
                             : user.friendship_status === "accepted"
                             ? "bg-green-100 text-green-700 border border-green-300"
-                            : "bg-white text-[#454545] border border-[#454545] hover:border-purple-400 hover:text-purple-500"
+                            : "cursor-pointer bg-white text-[#454545] border border-[#454545] hover:border-purple-400 hover:text-purple-500"
                         } transition-colors`}
                         disabled={user.friendship_status === "pending" || user.friendship_status === "accepted"}
                       >
