@@ -271,7 +271,7 @@ export default function garden({ params }: ProfilePageProps) {
           <div className="w-full max-w-6xl mx-auto mb-4 sm:mb-6">
             <button
               onClick={() => profileData?.user_id && router.push(`/profile/${profileData.user_id}`)}
-              className="flex items-center gap-2 text-gray-600 hover:text-purple-600 transition-colors text-sm sm:text-base"
+              className="cursor-pointer flex items-center gap-2 text-gray-600 hover:text-purple-600 transition-colors text-sm sm:text-base"
             >
               <svg
                 className="w-4 h-4 sm:w-5 sm:h-5"
