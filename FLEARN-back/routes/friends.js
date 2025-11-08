@@ -135,25 +135,14 @@ router.get('/user/:userId', checkJwt, async (req, res) => {
             ORDER BY f.updated_at DESC
         `;
 
-        router.get('/', checkJwt, async (req, res) => {
-    try {
-        const userId = await ensureUserFromReq(req, res);
-        if (!userId) return;
-
-        const query = `
-            ${FRIEND_SELECT}
-            WHERE (f.user1_id = $1 OR f.user2_id = $1)
-            ORDER BY f.updated_at DESC
-        `;
-
-        const result = await pgPool.query(query, [userId]);
+  const result = await pgPool.query(query, [userId]);
 
         res.json({
             message: 'Friends retrieved successfully',
             friends: result.rows,
         });
     } catch (error) {
-        console.error('Error fetching friends:', error);
+        console.error('Error fetching friends for user:', error);
         res.status(500).json({
             error: 'Internal server error',
             message: 'Failed to fetch friends',
