@@ -74,9 +74,35 @@ router.get('/', async (req, res) => {
 // Usage Example:
 // GET /api/topics/subject/1
 // ============================================
+
+
+// ---------- routes --------------------------------------------------
+
+// GET /api/topics - Get all topics (with filters)
+router.get('/', async (req, res) => {
+    try {
+        const topics = await Topic.getAll(req.query);
+
+        res.json({
+            success: true,
+            data: topics,
+            count: topics.length
+        });
+
+    } catch (error) {
+        console.error('Error getting topics:', error);
+        res.status(500).json({
+            success: false,
+            error: error.message
+        });
+    }
+});
+
+// GET /api/topics/subject/:subject_id - Get topics by subject
 router.get('/subject/:subject_id', async (req, res) => {
     try {
-        const topics = await Topic.getBySubject(req.params.subject_id);
+                const { subject_id } = req.params;
+        const topics = await Topic.getBySubject(subject_id);
         
         res.json({
             success: true,
