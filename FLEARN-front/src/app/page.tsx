@@ -148,8 +148,8 @@ export default function Home() {
             />
         </div>
         {/* Part 2 */}
-        <div className="w-full max-w-[1420px] items-center flex flex-col md:flex-row px-2 sm:px-6 py-4 justify-between">
-          <div className="w-full md:w-1/2 items-start flex flex-col mb-6 md:mb-0">
+        <div className="w-full max-w-[1420px] items-center flex flex-col md:flex-row px-2 sm:px-6 py-8">
+          <div className="w-full flex flex-col items-center md:items-start md:w-1/2 mb-6 md:mb-0">
             <SplitText
               text="Value Proposition"
               className="text-3xl sm:text-5xl text-center md:text-left text-[#9A41FF] font-bold mb-4 min-w-[200px] sm:min-w-[340px]"
@@ -160,11 +160,11 @@ export default function Home() {
               from={{ opacity: 0, y: 40 }}
               to={{ opacity: 1, y: 0 }}
               threshold={0.1}
-              textAlign="left"
+              textAlign="center"
             />
             <SplitText
               text="Transform studying into a fun, game-like experience that helps students build confidence and understanding step by step. With interactive quizzes, progress tracking, and daily streaks, we make learning simple, motivating, and accessible anytime, anywhere!"
-              className="text-base sm:text-lg text-left text-[#454545] mb-4 py-1 w-full sm:w-4/5 min-w-[180px] sm:min-w-[300px]"
+              className="text-lg text-center md:text-left text-[#454545] mb-4 py-1 w-2/5 min-w-[300px] md:w-4/5 md:min-w-[300px]"
               delay={5}
               duration={0.1}
               ease="power3.out"
@@ -172,7 +172,7 @@ export default function Home() {
               from={{ opacity: 0, y: 40 }}
               to={{ opacity: 1, y: 0 }}
               threshold={0.1}
-              textAlign="left"
+              textAlign="center"
             />
           </div>
           <div className="flex justify-center items-center w-full md:w-1/2">
@@ -182,7 +182,7 @@ export default function Home() {
                 height={200}
                 width={200}
                 style={{ objectFit: 'contain' }}
-                className="rounded-2xl drop-shadow-lg w-[140px] sm:w-[200px] md:w-[300px]"
+                className="rounded-2xl drop-shadow-lg mb-4 md:mb-0"
               />
           </div>
         </div>
