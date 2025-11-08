@@ -126,8 +126,9 @@ router.get('/subject/:subject_id', async (req, res) => {
 // ============================================
 router.get('/:id', async (req, res) => {
     try {
-        const topic = await Topic.getById(req.params.id);
-        
+                const { id } = req.params;
+        const topic = await Topic.getById(id);
+
         if (!topic) {
             return res.status(404).json({ 
                 success: false, 
