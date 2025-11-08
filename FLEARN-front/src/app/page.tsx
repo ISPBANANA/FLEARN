@@ -30,7 +30,7 @@ export default function Home() {
       <div className="w-full flex flex-col-reverse md:flex-row items-center justify-center z-0 min-h-[calc(100vh-64px)]">
         {/* Left Part */}
         <div className="w-full max-w-[1620px] flex flex-col md:flex-row items-center justify-between p-4 sm:p-8">
-          <div className="flex justify-center items-center w-full md:w-1/2 mb-8 md:mb-0">
+          <div className="flex justify-center items-center w-full md:w-1/2 mb-8 md:mb-0 -ml-6 md:-ml-12">
             <FadeContent blur={false} duration={200} easing="ease-out" initialOpacity={0}>
               <Image
                 src="/landing/hero.png"
