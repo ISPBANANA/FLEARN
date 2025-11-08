@@ -54,7 +54,7 @@ export default function Home() {
             >
               <FadeContent blur={true} duration={1000} easing="ease-out" initialOpacity={0}>
                   <button
-                    className="bg-purple-400 text-white py-4 px-4 w-70 rounded hover:bg-purple-500 transition font-semibold flex flex-row items-center justify-center group"
+                    className="cursor-pointer bg-purple-400 text-white py-4 px-4 w-70 rounded hover:bg-purple-500 transition font-semibold flex flex-row items-center justify-center group"
                     style={{ position: 'relative', overflow: 'hidden', minWidth: '220px' }}
                     >
                     <span
