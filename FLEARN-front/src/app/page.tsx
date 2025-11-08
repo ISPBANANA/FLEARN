@@ -112,9 +112,9 @@ export default function Home() {
       </div>
       
       {/* Infomation here */}
-      <div className="p-4 sm:px-12 md:px-24 h-auto w-full flex items-center z-1 bg-white flex-col" style={{ boxShadow: '0px -4px 4px rgba(0, 0, 0, 0.25)' }}>\
+      <div className="pt-24 sm:pt-32 md:pt-40 pb-8 sm:px-12 md:px-24 h-auto w-full flex items-center z-1 bg-white flex-col" style={{ boxShadow: '0px -4px 4px rgba(0, 0, 0, 0.25)' }}>
         {/* Part 1 */}
-        <div className="w-full max-w-[1420px] items-center flex flex-col px-2 sm:px-6 py-8 mb-12">
+        <div className="w-full max-w-[1420px] items-center flex flex-col px-2 sm:px-6 py-8 mb-30">
           <SplitText
             text="Fun Learning!"
             className="text-5xl text-center text-[#9A41FF] font-bold mb-4 min-w-[340px]"
@@ -148,8 +148,8 @@ export default function Home() {
           />
         </div>
         {/* Part 2 */}
-        <div className="w-full max-w-[1420px] items-center flex flex-col md:flex-row px-2 sm:px-6 py-8 mb-12">
-          <div className="w-full flex flex-col items-center md:items-start md:w-1/2">
+        <div className="w-full max-w-[1420px] items-center flex flex-col md:flex-row px-2 sm:px-6 py-8 md:ml-8 lg:ml-20 mb-50">
+          <div className="w-full flex flex-col items-center md:items-start md:w-[50%] mb-8 md:mb-0">
             <SplitText
               text="Value Proposition"
               className="text-5xl text-center md:text-left text-[#9A41FF] font-bold mb-4 min-w-[340px]"
@@ -164,7 +164,7 @@ export default function Home() {
             />
             <SplitText
               text="Transform studying into a fun, game-like experience that helps students build confidence and understanding step by step. With interactive quizzes, progress tracking, and daily streaks, we make learning simple, motivating, and accessible anytime, anywhere!"
-              className="text-lg text-left text-[#454545] mb-4 py-1 w-full md:w-4/5 min-w-[300px]"
+              className="text-lg text-center md:text-left text-[#454545] mb-4 py-1 max-w-[350px] md:max-w-[600px]"
               delay={5}
               duration={0.1}
               ease="power3.out"
@@ -188,7 +188,8 @@ export default function Home() {
         </div>
         
         {/* Part 3 */}
-        <div className="w-full max-w-[1420px] flex flex-col md:flex-row items-center px-2 sm:px-6 py-8">
+        <div className="w-full max-w-[1420px] flex flex-col md:flex-row items-center px-2 sm:px-6 py-8 md:ml-12 lg:ml-24">
+          {/* <div className="w-full flex flex-col items-center md:items-start md:w-[50%] "></div> */}
           <div className="flex justify-center items-center w-full md:w-1/2 order-last md:order-first">
             <Image
               src="/landing/main3.png"
@@ -214,7 +215,7 @@ export default function Home() {
             />
             <SplitText
               text="Out of practice problems? No worries! Access a wide variety of problems from teachers across schools and universities—never run out of challenges again!"
-              className="text-lg text-center md:text-left text-[#454545] mb-8 py-1 w-full md:w-4/5 min-w-[300px]"
+              className="text-lg text-center md:text-left text-[#454545] mb-4 py-1 max-w-[350px] md:max-w-[600px]"
               delay={5}
               duration={0.1}
               ease="power3.out"
