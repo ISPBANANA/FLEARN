@@ -188,7 +188,7 @@ router.get('/:id/statistics', async (req, res) => {
 router.post('/', checkJwt, async (req, res) => {
     try {
         const { subject_id, name, description, status } = req.body;
-        
+
         // Basic validation
         if (!subject_id || !name) {
             return res.status(400).json({
@@ -196,30 +196,19 @@ router.post('/', checkJwt, async (req, res) => {
                 error: 'Missing required fields: subject_id, name'
             });
         }
-        
-        // Validate status if provided
+
+        // Validate status if provided (keep same semantics)
         if (status && !['private', 'public'].includes(status)) {
             return res.status(400).json({
                 success: false,
                 error: 'Status must be either "private" or "public"'
             });
         }
-        
+
         // Get user_id from google_id
-        const googleId = req.user.sub || req.user.id;
-        const { pgPool } = require('../config/database');
-        const userQuery = 'SELECT user_id FROM "user" WHERE google_id = $1';
-        const userResult = await pgPool.query(userQuery, [googleId]);
-        
-        if (userResult.rows.length === 0) {
-            return res.status(404).json({
-                success: false,
-                error: 'User not found'
-            });
-        }
-        
-        const userId = userResult.rows[0].user_id;
-        
+        const userId = await ensureUserFromReq(req, res);
+        if (!userId) return; // response already sent
+
         const topic = await Topic.create({
             subject_id,
             name,
@@ -227,27 +216,27 @@ router.post('/', checkJwt, async (req, res) => {
             status,
             created_by: userId
         });
-        
+
         res.status(201).json({
             success: true,
             data: topic,
             message: 'Topic created successfully'
         });
-        
+
     } catch (error) {
         console.error('Error creating topic:', error);
-        
+
         // Handle unique constraint violation
         if (error.code === '23505') {
-            return res.status(400).json({ 
-                success: false, 
-                error: 'A topic with this name already exists for this subject' 
+            return res.status(400).json({
+                success: false,
+                error: 'A topic with this name already exists for this subject'
             });
         }
-        
-        res.status(400).json({ 
-            success: false, 
-            error: error.message 
+
+        res.status(400).json({
+            success: false,
+            error: error.message
         });
     }
 });
