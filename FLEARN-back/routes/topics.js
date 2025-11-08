@@ -297,8 +297,9 @@ router.put('/:id', checkJwt, async (req, res) => {
 // ============================================
 router.delete('/:id', checkJwt, async (req, res) => {
     try {
-        const deleted = await Topic.delete(req.params.id);
-        
+        const { id } = req.params;
+        const deleted = await Topic.delete(id);
+
         if (!deleted) {
             return res.status(404).json({
                 success: false,
