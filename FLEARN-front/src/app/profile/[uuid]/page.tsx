@@ -604,7 +604,7 @@ export default function ProfilePage({ params }: ProfilePageProps) {
                   ) : (
                     <button
                       onClick={() => profile?.user_id && router.push(`/profile/${profile.user_id}`)}
-                      className={`bg-[#ffffff] text-red-500 border border-red-500 hover:text-red-600 hover:border-red-600 py-2 px-4 w-full rounded transition h-10`}
+                      className={`cursor-pointer bg-[#ffffff] text-red-500 border border-red-500 hover:text-red-600 hover:border-red-600 py-2 px-4 w-full rounded transition h-10`}
                     >
                       To Profile
                     </button>

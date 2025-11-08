@@ -327,8 +327,8 @@ export default function Home() {
                       onClick={() => handleSubjectClick(s)}
                       className={`w-full flex items-center justify-between px-3 py-3 lg:py-2 rounded-xl transition-all duration-200 focus:outline-none ${
                         active
-                          ? "bg-purple-600 text-white shadow hover:bg-purple-700"
-                          : "bg-white text-gray-700 border border-gray-200 hover:border-purple-400 hover:shadow-md hover:scale-105"
+                          ? "cursor-pointer bg-purple-600 text-white shadow hover:bg-purple-700"
+                          : "cursor-pointer bg-white text-gray-700 border border-gray-200 hover:border-purple-400 hover:shadow-md hover:scale-105"
                       }`}
                     >
                       <div className="flex items-center gap-3">
@@ -349,7 +349,7 @@ export default function Home() {
             {/* Return to Profile button */}
             <div className="mt-4 pt-4 border-t border-gray-200">
               <Link href={`/profile/${currentUserId}`}>
-                <button className="w-full flex items-center gap-2 text-gray-600 hover:text-purple-600 transition-colors px-3 py-2">
+                <button className="cursor-pointer w-full flex items-center gap-2 text-gray-600 hover:text-purple-600 transition-colors px-3 py-2">
                   <ArrowLeft size={20} />
                   <span>Return to Profile</span>
                 </button>
