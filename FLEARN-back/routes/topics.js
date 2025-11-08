@@ -254,7 +254,8 @@ router.post('/', checkJwt, async (req, res) => {
 // ============================================
 router.put('/:id', checkJwt, async (req, res) => {
     try {
-        const updated = await Topic.update(req.params.id, req.body);
+                const { id } = req.params;
+        const updated = await Topic.update(id, req.body);
         
         if (!updated) {
             return res.status(404).json({
