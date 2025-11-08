@@ -264,17 +264,17 @@ export default function garden({ params }: ProfilePageProps) {
 
   return (
     <ProtectedRoute redirectTo="/">
-      <div className="min-h-screen bg-white">
+      <div className="min-h-screen bg-white flex flex-col">
         <Nav />
         {/* Infomation here */}
-        <div className="my-2 p-4 h-auto w-full flex items-center justify-center align-center z-1 bg-white flex-col min-h-screen">
-          <div className="w-full max-w-6xl mt-8">
+        <div className="flex-1 px-4 py-6 sm:py-8 lg:py-10 w-full bg-white overflow-y-auto">
+          <div className="w-full max-w-6xl mx-auto mb-4 sm:mb-6">
             <button
               onClick={() => profileData?.user_id && router.push(`/profile/${profileData.user_id}`)}
-              className="flex items-center gap-2 mb-4 text-gray-600 hover:text-purple-600 transition-colors"
+              className="flex items-center gap-2 text-gray-600 hover:text-purple-600 transition-colors text-sm sm:text-base"
             >
               <svg
-                className="w-5 h-5"
+                className="w-4 h-4 sm:w-5 sm:h-5"
                 fill="none"
                 stroke="currentColor"
                 viewBox="0 0 24 24"
@@ -289,172 +289,176 @@ export default function garden({ params }: ProfilePageProps) {
               Return to Profile
             </button>
           </div>
-          <div className="w-full max-w-[1620px] items-center flex flex-col px-25 py-2">
-            <p className="text-5xl font-bold mb-4 text-[#9A41FF] text-center w-full">{profileData?.name}&rsquo;s Garden</p>
+          <div className="w-full max-w-7xl mx-auto items-center flex flex-col">
+            <h1 className="text-2xl sm:text-3xl lg:text-4xl xl:text-5xl font-bold mb-6 sm:mb-8 lg:mb-10 text-[#9A41FF] text-center w-full px-2">{profileData?.name}&rsquo;s Garden</h1>
 
             {/* Error and Loading States */}
             {gardenError && (
-              <div className="w-full max-w-6xl mb-4 text-center">
-                <p className="text-red-500">{gardenError}</p>
+              <div className="w-full max-w-6xl mb-4 sm:mb-6 text-center px-4">
+                <p className="text-red-500 text-sm sm:text-base">{gardenError}</p>
               </div>
             )}
 
             {gardenLoading && (
-              <div className="w-full max-w-6xl mb-4 text-center">
-                <p className="text-gray-600">Loading gardens...</p>
+              <div className="w-full max-w-6xl mb-4 sm:mb-6 text-center px-4">
+                <p className="text-gray-600 text-sm sm:text-base">Loading gardens...</p>
               </div>
             )}
 
             {/* Garden List */}
-            <ul className="h-4/5 min-h-[calc(75vh)] flex flex-row flex-wrap justify-center gap-6 w-full max-w-[1420px] px-24 py-4 place-items-start auto-rows-max">
-              {/* Pending Garden Invitations (only show to owner) */}
-              {isOwner && pendingInvitations.map((invitation) => (
-                <li key={`pending-${invitation.row_id}`} className="w-full max-w-[300px] min-w-[300px] min-h-[370px] rounded-lg flex flex-col gap-4 items-center p-5 justify-between border border-yellow-400 bg-yellow-50" style={{boxShadow: '0px 0px 5px rgba(0, 0, 0, 0.25)' }}>
-                  <p className="text-2xl font-semibold mb-4 text-center text-[#454545]">{invitation.partner_name}</p>
-                  <div className="flex flex-col items-center gap-2">
-                    <div className="text-center text-yellow-600 font-medium mb-2">
-                      <p>Invitation Received</p>
+            <div className="w-full px-2 sm:px-4 lg:px-6">
+              <ul className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-5 lg:gap-6 max-w-7xl mx-auto justify-items-center">
+                {/* Pending Garden Invitations (only show to owner) */}
+                {isOwner && pendingInvitations.map((invitation) => (
+                  <li key={`pending-${invitation.row_id}`} className="w-full max-w-[320px] sm:max-w-none min-h-[360px] rounded-lg flex flex-col gap-3 items-center p-5 sm:p-6 justify-between border-2 border-yellow-400 bg-yellow-50 shadow-md hover:shadow-lg transition-shadow">
+                    <h3 className="text-xl sm:text-2xl font-semibold text-center text-[#454545] break-words w-full">{invitation.partner_name}</h3>
+                    <div className="flex flex-col items-center gap-3 flex-1 justify-center">
+                      <div className="text-center text-yellow-600 font-medium">
+                        <p className="text-base sm:text-lg">Invitation Received</p>
+                      </div>
+                      <p className="text-sm sm:text-base text-gray-600 text-center px-2">wants to create a garden with you</p>
                     </div>
-                    <p className="text-sm text-gray-600 text-center">wants to create a garden with you</p>
-                  </div>
-                  <div className="flex gap-2 mt-4">
-                    <button
-                      onClick={() => handleAcceptInvitation(invitation.row_id)}
-                      className="px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors"
-                    >
-                      Accept
-                    </button>
-                    <button
-                      onClick={() => handleRejectInvitation(invitation.row_id)}
-                      className="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors"
-                    >
-                      Reject
-                    </button>
-                  </div>
-                </li>
-              ))}
+                    <div className="flex gap-3 w-full">
+                      <button
+                        onClick={() => handleAcceptInvitation(invitation.row_id)}
+                        className="flex-1 px-4 py-2.5 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors text-sm sm:text-base font-medium"
+                      >
+                        Accept
+                      </button>
+                      <button
+                        onClick={() => handleRejectInvitation(invitation.row_id)}
+                        className="flex-1 px-4 py-2.5 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors text-sm sm:text-base font-medium"
+                      >
+                        Reject
+                      </button>
+                    </div>
+                  </li>
+                ))}
 
-              {/* Sent Garden Invitations (only show to owner) */}
-              {isOwner && sentInvitations.map((invitation) => (
-                <li key={`sent-${invitation.row_id}`} className="w-full max-w-[300px] min-w-[300px] min-h-[370px] rounded-lg flex flex-col gap-4 items-center p-5 justify-between border border-orange-400 bg-orange-50" style={{boxShadow: '0px 0px 5px rgba(0, 0, 0, 0.25)' }}>
-                  <p className="text-2xl font-semibold mb-4 text-center text-[#454545]">{invitation.partner_name}</p>
-                  <div className="flex flex-col items-center gap-2">
-                    <div className="text-center text-orange-600 font-medium mb-2">
-                      <p>Invitation Sent</p>
+                {/* Sent Garden Invitations (only show to owner) */}
+                {isOwner && sentInvitations.map((invitation) => (
+                  <li key={`sent-${invitation.row_id}`} className="w-full max-w-[320px] sm:max-w-none min-h-[360px] rounded-lg flex flex-col gap-3 items-center p-5 sm:p-6 justify-between border-2 border-orange-400 bg-orange-50 shadow-md hover:shadow-lg transition-shadow">
+                    <h3 className="text-xl sm:text-2xl font-semibold text-center text-[#454545] break-words w-full">{invitation.partner_name}</h3>
+                    <div className="flex flex-col items-center gap-3 flex-1 justify-center">
+                      <div className="text-center text-orange-600 font-medium">
+                        <p className="text-base sm:text-lg">Invitation Sent</p>
+                      </div>
+                      <p className="text-sm sm:text-base text-gray-600 text-center px-2">Pending invitation...</p>
                     </div>
-                    <p className="text-sm text-gray-600 text-center">Pending invitation...</p>
-                  </div>
-                  <div className="flex gap-2 mt-4">
-                    <button
-                      onClick={() => handleCancelInvitation(invitation.row_id)}
-                      className="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors"
+                    <div className="flex gap-3 w-full">
+                      <button
+                        onClick={() => handleCancelInvitation(invitation.row_id)}
+                        className="w-full px-4 py-2.5 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors text-sm sm:text-base font-medium"
+                      >
+                        Cancel
+                      </button>
+                    </div>
+                  </li>
+                ))}
+
+                {/* Active Gardens */}
+                {gardens.map((garden) => (
+                  <li key={garden.row_id} className="w-full max-w-[320px] sm:max-w-none min-h-[360px] rounded-lg flex flex-col gap-3 items-center p-5 sm:p-6 justify-between shadow-md hover:shadow-lg transition-shadow bg-white border border-gray-200">
+                    <h3 className="text-xl sm:text-2xl font-semibold text-center text-[#454545] break-words w-full">{garden.partner_name}</h3>
+                    <div className="flex flex-col items-center gap-4 flex-1 justify-center">
+                      <div className="relative w-32 h-32 sm:w-36 sm:h-36 lg:w-40 lg:h-40">
+                        <Image
+                          src={`/garden/tree${Math.min(Math.floor(garden.streak / 30) + 1, 6)}.png`}
+                          alt="Garden Plant"
+                          fill
+                          className="object-contain"
+                        />
+                      </div>
+                      <div className="flex items-center justify-center gap-3 sm:gap-4">
+                        <div className="relative w-8 h-8 sm:w-9 sm:h-9 flex-shrink-0">
+                          <Image
+                            src={(() => {
+                                if (!garden?.uptime_streak) return "/stopSteak.png";
+                                const today = new Date().toDateString();
+                                const streakDate = new Date(garden.uptime_streak).toDateString();
+                                return streakDate === today ? "/onSteak.png" : "/stopSteak.png";
+                              })()}
+                            alt="Streak"
+                            fill
+                            className="object-contain"
+                          />
+                        </div>
+                        <p className="text-base sm:text-lg font-medium text-[#454545]">Streak: {garden.streak}</p>
+                      </div>
+                    </div>
+                  </li>
+                ))}
+
+                {/* Add/Invite/Accept/Request - Only show to owner */}
+                {isOwner && (
+                  <li className="w-full max-w-[320px] sm:max-w-none min-h-[360px] rounded-lg flex flex-col items-center justify-center border-2 border-dashed border-[#9A41FF] shadow-md hover:shadow-lg transition-all hover:border-solid hover:bg-purple-50">
+                    <button 
+                      onClick={() => {
+                        setShowInviteModal(true);
+                        fetchFriends();
+                      }}
+                      className="text-[#454545] cursor-pointer hover:scale-105 transition-transform flex flex-col items-center p-6"
                     >
-                      Cancel
+                      <div className="flex flex-col items-center gap-3">
+                        <UserRoundPlus 
+                          className="w-12 h-12 sm:w-14 sm:h-14 lg:w-16 lg:h-16 text-[#9A41FF]"
+                        />
+                        <p className="text-center text-base sm:text-lg font-medium text-[#454545]">Invite Friend</p>
+                      </div>
                     </button>
-                  </div>
-                </li>
-              ))}
-
-              {/* Active Gardens */}
-              {gardens.map((garden) => (
-                <li key={garden.row_id} className="w-full max-w-[300px] min-w-[300px] min-h-[370px] rounded-lg flex flex-col gap-4 items-center p-5 justify-between" style={{boxShadow: '0px 0px 5px rgba(0, 0, 0, 0.25)' }}>
-                  <p className="text-2xl font-semibold mb-4 text-center text-[#454545]">{garden.partner_name}</p>
-                  <div className="flex flex-col items-center gap-2">
-                    <Image
-                      src={`/garden/tree${Math.min(Math.floor(garden.streak / 30) + 1, 6)}.png`}
-                      alt="Garden Plant"
-                      width={140}
-                      height={140}
-                    />
-                    <div className="items-center align-center justify-center flex flex-row gap-4">
-                      <Image
-                        src={(() => {
-                            if (!garden?.uptime_streak) return "/stopSteak.png";
-                            const today = new Date().toDateString();
-                            const streakDate = new Date(garden.uptime_streak).toDateString();
-                            return streakDate === today ? "/onSteak.png" : "/stopSteak.png";
-                          })()}
-                        alt="Streak"
-                        width={35}
-                        height={35}
-                      />
-                      <p className="text-center text-lg text-[#454545] h-max">Streak: {garden.streak}</p>
-                    </div>
-                  </div>
-                </li>
-              ))}
-
-              {/* Add/Invite/Accept/Request - Only show to owner */}
-              {isOwner && (
-                <li className="w-full max-w-[300px] min-w-[300px] min-h-[370px] rounded-lg flex flex-col gap-4 items-center p-5 justify-center border border-dashed border-2 border-[#9A41FF]">
-                  <button 
-                    onClick={() => {
-                      setShowInviteModal(true);
-                      fetchFriends();
-                    }}
-                    className="text-[#454545] cursor-pointer hover:scale-105 transition flex flex-col items-center"
-                  >
-                    <div className="flex flex-col items-center gap-2">
-                      <UserRoundPlus 
-                        height={50}
-                        width={50}
-                      />
-                      <p className="text-center text-lg text-[#454545] h-max">Invite Friend</p>
-                    </div>
-                  </button>
-                </li>
-              )}
+                  </li>
+                )}
+              </ul>
 
               {/* Show message if no gardens and not owner */}
               {!isOwner && gardens.length === 0 && !gardenLoading && (
-                <div className="w-full text-center py-8">
-                  <p className="text-gray-600 text-lg">No gardens to display</p>
+                <div className="w-full text-center py-12 sm:py-16">
+                  <p className="text-gray-600 text-base sm:text-lg">No gardens to display</p>
                 </div>
               )}
-            </ul>
+            </div>
           </div>
-          <div className="py-5"></div>
         </div>
 
         <Footer />
 
         {/* Garden Invitation Modal */}
         {showInviteModal && (
-          <div className="fixed inset-0 backdrop-blur-sm flex items-center justify-center z-50">
-            <div className="bg-white rounded-lg p-6 w-full max-w-md mx-4 shadow-lg">
-              <div className="flex justify-between items-center mb-4">
-                <h3 className="text-xl font-semibold text-[#454545]">Invite Friend to Garden</h3>
+          <div className="fixed inset-0 backdrop-blur-sm flex items-center justify-center z-50 p-4 overflow-y-auto">
+            <div className="bg-white rounded-xl p-5 sm:p-6 lg:p-8 w-full max-w-sm sm:max-w-md lg:max-w-lg mx-4 shadow-2xl my-auto">
+              <div className="flex justify-between items-center mb-5 sm:mb-6">
+                <h3 className="text-lg sm:text-xl lg:text-2xl font-semibold text-[#454545]">Invite Friend to Garden</h3>
                 <button
                   onClick={() => setShowInviteModal(false)}
-                  className="text-gray-500 hover:text-gray-700"
+                  className="text-gray-500 hover:text-gray-700 transition-colors p-1"
                 >
-                  <X size={24} />
+                  <X size={24} className="w-5 h-5 sm:w-6 sm:h-6" />
                 </button>
               </div>
               
               {friendsLoading ? (
-                <div className="text-center py-4">
-                  <p className="text-gray-600">Loading friends...</p>
+                <div className="text-center py-8 sm:py-10">
+                  <p className="text-gray-600 text-sm sm:text-base">Loading friends...</p>
                 </div>
               ) : friends.length === 0 ? (
-                <div className="text-center py-4">
-                  <p className="text-gray-600">No friends available to invite. Add some friends first!</p>
+                <div className="text-center py-8 sm:py-10">
+                  <p className="text-gray-600 text-sm sm:text-base mb-6">No friends available to invite. Add some friends first!</p>
                   <button
                     onClick={() => {
                       setShowInviteModal(false);
                       router.push('/search');
                     }}
-                    className="mt-2 px-4 py-2 bg-purple-500 text-white rounded-lg hover:bg-purple-600 transition-colors"
+                    className="px-5 sm:px-6 py-2.5 sm:py-3 bg-purple-500 text-white rounded-lg hover:bg-purple-600 transition-colors text-sm sm:text-base font-medium"
                   >
                     Find Friends
                   </button>
                 </div>
               ) : (
-                <div className="max-h-60 overflow-y-auto">
+                <div className="max-h-60 sm:max-h-72 lg:max-h-96 overflow-y-auto rounded-lg border border-gray-200">
                   {friends.map((friend) => (
-                    <div key={friend.friend_user_id} className="flex items-center justify-between p-3 border-b border-gray-200 hover:bg-gray-50">
-                      <div className="flex items-center space-x-3">
-                        <div className="relative w-10 h-10 rounded-full flex-shrink-0 overflow-hidden">
+                    <div key={friend.friend_user_id} className="flex items-center justify-between p-3 sm:p-4 border-b border-gray-200 last:border-b-0 hover:bg-gray-50 transition-colors">
+                      <div className="flex items-center gap-3 min-w-0 flex-1 mr-3">
+                        <div className="relative w-10 h-10 sm:w-12 sm:h-12 rounded-full flex-shrink-0 overflow-hidden bg-gray-200">
                           {friend.friend_profile_pic ? (
                             <Image
                               src={friend.friend_profile_pic}
@@ -466,15 +470,15 @@ export default function garden({ params }: ProfilePageProps) {
                             <div className="w-full h-full bg-gray-200" />
                           )}
                         </div>
-                        <div>
-                          <p className="font-semibold text-xl text-purple-500">{friend.friend_name}</p>
-                          <p className="text-xs text-[#454545]">{friend.friend_user_id}</p>
+                        <div className="min-w-0 flex-1">
+                          <p className="font-semibold text-base sm:text-lg text-purple-500 truncate">{friend.friend_name}</p>
+                          <p className="text-xs sm:text-sm text-[#454545] truncate">{friend.friend_user_id}</p>
                         </div>
                       </div>
                       <button
                         onClick={() => handleSendInvitation(friend.friend_email)}
                         disabled={inviteLoading}
-                        className="px-3 py-1 bg-purple-500 text-white rounded-lg hover:bg-purple-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                        className="px-3 sm:px-4 py-1.5 sm:py-2 bg-purple-500 text-white rounded-lg hover:bg-purple-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed text-sm sm:text-base font-medium flex-shrink-0"
                       >
                         {inviteLoading ? "Inviting..." : "Invite"}
                       </button>
