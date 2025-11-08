@@ -54,26 +54,9 @@ export default function Home() {
             >
               <FadeContent blur={true} duration={1000} easing="ease-out" initialOpacity={0}>
                   <button
-                    className="bg-purple-400 text-white py-3 px-4 w-full max-w-xs rounded hover:bg-purple-500 transition font-semibold flex flex-row items-center justify-center group"
-                    style={{ position: 'relative', overflow: 'hidden', minWidth: '180px' }}
+                    className="bg-purple-400 text-white py-3 px-4 w-full max-w-xs rounded hover:bg-purple-500 transition font-semibold flex items-center justify-center group"
+                    style={{ position: 'relative', overflow: 'hidden', minWidth: '180px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
                   >
-                    <span
-                      className="flex items-center h-full justify-center"
-                      style={{ transition: 'transform 0.4s cubic-bezier(0.77,0,0.175,1), opacity 0.3s', pointerEvents: 'none', marginRight: '8px' }}
-                    >
-                      <Image
-                        src="/landing/google.webp"
-                        alt="Google"
-                        height={28}
-                        width={28}
-                        className="drop-shadow-sm drop-shadow-purple-600"
-                        style={{
-                          opacity: 0,
-                          transform: 'translateX(-20px)',
-                          transition: 'transform 0.4s cubic-bezier(0.77,0,0.175,1), opacity 0.3s',
-                        }}
-                      />
-                    </span>
                     <p className="text-lg sm:text-xl md:text-2xl text-center w-full">{isAuthenticated && profile?.user_id ? "Go to Profile" : "Let's get started"}</p>
                   </button>
               </FadeContent>
