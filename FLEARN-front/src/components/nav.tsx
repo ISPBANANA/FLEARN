@@ -101,7 +101,7 @@ export function Nav() {
                   <li>
                     <button
                       onClick={handleLogout}
-                      className="text-[#9A41FF] opacity-70 hover:opacity-100 duration-200 flex items-center gap-1"
+                      className="cursor-pointer text-[#9A41FF] opacity-70 hover:opacity-100 duration-200 flex items-center gap-1"
                       title="Logout"
                     >
                       <LogOut width={20} height={20} />
