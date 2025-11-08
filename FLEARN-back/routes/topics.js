@@ -157,8 +157,8 @@ router.get('/:id', async (req, res) => {
 // ============================================
 router.get('/:id/statistics', async (req, res) => {
     try {
-        const stats = await Topic.getStatistics(req.params.id);
-        
+        const { id } = req.params;
+        const stats = await Topic.getStatistics(id);
         res.json({
             success: true,
             data: stats
