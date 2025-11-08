@@ -2,7 +2,7 @@ const express = require('express');
 const router = express.Router();
 const Topic = require('../models/Topic');
 const { checkJwt } = require('../middleware/auth');
-
+const { pgPool } = require('../config/database');
 // ============================================
 // GET /api/topics - Get all topics (with filters)
 // Usage Example:
@@ -11,6 +11,45 @@ const { checkJwt } = require('../middleware/auth');
 // GET /api/topics?status=public
 // GET /api/topics?subject_id=1&status=public&limit=10&offset=0
 // ============================================
+
+// ---------- helpers -------------------------------------------------
+
+async function getUserIdFromReq(req) {
+    const googleId = req.user?.sub || req.user?.id;
+
+    if (!googleId) {
+        // caller decides how to respond (usually 401)
+        return null;
+    }
+
+    const userQuery = 'SELECT user_id FROM "user" WHERE google_id = $1';
+    const { rows } = await pgPool.query(userQuery, [googleId]);
+    return rows[0]?.user_id || null;
+}
+
+async function ensureUserFromReq(req, res) {
+    // if checkJwt didn’t attach user correctly, fail early
+    if (!req.user) {
+        res.status(401).json({
+            success: false,
+            error: 'Unauthorized: missing authentication data'
+        });
+        return null;
+    }
+
+    const userId = await getUserIdFromReq(req);
+
+    if (!userId) {
+        res.status(404).json({
+            success: false,
+            error: 'User not found'
+        });
+        return null;
+    }
+
+    return userId;
+}
+
 router.get('/', async (req, res) => {
     try {
         const topics = await Topic.getAll(req.query);
