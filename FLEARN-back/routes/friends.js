@@ -11,50 +11,70 @@ const router = express.Router();
 router.get('/', checkJwt, async (req, res) => {
     try {
         const googleId = req.user.sub || req.user.id;
-        
+
+    if (!googleId) {
+        // Caller should handle 401 response
+        return null;
+    }
+
         // First get user_id from google_id
         const userQuery = `SELECT user_id FROM "user" WHERE google_id = $1`;
-        const userResult = await pgPool.query(userQuery, [googleId]);
-        
-        if (userResult.rows.length === 0) {
-            return res.status(404).json({
-                error: 'User not found',
-                message: 'Please complete your profile setup first'
+        // const userResult = await pgPool.query(userQuery, [googleId]);
+        const { rows } = await pgPool.query(userQuery, [googleId]);
+        return rows[0]?.user_id || null;
+    }
+
+    async function ensureUserFromReq(req, res) {
+    const userId = await getUserIdFromReq(req);
+
+    if (!req.user || !userId) {
+        // If no req.user → unauthorized
+        if (!req.user) {
+            res.status(401).json({
+                error: 'Unauthorized',
+                message: 'Missing or invalid authentication data',
             });
+            return null;
         }
-        
-        const userId = userResult.rows[0].user_id;
-        
-        const query = `
-            SELECT 
-                f.row_id,
-                f.status,
-                f.created_at,
-                f.updated_at,
-                f.user1_id,
-                f.user2_id,
-                CASE 
-                    WHEN f.user1_id = $1 THEN u2.name
-                    ELSE u1.name
-                END as friend_name,
-                CASE 
-                    WHEN f.user1_id = $1 THEN u2.email
-                    ELSE u1.email
-                END as friend_email,
-                CASE 
-                    WHEN f.user1_id = $1 THEN u2.profile_pic
-                    ELSE u1.profile_pic
-                END as friend_profile_pic,
-                CASE 
-                    WHEN f.user1_id = $1 THEN f.user2_id
-                    ELSE f.user1_id
-                END as friend_user_id
-            FROM friend f
-            JOIN "user" u1 ON f.user1_id = u1.user_id
-            JOIN "user" u2 ON f.user2_id = u2.user_id
-            WHERE (f.user1_id = $1 OR f.user2_id = $1)
-            ORDER BY f.updated_at DESC
-        `;
+
+        // If userId not found → same 404 message as before
+        res.status(404).json({
+            error: 'User not found',
+            message: 'Please complete your profile setup first',
+        });
+        return null;
+    }
+
+    return userId;
+}
+const FRIEND_SELECT = `
+    SELECT 
+        f.row_id,
+        f.status,
+        f.created_at,
+        f.updated_at,
+        f.user1_id,
+        f.user2_id,
+        CASE 
+            WHEN f.user1_id = $1 THEN u2.name
+            ELSE u1.name
+        END as friend_name,
+        CASE 
+            WHEN f.user1_id = $1 THEN u2.email
+            ELSE u1.email
+        END as friend_email,
+        CASE 
+            WHEN f.user1_id = $1 THEN u2.profile_pic
+            ELSE u1.profile_pic
+        END as friend_profile_pic,
+        CASE 
+            WHEN f.user1_id = $1 THEN f.user2_id
+            ELSE f.user1_id
+        END as friend_user_id
+    FROM friend f
+    JOIN "user" u1 ON f.user1_id = u1.user_id
+    JOIN "user" u2 ON f.user2_id = u2.user_id
+`;
         
         const result = await pgPool.query(query, [userId]);
         
