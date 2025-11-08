@@ -291,6 +291,7 @@ router.patch('/:friendshipId/status', checkJwt, async (req, res) => {
             message,
             friendship: result.rows[0],
         });
+
     } catch (error) {
         console.error('Error updating friend request status:', error);
         res.status(500).json({
@@ -306,48 +307,35 @@ router.patch('/:friendshipId/status', checkJwt, async (req, res) => {
 // Headers: Authorization: Bearer <JWT_TOKEN>
 router.delete('/:friendshipId', checkJwt, async (req, res) => {
     try {
-        const googleId = req.user.sub || req.user.id;
-        
-        // First get user_id from google_id
-        const userQuery = `SELECT user_id FROM "user" WHERE google_id = $1`;
-        const userResult = await pgPool.query(userQuery, [googleId]);
-        
-        if (userResult.rows.length === 0) {
-            return res.status(404).json({
-                error: 'User not found',
-                message: 'Please complete your profile setup first'
-            });
-        }
-        
-        const userId = userResult.rows[0].user_id;
+        const userId = await ensureUserFromReq(req, res);
+        if (!userId) return;
+
         const { friendshipId } = req.params;
-        
-        // Delete friendship (only if the current user is involved)
+
         const deleteQuery = `
             DELETE FROM friend 
             WHERE row_id = $1 AND (user1_id = $2 OR user2_id = $2)
             RETURNING *
         `;
-        
+
         const result = await pgPool.query(deleteQuery, [friendshipId, userId]);
-        
+
         if (result.rows.length === 0) {
             return res.status(404).json({
                 error: 'Friendship not found',
-                message: 'Friendship not found or you are not authorized to delete it'
+                message: 'Friendship not found or you are not authorized to delete it',
             });
         }
-        
+
         res.json({
             message: 'Friendship removed successfully',
-            deletedFriendship: result.rows[0]
+            deletedFriendship: result.rows[0],
         });
-        
     } catch (error) {
         console.error('Error removing friendship:', error);
         res.status(500).json({
             error: 'Internal server error',
-            message: 'Failed to remove friendship'
+            message: 'Failed to remove friendship',
         });
     }
 });
