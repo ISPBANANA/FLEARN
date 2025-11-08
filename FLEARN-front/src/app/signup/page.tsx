@@ -375,26 +375,26 @@ export default function Home() {
 
       {/* Infomation here */}
       <div className="my-2 p-4 h-auto w-full flex items-center z-1 bg-white flex-col min-h-screen">
-        <div className="w-full max-w-[1620px] min-w-[600px] items-center flex flex-col px-25 py-7">
-          <div className="w-full items-start flex flex-col mb-10">
+        <div className="w-full max-w-[1620px] items-center flex flex-col px-4 sm:px-8 lg:px-25 py-7">
+          <div className="w-full items-start flex flex-col mb-6 sm:mb-10">
               <div className="w-full items-start flex flex-row justify-between">
                 <div className={`w-1/2 py-1 rounded-xl mx-2 ${step === 2 ? 'bg-purple-500' : 'bg-purple-500'}`}></div>
                 <div className={`w-1/2 py-1 rounded-xl mx-2 ${step === 2 ? 'bg-purple-500' : 'bg-gray-300'}`}></div>
               </div>
               <p className="text-start text-[#454545] text-lg mx-2 py-2">Step {step}/2</p>
           </div>
-          <form className="max-w-[1220px] text-lg flex flex-col justify-center text-center items-center text-[#454545] mb-4 py-10 w-full h-auto rounded-xl" style={{ boxShadow: '0px 0px 10px rgba(0, 0, 0, 0.25)' }}>
-            <div className="w-2/4 flex flex-col items-start px-10 max-w-[600px] min-w-[400px] gap-2 py-4">
+          <form className="max-w-[1220px] w-full text-base sm:text-lg flex flex-col justify-center text-center items-center text-[#454545] mb-4 py-6 sm:py-10 rounded-xl" style={{ boxShadow: '0px 0px 10px rgba(0, 0, 0, 0.25)' }}>
+            <div className="w-full sm:w-3/4 lg:w-2/4 flex flex-col items-start px-4 sm:px-8 lg:px-10 max-w-[600px] gap-2 py-4">
               {step === 1 ? (
                 <>
-                  <label className="text-left w-full text-xl mb-2 font-semibold">Profile Picture :</label>
+                  <label className="text-left w-full text-lg sm:text-xl mb-2 font-semibold">Profile Picture :</label>
                   <label htmlFor="file-upload" className="w-full flex flex-col items-center justify-center cursor-pointer mb-4">
-                    <div className="w-40 h-40 rounded-full mb-2 overflow-hidden  flex items-center justify-center bg-gray-100" style={{ boxShadow: '0px 0px 5px rgba(0, 0, 0, 0.25)' }}>
+                    <div className="w-32 h-32 sm:w-40 sm:h-40 rounded-full mb-2 overflow-hidden  flex items-center justify-center bg-gray-100" style={{ boxShadow: '0px 0px 5px rgba(0, 0, 0, 0.25)' }}>
                       {imagePreview ? (
                         <img src={imagePreview} alt="Preview" className="w-full h-full object-cover" />
                       ) : (
                         <svg
-                          className="w-16 h-16 text-gray-400"
+                          className="w-12 h-12 sm:w-16 sm:h-16 text-gray-400"
                           fill="none"
                           stroke="currentColor"
                           viewBox="0 0 24 24"
@@ -404,7 +404,7 @@ export default function Home() {
                         </svg>
                       )}
                     </div>
-                    <span className="text-[#9333EA] hover:text-[#9A41FF] transition-colors flex items-center gap-2">Upload File <FileUp className="inline-block" /></span>
+                    <span className="text-[#9333EA] hover:text-[#9A41FF] transition-colors flex items-center gap-2 text-sm sm:text-base">Upload File <FileUp className="inline-block w-4 h-4 sm:w-5 sm:h-5" /></span>
                     <input
                       id="file-upload"
                       type="file"
@@ -414,11 +414,11 @@ export default function Home() {
                     />
                   </label>
 
-                  <label className="text-left w-full text-xl mb-2 font-semibold flex items-center gap-1"><Asterisk className="text-[#9333EA]" width={12} height={12}/>Display name :</label>
+                  <label className="text-left w-full text-lg sm:text-xl mb-2 font-semibold flex items-center gap-1"><Asterisk className="text-[#9333EA]" width={12} height={12}/>Display name :</label>
                   <input 
                     type="input" 
                     placeholder="Ex: FunLearn" 
-                    className={`w-full py-2 px-4 mb-1 border rounded-xl ${
+                    className={`w-full py-2 px-3 sm:px-4 mb-1 border rounded-xl text-sm sm:text-base ${
                       showValidationErrors && formData.displayName.trim() === '' 
                         ? 'border-red-500 bg-red-50' 
                         : 'border-gray-300'
@@ -428,24 +428,24 @@ export default function Home() {
                     onChange={handleDisplayNameChange}
                     maxLength={15}
                   />
-                  <p className="text-[#454545] text-sm mt-1">{formData.displayName.length}/15 characters</p>
+                  <p className="text-[#454545] text-xs sm:text-sm mt-1">{formData.displayName.length}/15 characters</p>
                   {showValidationErrors && formData.displayName.trim() === '' && (
-                    <p className="text-red-500 text-sm mb-3">Display name is required</p>
+                    <p className="text-red-500 text-xs sm:text-sm mb-3">Display name is required</p>
                   )}
                   {!(showValidationErrors && formData.displayName.trim() === '') && <div className="mb-3"></div>}
-                  <label className="text-left w-full text-xl mb-2 font-semibold flex items-center gap-1"><Asterisk className="text-[#9333EA]" width={12} height={12}/>Email :</label>
+                  <label className="text-left w-full text-lg sm:text-xl mb-2 font-semibold flex items-center gap-1"><Asterisk className="text-[#9333EA]" width={12} height={12}/>Email :</label>
                   <input 
                     type="email" 
                     value={userData?.email || ''} 
                     placeholder="sample@gmail.com" 
-                    className="w-full py-2 px-4 mb-4 border border-gray-300 rounded-xl cursor-not-allowed" 
+                    className="w-full py-2 px-3 sm:px-4 mb-4 border border-gray-300 rounded-xl cursor-not-allowed text-sm sm:text-base" 
                     style={{ boxShadow: '0px 0px 5px rgba(0, 0, 0, 0.25)' }} 
                     disabled
                   />
-                  <label className="text-left w-full text-xl mb-2 font-semibold flex items-center gap-1"><Asterisk className="text-[#9333EA]" width={12} height={12}/>Date of Birth :</label>
+                  <label className="text-left w-full text-lg sm:text-xl mb-2 font-semibold flex items-center gap-1"><Asterisk className="text-[#9333EA]" width={12} height={12}/>Date of Birth :</label>
                   <input 
                     type="date" 
-                    className={`w-full py-2 px-4 mb-1 border rounded-xl ${
+                    className={`w-full py-2 px-3 sm:px-4 mb-1 border rounded-xl text-sm sm:text-base ${
                       showValidationErrors && formData.dateOfBirth === '' 
                         ? 'border-red-500 bg-red-50' 
                         : 'border-gray-300'
@@ -456,54 +456,54 @@ export default function Home() {
                     max={new Date().toISOString().split('T')[0]}
                   />
                   {showValidationErrors && formData.dateOfBirth === '' && (
-                    <p className="text-red-500 text-sm mb-3">Date of birth is required</p>
+                    <p className="text-red-500 text-xs sm:text-sm mb-3">Date of birth is required</p>
                   )}
                   {!(showValidationErrors && formData.dateOfBirth === '') && <div className="mb-3"></div>}
                 </>
               ) : (
                 <>
-                  <label className="text-left w-full text-xl mb-4 font-semibold flex items-center gap-1">
+                  <label className="text-left w-full text-lg sm:text-xl mb-4 font-semibold flex items-center gap-1">
                     <Asterisk className="text-[#9333EA]" width={12} height={12}/>Education Level :
                   </label>
-                  <div className="flex flex-col gap-3 mb-6 w-full px-4">
-                    <label className="flex items-center gap-3">
+                  <div className="flex flex-col gap-3 mb-6 w-full px-2 sm:px-4">
+                    <label className="flex items-center gap-3 text-sm sm:text-base">
                       <input 
                         type="radio" 
                         name="education" 
-                        className="w-4 h-4 text-purple-500" 
+                        className="w-4 h-4 text-purple-500 flex-shrink-0" 
                         value="primary"
                         checked={formData.educationLevel === 'primary'}
                         onChange={handleEducationLevelChange}
                       />
                       <span>Primary School</span>
                     </label>
-                    <label className="flex items-center gap-3">
+                    <label className="flex items-center gap-3 text-sm sm:text-base">
                       <input 
                         type="radio" 
                         name="education" 
-                        className="w-4 h-4 text-purple-500" 
+                        className="w-4 h-4 text-purple-500 flex-shrink-0" 
                         value="high_school"
                         checked={formData.educationLevel === 'high_school'}
                         onChange={handleEducationLevelChange}
                       />
                       <span>High School / Secondary</span>
                     </label>
-                    <label className="flex items-center gap-3">
+                    <label className="flex items-center gap-3 text-sm sm:text-base">
                       <input 
                         type="radio" 
                         name="education" 
-                        className="w-4 h-4 text-purple-500" 
+                        className="w-4 h-4 text-purple-500 flex-shrink-0" 
                         value="university"
                         checked={formData.educationLevel === 'university'}
                         onChange={handleEducationLevelChange}
                       />
                       <span>University / College</span>
                     </label>
-                    <label className="flex items-center gap-3">
+                    <label className="flex items-center gap-3 text-sm sm:text-base">
                       <input 
                         type="radio" 
                         name="education" 
-                        className="w-4 h-4 text-purple-500" 
+                        className="w-4 h-4 text-purple-500 flex-shrink-0" 
                         value="not_studying"
                         checked={formData.educationLevel === 'not_studying'}
                         onChange={handleEducationLevelChange}
@@ -512,44 +512,44 @@ export default function Home() {
                     </label>
                   </div>
                   {showValidationErrors && formData.educationLevel === '' && (
-                    <p className="text-red-500 text-sm mb-4 px-4">Please select an education level</p>
+                    <p className="text-red-500 text-xs sm:text-sm mb-4 px-2 sm:px-4">Please select an education level</p>
                   )}
 
-                  <label className="text-left w-full text-xl mb-4 font-semibold flex items-center gap-1">
+                  <label className="text-left w-full text-lg sm:text-xl mb-4 font-semibold flex items-center gap-1">
                     <Asterisk className="text-[#9333EA]" width={12} height={12}/>Preferred Subject :
                   </label>
-                  <div className="flex flex-col gap-3 mb-6 w-full px-4">
-                    <label className="flex items-center gap-3">
+                  <div className="flex flex-col gap-3 mb-6 w-full px-2 sm:px-4">
+                    <label className="flex items-center gap-3 text-sm sm:text-base">
                       <input 
                         type="checkbox" 
-                        className="w-4 h-4 text-purple-500" 
+                        className="w-4 h-4 text-purple-500 flex-shrink-0" 
                         checked={formData.preferredSubjects.includes('mathematics')}
                         onChange={(e) => handleSubjectChange('mathematics', e.target.checked)}
                       />
                       <span>Mathematics</span>
                     </label>
-                    <label className="flex items-center gap-3">
+                    <label className="flex items-center gap-3 text-sm sm:text-base">
                       <input 
                         type="checkbox" 
-                        className="w-4 h-4 text-purple-500" 
+                        className="w-4 h-4 text-purple-500 flex-shrink-0" 
                         checked={formData.preferredSubjects.includes('physics')}
                         onChange={(e) => handleSubjectChange('physics', e.target.checked)}
                       />
                       <span>Physics</span>
                     </label>
-                    <label className="flex items-center gap-3">
+                    <label className="flex items-center gap-3 text-sm sm:text-base">
                       <input 
                         type="checkbox" 
-                        className="w-4 h-4 text-purple-500" 
+                        className="w-4 h-4 text-purple-500 flex-shrink-0" 
                         checked={formData.preferredSubjects.includes('biology')}
                         onChange={(e) => handleSubjectChange('biology', e.target.checked)}
                       />
                       <span>Biology</span>
                     </label>
-                    <label className="flex items-center gap-3">
+                    <label className="flex items-center gap-3 text-sm sm:text-base">
                       <input 
                         type="checkbox" 
-                        className="w-4 h-4 text-purple-500" 
+                        className="w-4 h-4 text-purple-500 flex-shrink-0" 
                         checked={formData.preferredSubjects.includes('chemistry')}
                         onChange={(e) => handleSubjectChange('chemistry', e.target.checked)}
                       />
@@ -557,35 +557,35 @@ export default function Home() {
                     </label>
                   </div>
                   {showValidationErrors && formData.preferredSubjects.trim() === '' && (
-                    <p className="text-red-500 text-sm mb-4 px-4">Please select at least one preferred subject</p>
+                    <p className="text-red-500 text-xs sm:text-sm mb-4 px-2 sm:px-4">Please select at least one preferred subject</p>
                   )}
 
-                  <label className="text-left w-full text-sm mb-1 font-normal flex items-start gap-2">
+                  <label className="text-left w-full text-xs sm:text-sm mb-1 font-normal flex items-start gap-2">
                     <input 
                       type="checkbox" 
-                      className="w-4 h-4 text-purple-500 mt-1" 
+                      className="w-4 h-4 text-purple-500 mt-1 flex-shrink-0" 
                       checked={formData.consentAgreed}
                       onChange={handleConsentChange}
                     />
                     <span>I hereby give my consent for the FLearn platform to collect, process, and use my personal data in accordance with the purposes outlined in the <Link href="/policy" target="_blank" className="text-[#9333EA] hover:underline">Privacy Policy</Link> and <Link href="/tos" target="_blank" className="text-[#9333EA] hover:underline">Terms of Service</Link>.</span>
                   </label>
                   {showValidationErrors && !formData.consentAgreed && (
-                    <p className="text-red-500 text-sm mb-4">You must agree to the terms and privacy policy to continue</p>
+                    <p className="text-red-500 text-xs sm:text-sm mb-4">You must agree to the terms and privacy policy to continue</p>
                   )}
                   {!(showValidationErrors && !formData.consentAgreed) && <div className="mb-4"></div>}
                 </>
               )}
             </div>
           </form>
-          <div className="w-full max-w-[1220px] items-start flex flex-row justify-between py-5">
-              <button type="button" onClick={goBack} className={`bg-[#ffffff] ${step === 2 ? 'text-[#454545] border border-[#454545]' : 'text-red-500 border border-red-500 hover:text-red-600 hover:border-red-600'} py-2 px-4 w-50 rounded transition`}>
+          <div className="w-full max-w-[1220px] items-start flex flex-col sm:flex-row gap-3 sm:gap-0 justify-between py-5 px-4 sm:px-0">
+              <button type="button" onClick={goBack} className={`bg-[#ffffff] ${step === 2 ? 'text-[#454545] border border-[#454545]' : 'text-red-500 border border-red-500 hover:text-red-600 hover:border-red-600'} py-2 px-4 w-full sm:w-auto sm:min-w-[160px] lg:min-w-[200px] rounded transition text-sm sm:text-base`}>
                   {step === 2 ? 'Go Back' : 'Cancel'}
               </button>
               <button 
                 type="button" 
                 onClick={handleNext} 
                 disabled={!isFormValid() || isSubmitting}
-                className={`py-2 px-4 w-50 rounded transition ${
+                className={`py-2 px-4 w-full sm:w-auto sm:min-w-[160px] lg:min-w-[200px] rounded transition text-sm sm:text-base ${
                   isFormValid() && !isSubmitting
                     ? 'bg-purple-400 text-white hover:bg-purple-500' 
                     : 'bg-gray-300 text-gray-500 cursor-not-allowed'
