@@ -45,7 +45,10 @@ export default function Home() {
           </div>
           {/* Right Part */}
           <div className="flex flex-col justify-center items-center md:items-end space-y-6 w-full md:w-1/2">
-            <p className="text-3xl sm:text-5xl md:text-7xl font-semibold text-[#454545] text-center md:text-right leading-tight">What do you<br />wanna <span className="font-bold text-[#9A41FF]">FLearn</span><br />Today</p>
+            <p className="text-3xl sm:text-5xl md:text-7xl font-semibold text-[#454545] text-center md:text-right leading-tight w-full md:w-4/5">
+              <span className="block sm:hidden">What do you wanna<br /> <span className="font-bold text-[#9A41FF]">FLearn</span> Today</span>
+              <span className="hidden sm:block">What do you<br />wanna <span className="font-bold text-[#9A41FF]">FLearn</span><br />Today</span>
+            </p>
             <Link
                 href={isAuthenticated && profile?.user_id ? `/profile/${profile.user_id}` : "/api/auth/login"}
             >
@@ -55,7 +58,7 @@ export default function Home() {
                     style={{ position: 'relative', overflow: 'hidden', minWidth: '180px' }}
                   >
                     <span
-                      className="flex items-center h-full"
+                      className="flex items-center h-full justify-center"
                       style={{ transition: 'transform 0.4s cubic-bezier(0.77,0,0.175,1), opacity 0.3s', pointerEvents: 'none', marginRight: '8px' }}
                     >
                       <Image
@@ -71,9 +74,7 @@ export default function Home() {
                         }}
                       />
                     </span>
-                    <p className="text-lg sm:text-xl md:text-2xl">
-                      {isAuthenticated && profile?.user_id ? "Go to Profile" : "Let's get started"}
-                    </p>
+                    <p className="text-lg sm:text-xl md:text-2xl text-center w-full">{isAuthenticated && profile?.user_id ? "Go to Profile" : "Let's get started"}</p>
                   </button>
               </FadeContent>
             </Link>
