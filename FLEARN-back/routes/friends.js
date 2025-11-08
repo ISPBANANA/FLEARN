@@ -8,9 +8,8 @@ const router = express.Router();
 // Usage Example:
 // GET /api/friends
 // Headers: Authorization: Bearer <JWT_TOKEN>
-router.get('/', checkJwt, async (req, res) => {
-    try {
-        const googleId = req.user.sub || req.user.id;
+async function getUserIdFromReq(req) {
+    const googleId = req.user?.sub || req.user?.id;
 
     if (!googleId) {
         // Caller should handle 401 response
@@ -75,22 +74,33 @@ const FRIEND_SELECT = `
     JOIN "user" u1 ON f.user1_id = u1.user_id
     JOIN "user" u2 ON f.user2_id = u2.user_id
 `;
-        
+
+        router.get('/', checkJwt, async (req, res) => {
+    try {
+        const userId = await ensureUserFromReq(req, res);
+        if (!userId) return;
+
+        const query = `
+            ${FRIEND_SELECT}
+            WHERE (f.user1_id = $1 OR f.user2_id = $1)
+            ORDER BY f.updated_at DESC
+        `;
+
         const result = await pgPool.query(query, [userId]);
-        
+
         res.json({
             message: 'Friends retrieved successfully',
-            friends: result.rows
+            friends: result.rows,
         });
-        
     } catch (error) {
         console.error('Error fetching friends:', error);
         res.status(500).json({
             error: 'Internal server error',
-            message: 'Failed to fetch friends'
+            message: 'Failed to fetch friends',
         });
     }
 });
+
 
 // Get friends for a specific user by user_id
 // Usage Example:
@@ -103,7 +113,7 @@ router.get('/user/:userId', checkJwt, async (req, res) => {
         if (!userId) {
             return res.status(400).json({
                 error: 'Bad request',
-                message: 'User ID is required'
+                message: 'User ID is required',
             });
         }
 
@@ -119,48 +129,34 @@ router.get('/user/:userId', checkJwt, async (req, res) => {
         }
         
         const query = `
-            SELECT 
-                f.row_id,
-                f.status,
-                f.created_at,
-                f.updated_at,
-                f.user1_id,
-                f.user2_id,
-                CASE 
-                    WHEN f.user1_id = $1 THEN u2.name
-                    ELSE u1.name
-                END as friend_name,
-                CASE 
-                    WHEN f.user1_id = $1 THEN u2.email
-                    ELSE u1.email
-                END as friend_email,
-                CASE 
-                    WHEN f.user1_id = $1 THEN u2.profile_pic
-                    ELSE u1.profile_pic
-                END as friend_profile_pic,
-                CASE 
-                    WHEN f.user1_id = $1 THEN f.user2_id
-                    ELSE f.user1_id
-                END as friend_user_id
-            FROM friend f
-            JOIN "user" u1 ON f.user1_id = u1.user_id
-            JOIN "user" u2 ON f.user2_id = u2.user_id
-            WHERE (f.user1_id = $1 OR f.user2_id = $1) AND f.status = 'accepted'
+            ${FRIEND_SELECT}
+            WHERE (f.user1_id = $1 OR f.user2_id = $1)
+              AND f.status = 'accepted'
             ORDER BY f.updated_at DESC
         `;
-        
+
+        router.get('/', checkJwt, async (req, res) => {
+    try {
+        const userId = await ensureUserFromReq(req, res);
+        if (!userId) return;
+
+        const query = `
+            ${FRIEND_SELECT}
+            WHERE (f.user1_id = $1 OR f.user2_id = $1)
+            ORDER BY f.updated_at DESC
+        `;
+
         const result = await pgPool.query(query, [userId]);
-        
+
         res.json({
             message: 'Friends retrieved successfully',
-            friends: result.rows
+            friends: result.rows,
         });
-        
     } catch (error) {
-        console.error('Error fetching friends for user:', error);
+        console.error('Error fetching friends:', error);
         res.status(500).json({
             error: 'Internal server error',
-            message: 'Failed to fetch friends'
+            message: 'Failed to fetch friends',
         });
     }
 });
