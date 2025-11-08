@@ -321,13 +321,13 @@ export default function garden({ params }: ProfilePageProps) {
                     <div className="flex gap-3 w-full">
                       <button
                         onClick={() => handleAcceptInvitation(invitation.row_id)}
-                        className="flex-1 px-4 py-2.5 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors text-sm sm:text-base font-medium"
+                        className="cursor-pointer flex-1 px-4 py-2.5 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors text-sm sm:text-base font-medium"
                       >
                         Accept
                       </button>
                       <button
                         onClick={() => handleRejectInvitation(invitation.row_id)}
-                        className="flex-1 px-4 py-2.5 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors text-sm sm:text-base font-medium"
+                        className="cursor-pointer flex-1 px-4 py-2.5 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors text-sm sm:text-base font-medium"
                       >
                         Reject
                       </button>
@@ -348,7 +348,7 @@ export default function garden({ params }: ProfilePageProps) {
                     <div className="flex gap-3 w-full">
                       <button
                         onClick={() => handleCancelInvitation(invitation.row_id)}
-                        className="w-full px-4 py-2.5 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors text-sm sm:text-base font-medium"
+                        className="cursor-pointer w-full px-4 py-2.5 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors text-sm sm:text-base font-medium"
                       >
                         Cancel
                       </button>
@@ -478,7 +478,7 @@ export default function garden({ params }: ProfilePageProps) {
                       <button
                         onClick={() => handleSendInvitation(friend.friend_email)}
                         disabled={inviteLoading}
-                        className="px-3 sm:px-4 py-1.5 sm:py-2 bg-purple-500 text-white rounded-lg hover:bg-purple-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed text-sm sm:text-base font-medium flex-shrink-0"
+                        className="cursor-pointer px-3 sm:px-4 py-1.5 sm:py-2 bg-purple-500 text-white rounded-lg hover:bg-purple-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed text-sm sm:text-base font-medium flex-shrink-0"
                       >
                         {inviteLoading ? "Inviting..." : "Invite"}
                       </button>
