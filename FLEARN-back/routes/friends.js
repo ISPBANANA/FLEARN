@@ -150,6 +150,7 @@ router.get('/user/:userId', checkJwt, async (req, res) => {
     }
 });
 
+
 // Send friend request
 // Usage Example:
 // POST /api/friends/request
@@ -159,61 +160,51 @@ router.get('/user/:userId', checkJwt, async (req, res) => {
 // }
 router.post('/request', checkJwt, async (req, res) => {
     try {
-        const googleId = req.user.sub || req.user.id;
-        
-        // First get user_id from google_id
-        const userQuery = `SELECT user_id FROM "user" WHERE google_id = $1`;
-        const userResult = await pgPool.query(userQuery, [googleId]);
-        
-        if (userResult.rows.length === 0) {
-            return res.status(404).json({
-                error: 'User not found',
-                message: 'Please complete your profile setup first'
-            });
-        }
-        
-        const userId = userResult.rows[0].user_id;
+        const userId = await ensureUserFromReq(req, res);
+        if (!userId) return;
+
         const { friend_user_id } = req.body;
-        
+
         if (!friend_user_id) {
             return res.status(400).json({
                 error: 'Bad request',
-                message: 'Friend user ID is required'
+                message: 'Friend user ID is required',
             });
         }
-        
+
         // Validate that friend user exists
         const friendQuery = `SELECT user_id FROM "user" WHERE user_id = $1`;
         const friendResult = await pgPool.query(friendQuery, [friend_user_id]);
-        
+
         if (friendResult.rows.length === 0) {
             return res.status(404).json({
                 error: 'Friend not found',
-                message: 'User with this ID does not exist'
+                message: 'User with this ID does not exist',
             });
         }
-        
+
         const friendUserId = friend_user_id;
-        
-        // Check if they're trying to add themselves
+
+        // Prevent adding self
         if (userId === friendUserId) {
             return res.status(400).json({
                 error: 'Bad request',
-                message: 'You cannot add yourself as a friend'
+                message: 'You cannot add yourself as a friend',
             });
         }
-        
+
         // Check if friendship already exists
         const existingFriendQuery = `
             SELECT * FROM friend 
-            WHERE (user1_id = $1 AND user2_id = $2) OR (user1_id = $2 AND user2_id = $1)
+            WHERE (user1_id = $1 AND user2_id = $2)
+               OR (user1_id = $2 AND user2_id = $1)
         `;
         const existingFriend = await pgPool.query(existingFriendQuery, [userId, friendUserId]);
-        
+
         if (existingFriend.rows.length > 0) {
             return res.status(409).json({
                 error: 'Friendship already exists',
-                message: 'You are already friends or have a pending request'
+                message: 'You are already friends or have a pending request',
             });
         }
         
