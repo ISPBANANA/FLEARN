@@ -13,24 +13,24 @@ export default function Home() {
             About us
           </p>
 
-          <div className="text-lg text-start text-[#454545] mb-4 py-10 w-full">
+          <div className="text-base sm:text-lg text-left text-[#454545] py-6 w-full leading-relaxed">
             At Flearn, we believe learning should be engaging, accessible, and enjoyable. Too often, studying feels like a chore — with overwhelming lessons, weak foundations, or dull content that makes students lose motivation.<br></br>
             That&rsquo;s why we created Flearn: a web app that transforms education into a fun, game-like experience. With interactive quizzes, daily streaks, and progress tracking, we help learners stay motivated and make studying something to look forward to.
           </div>
-          <div className="text-lg text-start text-[#454545] mb-4 py-3 w-full">
+          <div className="text-base sm:text-lg text-left text-[#454545] py-6 w-full leading-relaxed">
             Our mission is to help students build confidence and understanding step by step. We empower teachers with tools to create and share effective practice sets, while giving students a platform that makes learning simpler, less stressful, and more rewarding.
           </div>
-          <div className="text-lg text-start text-[#454545] mb-4 py-3 w-full">
+          <div className="text-base sm:text-lg text-left text-[#454545] py-6 w-full leading-relaxed">
             Why Flearn?<br></br>
             ■ Engaging: Game-like learning with streaks and progress rewards<br></br>
             ■ Accessible: Easy-to-use platform for both students and teachers<br></br>
             ■ Motivating: Encourages consistent practice without the stress<br></br>
             Whether you&rsquo;re catching up on a subject, preparing for class, or exploring new topics, Flearn is here to make the journey more enjoyable.
           </div>
-          <div className="text-lg text-start text-[#454545] mb-4 py-3 w-full">
+          <div className="text-base sm:text-lg text-left text-[#454545] py-6 w-full leading-relaxed">
             🚀 Built with passion by ISPbanana.
           </div>
-          <div className="text-lg text-start text-[#454545] mb-4 py-3 w-full">
+          <div className="text-base sm:text-lg text-left text-[#454545] py-6 w-full leading-relaxed">
             Ispbanana (Flearn Team)<br></br>
             ■ Email: ispbanana.contact@gmail.com<br></br>
             ■ Website: hongrocker49.thddns.net:2725
