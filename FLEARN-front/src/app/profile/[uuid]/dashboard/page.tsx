@@ -573,9 +573,9 @@ export default function BacklogAnalyticsPage() {
     <div className="min-h-screen bg-gray-50">
       <Nav />
 
-      <div className="max-w-7xl mx-auto px-4 py-8 print:px-0 print:py-4">
+      <div className="max-w-7xl mx-auto px-4 py-4 lg:py-8 print:px-0 print:py-4">
         {/* Header with Return Button */}
-        <div className="mb-8 no-print">
+        <div className="mb-6 lg:mb-8 no-print">
           <button
             onClick={() => router.push(`/profile/${userId}`)}
             className="flex items-center gap-2 mb-4 text-gray-600 hover:text-purple-600 transition-colors"
@@ -596,10 +596,10 @@ export default function BacklogAnalyticsPage() {
             Return to Profile
           </button>
           
-          <h1 className="text-4xl font-bold text-purple-600 mb-2">
+          <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-purple-600 mb-2">
             Learning Analytics
           </h1>
-          <p className="text-gray-600">
+          <p className="text-gray-600 text-sm sm:text-base">
             Track your progress and performance over time
           </p>
         </div>
@@ -615,28 +615,29 @@ export default function BacklogAnalyticsPage() {
         </div>
 
         {/* Date Range Selector */}
-        <div className="bg-white rounded-lg shadow-md p-6 mb-8 no-print">
-          <div className="flex justify-between items-center mb-4">
-            <h2 className="text-xl font-semibold text-gray-800">Date Range</h2>
+        <div className="bg-white rounded-lg shadow-md p-4 sm:p-6 mb-6 lg:mb-8 no-print">
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 gap-4">
+            <h2 className="text-lg sm:text-xl font-semibold text-gray-800">Date Range</h2>
             <button
               onClick={generatePDFReport}
               disabled={isLoading || isGeneratingPDF}
-              className={`px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors flex items-center gap-2 ${
+              className={`px-3 sm:px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors flex items-center gap-2 text-sm sm:text-base ${
                 (isLoading || isGeneratingPDF) ? 'opacity-50 cursor-not-allowed' : ''
               }`}
             >
               {isGeneratingPDF ? (
                 <>
-                  <svg className="animate-spin h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                  <svg className="animate-spin h-4 w-4 sm:h-5 sm:w-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                     <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                     <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                   </svg>
-                  Generating PDF...
+                  <span className="hidden sm:inline">Generating PDF...</span>
+                  <span className="sm:hidden">PDF...</span>
                 </>
               ) : (
                 <>
                   <svg
-                    className="w-5 h-5"
+                    className="w-4 h-4 sm:w-5 sm:h-5"
                     fill="none"
                     stroke="currentColor"
                     viewBox="0 0 24 24"
@@ -648,22 +649,23 @@ export default function BacklogAnalyticsPage() {
                       d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
                     />
                   </svg>
-                  Download PDF
+                  <span className="hidden sm:inline">Download PDF</span>
+                  <span className="sm:hidden">PDF</span>
                 </>
               )}
             </button>
           </div>
           
-          <div className="flex flex-wrap gap-4 items-end">
+          <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-end">
             {/* Dropdown selector */}
-              <div className="flex-1 min-w-[200px] max-w-[300px]">
+              <div className="w-full sm:flex-1 sm:min-w-[200px] sm:max-w-[300px]">
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   Select Time Period
                 </label>
                 <select
                   value={dateRange}
                   onChange={(e) => handleDateRangeChange(e.target.value as '7' | '14' | '28' | 'custom')}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent bg-white text-gray-900"
+                  className="w-full px-3 sm:px-4 py-2 text-sm sm:text-base border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent bg-white text-gray-900"
                 >
                   <option value="7">Past 7 Days</option>
                   <option value="14">Past 14 Days</option>
@@ -674,8 +676,8 @@ export default function BacklogAnalyticsPage() {
 
             {/* Custom date inputs */}
             {dateRange === 'custom' && (
-              <div className="flex gap-4 items-end flex-wrap">
-                <div>
+              <div className="flex flex-col sm:flex-row gap-4 w-full sm:w-auto">
+                <div className="w-full sm:w-auto">
                   <label className="block text-sm font-medium text-gray-700 mb-2">
                     Start Date
                   </label>
@@ -688,10 +690,10 @@ export default function BacklogAnalyticsPage() {
                       return yesterday.toISOString().split('T')[0];
                     })()}
                     onChange={(e) => setCustomStartDate(e.target.value)}
-                    className="text-gray-700 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 bg-white"
+                    className="text-gray-700 px-3 py-2 text-sm sm:text-base border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 bg-white w-full"
                   />
                 </div>
-                <div>
+                <div className="w-full sm:w-auto">
                   <label className="block text-sm font-medium text-gray-700 mb-2">
                     End Date
                   </label>
@@ -701,7 +703,7 @@ export default function BacklogAnalyticsPage() {
                     min={customStartDate}
                     max={new Date().toISOString().split('T')[0]}
                     onChange={(e) => setCustomEndDate(e.target.value)}
-                    className="text-gray-700 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 bg-white"
+                    className="text-gray-700 px-3 py-2 text-sm sm:text-base border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 bg-white w-full"
                   />
                 </div>
               </div>
@@ -711,11 +713,11 @@ export default function BacklogAnalyticsPage() {
 
         {isLoading ? (
           <div className="text-center py-12">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-500 mx-auto mb-4"></div>
-            <p className="text-gray-600">Loading analytics...</p>
+            <div className="animate-spin rounded-full h-8 w-8 sm:h-12 sm:w-12 border-b-2 border-purple-500 mx-auto mb-4"></div>
+            <p className="text-gray-600 text-sm sm:text-base">Loading analytics...</p>
           </div>
         ) : (
-          <div className="space-y-8 print:space-y-3">
+          <div className="space-y-6 lg:space-y-8 print:space-y-3">
             {/* Debug info - check if there's actual data, not just empty date entries */}
             {dailyTasksData.length === 0 || (dailyTasksData.every(d => d.All === 0)) ? (
               <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-4 no-print">
@@ -726,16 +728,16 @@ export default function BacklogAnalyticsPage() {
             ) : null}
 
             {/* Graph 1: Daily Completed Tasks */}
-            <div ref={dailyTasksChartRef} className="bg-white rounded-lg shadow-md p-6 print:p-4 print:mb-3 avoid-break">
-              <h2 className="text-2xl font-bold text-gray-800 mb-4 print:text-lg print:mb-2">
+            <div ref={dailyTasksChartRef} className="bg-white rounded-lg shadow-md p-4 sm:p-6 print:p-4 print:mb-3 avoid-break">
+              <h2 className="text-xl sm:text-2xl font-bold text-gray-800 mb-2 sm:mb-4 print:text-lg print:mb-2">
                 Daily Completed Tasks
               </h2>
-              <p className="text-gray-600 mb-6 print:text-sm print:mb-2">
+              <p className="text-gray-600 mb-4 sm:mb-6 text-sm sm:text-base print:text-sm print:mb-2">
                 Track how many tasks you complete each day across different subjects
               </p>
               
               {dailyTasksData.length > 0 ? (
-                <ResponsiveContainer width="100%" height={400} className="print:!h-[250px]">
+                <ResponsiveContainer width="100%" height={300} className="sm:!h-[400px] print:!h-[250px]">
                   <LineChart data={dailyTasksData} margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
                     <CartesianGrid strokeDasharray="3 3" stroke="#E5E7EB" />
                     <XAxis 
@@ -801,23 +803,23 @@ export default function BacklogAnalyticsPage() {
                   </LineChart>
                 </ResponsiveContainer>
               ) : (
-                <div className="h-[400px] flex items-center justify-center bg-gray-50 rounded">
-                  <p className="text-gray-500">No data to display</p>
+                <div className="h-[300px] sm:h-[400px] flex items-center justify-center bg-gray-50 rounded">
+                  <p className="text-gray-500 text-sm sm:text-base">No data to display</p>
                 </div>
               )}
             </div>
 
             {/* Graph 2: Correct vs Incorrect Donut Chart */}
-            <div ref={accuracyChartRef} className="bg-white rounded-lg shadow-md p-6 print:p-4 print:mb-3 avoid-break">
-              <h2 className="text-2xl font-bold text-gray-800 mb-4 print:text-lg print:mb-2">
+            <div ref={accuracyChartRef} className="bg-white rounded-lg shadow-md p-4 sm:p-6 print:p-4 print:mb-3 avoid-break">
+              <h2 className="text-xl sm:text-2xl font-bold text-gray-800 mb-2 sm:mb-4 print:text-lg print:mb-2">
                 Accuracy Overview
               </h2>
-              <p className="text-gray-600 mb-6 print:text-sm print:mb-2">
+              <p className="text-gray-600 mb-4 sm:mb-6 text-sm sm:text-base print:text-sm print:mb-2">
                 Your overall performance across all attempts
               </p>
 
-              <div className="flex flex-col md:flex-row items-center justify-center gap-8 print:gap-4">
-                <ResponsiveContainer width="100%" height={300} className="print:!h-[200px]">
+              <div className="flex flex-col lg:flex-row items-center justify-center gap-4 sm:gap-8 print:gap-4">
+                <ResponsiveContainer width="100%" height={250} className="sm:!h-[300px] print:!h-[200px]">
                   <PieChart>
                     <Pie
                       data={donutData}
@@ -842,28 +844,28 @@ export default function BacklogAnalyticsPage() {
                 </ResponsiveContainer>
 
                 {/* Stats summary */}
-                <div className="space-y-4 print:space-y-2">
-                  <div className="flex items-center gap-4 print:gap-2">
-                    <div className="w-4 h-4 rounded-full print:w-3 print:h-3" style={{ backgroundColor: DONUT_COLORS.correct }}></div>
+                <div className="space-y-3 sm:space-y-4 print:space-y-2">
+                  <div className="flex items-center gap-3 sm:gap-4 print:gap-2">
+                    <div className="w-3 h-3 sm:w-4 sm:h-4 rounded-full print:w-3 print:h-3" style={{ backgroundColor: DONUT_COLORS.correct }}></div>
                     <div>
-                      <p className="text-sm text-gray-600 print:text-xs">Correct Answers</p>
-                      <p className="text-2xl font-bold text-green-600 print:text-lg">
+                      <p className="text-xs sm:text-sm text-gray-600 print:text-xs">Correct Answers</p>
+                      <p className="text-lg sm:text-2xl font-bold text-green-600 print:text-lg">
                         {donutData.find(d => d.name === 'Correct')?.value || 0}
                       </p>
                     </div>
                   </div>
-                  <div className="flex items-center gap-4 print:gap-2">
-                    <div className="w-4 h-4 rounded-full print:w-3 print:h-3" style={{ backgroundColor: DONUT_COLORS.incorrect }}></div>
+                  <div className="flex items-center gap-3 sm:gap-4 print:gap-2">
+                    <div className="w-3 h-3 sm:w-4 sm:h-4 rounded-full print:w-3 print:h-3" style={{ backgroundColor: DONUT_COLORS.incorrect }}></div>
                     <div>
-                      <p className="text-sm text-gray-600 print:text-xs">Incorrect Answers</p>
-                      <p className="text-2xl font-bold text-red-600 print:text-lg">
+                      <p className="text-xs sm:text-sm text-gray-600 print:text-xs">Incorrect Answers</p>
+                      <p className="text-lg sm:text-2xl font-bold text-red-600 print:text-lg">
                         {donutData.find(d => d.name === 'Incorrect')?.value || 0}
                       </p>
                     </div>
                   </div>
-                  <div className="pt-4 border-t border-gray-200 print:pt-2">
-                    <p className="text-sm text-gray-600 print:text-xs">Total Attempts</p>
-                    <p className="text-3xl font-bold text-purple-600 print:text-xl">
+                  <div className="pt-3 sm:pt-4 border-t border-gray-200 print:pt-2">
+                    <p className="text-xs sm:text-sm text-gray-600 print:text-xs">Total Attempts</p>
+                    <p className="text-xl sm:text-3xl font-bold text-purple-600 print:text-xl">
                       {donutData.reduce((sum, item) => sum + item.value, 0)}
                     </p>
                   </div>
@@ -872,16 +874,16 @@ export default function BacklogAnalyticsPage() {
             </div>
 
             {/* Graph 3: Daily EXP Earned */}
-            <div ref={dailyExpChartRef} className="bg-white rounded-lg shadow-md p-6 print:p-4 print:mb-3 avoid-break">
-              <h2 className="text-2xl font-bold text-gray-800 mb-4 print:text-lg print:mb-2">
+            <div ref={dailyExpChartRef} className="bg-white rounded-lg shadow-md p-4 sm:p-6 print:p-4 print:mb-3 avoid-break">
+              <h2 className="text-xl sm:text-2xl font-bold text-gray-800 mb-2 sm:mb-4 print:text-lg print:mb-2">
                 Daily Experience Points Earned
               </h2>
-              <p className="text-gray-600 mb-6 print:text-sm print:mb-2">
+              <p className="text-gray-600 mb-4 sm:mb-6 text-sm sm:text-base print:text-sm print:mb-2">
                 Track your EXP gains from correct answers across different subjects
               </p>
               
               {dailyExpData.length > 0 ? (
-                <ResponsiveContainer width="100%" height={400} className="print:!h-[250px]">
+                <ResponsiveContainer width="100%" height={300} className="sm:!h-[400px] print:!h-[250px]">
                   <LineChart data={dailyExpData} margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
                     <CartesianGrid strokeDasharray="3 3" stroke="#E5E7EB" />
                     <XAxis 
@@ -948,8 +950,8 @@ export default function BacklogAnalyticsPage() {
                   </LineChart>
                 </ResponsiveContainer>
               ) : (
-                <div className="h-[400px] flex items-center justify-center bg-gray-50 rounded">
-                  <p className="text-gray-500">No data to display</p>
+                <div className="h-[300px] sm:h-[400px] flex items-center justify-center bg-gray-50 rounded">
+                  <p className="text-gray-500 text-sm sm:text-base">No data to display</p>
                 </div>
               )}
             </div>
