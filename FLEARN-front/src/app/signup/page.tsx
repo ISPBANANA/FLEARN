@@ -470,7 +470,7 @@ export default function Home() {
                       <input 
                         type="radio" 
                         name="education" 
-                        className="w-4 h-4 text-purple-500 flex-shrink-0" 
+                        className="cursor-pointer w-4 h-4 text-purple-500 flex-shrink-0" 
                         value="primary"
                         checked={formData.educationLevel === 'primary'}
                         onChange={handleEducationLevelChange}
@@ -481,7 +481,7 @@ export default function Home() {
                       <input 
                         type="radio" 
                         name="education" 
-                        className="w-4 h-4 text-purple-500 flex-shrink-0" 
+                        className="cursor-pointer w-4 h-4 text-purple-500 flex-shrink-0" 
                         value="high_school"
                         checked={formData.educationLevel === 'high_school'}
                         onChange={handleEducationLevelChange}
@@ -492,7 +492,7 @@ export default function Home() {
                       <input 
                         type="radio" 
                         name="education" 
-                        className="w-4 h-4 text-purple-500 flex-shrink-0" 
+                        className="cursor-pointer w-4 h-4 text-purple-500 flex-shrink-0" 
                         value="university"
                         checked={formData.educationLevel === 'university'}
                         onChange={handleEducationLevelChange}
@@ -503,7 +503,7 @@ export default function Home() {
                       <input 
                         type="radio" 
                         name="education" 
-                        className="w-4 h-4 text-purple-500 flex-shrink-0" 
+                        className="cursor-pointer w-4 h-4 text-purple-500 flex-shrink-0" 
                         value="not_studying"
                         checked={formData.educationLevel === 'not_studying'}
                         onChange={handleEducationLevelChange}
@@ -522,7 +522,7 @@ export default function Home() {
                     <label className="flex items-center gap-3 text-sm sm:text-base">
                       <input 
                         type="checkbox" 
-                        className="w-4 h-4 text-purple-500 flex-shrink-0" 
+                        className="cursor-pointer w-4 h-4 text-purple-500 flex-shrink-0" 
                         checked={formData.preferredSubjects.includes('mathematics')}
                         onChange={(e) => handleSubjectChange('mathematics', e.target.checked)}
                       />
@@ -531,7 +531,7 @@ export default function Home() {
                     <label className="flex items-center gap-3 text-sm sm:text-base">
                       <input 
                         type="checkbox" 
-                        className="w-4 h-4 text-purple-500 flex-shrink-0" 
+                        className="cursor-pointer w-4 h-4 text-purple-500 flex-shrink-0" 
                         checked={formData.preferredSubjects.includes('physics')}
                         onChange={(e) => handleSubjectChange('physics', e.target.checked)}
                       />
@@ -540,7 +540,7 @@ export default function Home() {
                     <label className="flex items-center gap-3 text-sm sm:text-base">
                       <input 
                         type="checkbox" 
-                        className="w-4 h-4 text-purple-500 flex-shrink-0" 
+                        className="cursor-pointer w-4 h-4 text-purple-500 flex-shrink-0" 
                         checked={formData.preferredSubjects.includes('biology')}
                         onChange={(e) => handleSubjectChange('biology', e.target.checked)}
                       />
@@ -549,7 +549,7 @@ export default function Home() {
                     <label className="flex items-center gap-3 text-sm sm:text-base">
                       <input 
                         type="checkbox" 
-                        className="w-4 h-4 text-purple-500 flex-shrink-0" 
+                        className="cursor-pointer w-4 h-4 text-purple-500 flex-shrink-0" 
                         checked={formData.preferredSubjects.includes('chemistry')}
                         onChange={(e) => handleSubjectChange('chemistry', e.target.checked)}
                       />
@@ -563,7 +563,7 @@ export default function Home() {
                   <label className="text-left w-full text-xs sm:text-sm mb-1 font-normal flex items-start gap-2">
                     <input 
                       type="checkbox" 
-                      className="w-4 h-4 text-purple-500 mt-1 flex-shrink-0" 
+                      className="cursor-pointer w-4 h-4 text-purple-500 mt-1 flex-shrink-0" 
                       checked={formData.consentAgreed}
                       onChange={handleConsentChange}
                     />
@@ -578,7 +578,7 @@ export default function Home() {
             </div>
           </form>
           <div className="w-full max-w-[1220px] items-start flex flex-col sm:flex-row gap-3 sm:gap-0 justify-between py-5 px-4 sm:px-0">
-              <button type="button" onClick={goBack} className={`bg-[#ffffff] ${step === 2 ? 'text-[#454545] border border-[#454545]' : 'text-red-500 border border-red-500 hover:text-red-600 hover:border-red-600'} py-2 px-4 w-full sm:w-auto sm:min-w-[160px] lg:min-w-[200px] rounded transition text-sm sm:text-base`}>
+              <button type="button" onClick={goBack} className={`cursor-pointer bg-[#ffffff] ${step === 2 ? 'text-[#454545] border border-[#454545]' : 'text-red-500 border border-red-500 hover:text-red-600 hover:border-red-600'} py-2 px-4 w-full sm:w-auto sm:min-w-[160px] lg:min-w-[200px] rounded transition text-sm sm:text-base`}>
                   {step === 2 ? 'Go Back' : 'Cancel'}
               </button>
               <button 
@@ -587,7 +587,7 @@ export default function Home() {
                 disabled={!isFormValid() || isSubmitting}
                 className={`py-2 px-4 w-full sm:w-auto sm:min-w-[160px] lg:min-w-[200px] rounded transition text-sm sm:text-base ${
                   isFormValid() && !isSubmitting
-                    ? 'bg-purple-400 text-white hover:bg-purple-500' 
+                    ? 'bg-purple-400 text-white hover:bg-purple-500 cursor-pointer' 
                     : 'bg-gray-300 text-gray-500 cursor-not-allowed'
                 }`}
               >
