@@ -54,13 +54,59 @@ export default function Home() {
             >
               <FadeContent blur={true} duration={1000} easing="ease-out" initialOpacity={0}>
                   <button
-                    className="bg-purple-400 text-white py-4 px-12 w-full max-w-[500px] rounded hover:bg-purple-500 transition font-semibold flex items-center justify-center group"
-                    style={{ position: 'relative', overflow: 'hidden', minWidth: '220px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
-                  >
-                    <p className="text-lg sm:text-xl md:text-2xl text-center w-full">{isAuthenticated && profile?.user_id ? "Go to Profile" : "Let's get started"}</p>
+                    className="bg-purple-400 text-white py-4 px-4 w-70 rounded hover:bg-purple-500 transition font-semibold flex flex-row items-center justify-center group"
+                    style={{ position: 'relative', overflow: 'hidden', minWidth: '220px' }}
+                    >
+                    <span
+                      className="flex items-center h-full"
+                      style={{ transition: 'transform 0.4s cubic-bezier(0.77,0,0.175,1), opacity 0.3s', pointerEvents: 'none', marginRight: '8px' }}
+                    >
+                      <Image
+                        src="/landing/google.webp"
+                        alt="Google"
+                        height={32}
+                        width={32}
+                        className="drop-shadow-sm drop-shadow-purple-600"
+                        style={{
+                          opacity: 0,
+                          transform: 'translateX(-20px)',
+                          transition: 'transform 0.4s cubic-bezier(0.77,0,0.175,1), opacity 0.3s',
+                        }}
+                      />
+                    </span>
+                    <p className="text-2xl">
+                      {isAuthenticated && profile?.user_id ? "Go to Profile" : "Let's get started"}
+                    </p>
+                    <style jsx>{`
+                      button.group {
+                        position: relative;
+                      }
+                      button.group .text-2xl {
+                        transition: transform 0.4s cubic-bezier(0.77,0,0.175,1), text-align 0.1s;
+                        text-align: left;
+                        width: 100%;
+                        display: block;
+                        position: relative;
+                        left: 0;
+                      }
+                      button.group:hover .text-2xl {
+                        transform: translateX(16px);
+                        text-align: left;
+                      }
+                      button.group span > :global(img) {
+                        opacity: 0;
+                        transform: translateX(-20px);
+                        transition: transform 0.4s cubic-bezier(0.77,0,0.175,1), opacity 0.3s;
+                      }
+                      button.group:hover span > :global(img) {
+                        opacity: 1 !important;
+                        transform: translateX(0) !important;
+                      }
+                    `}</style>
                   </button>
               </FadeContent>
             </Link>
+            <br />
           </div>
         </div>
       </div>
@@ -68,10 +114,11 @@ export default function Home() {
       {/* Information Section */}
       <div className="p-2 sm:p-4 h-auto w-full flex items-center z-1 bg-white flex-col" style={{ boxShadow: '0px -4px 4px rgba(0, 0, 0, 0.25)' }}>
         {/* Part 1 */}
-        <div className="w-full max-w-[1420px] items-center flex flex-col px-2 sm:px-6 py-4">
+        <br />
+        <div className="w-full max-w-[1420px] items-center flex flex-col px-2 sm:px-6 py-8">
           <SplitText
             text="Fun Learning!"
-            className="text-3xl sm:text-5xl text-center text-[#9A41FF] font-bold mb-4 min-w-[200px] sm:min-w-[340px]"
+            className="text-3xl sm:text-5xl text-center text-[#9A41FF] font-bold mb-8 min-w-[200px] sm:min-w-[340px]"
             delay={50}
             duration={0.6}
             ease="power3.out"
