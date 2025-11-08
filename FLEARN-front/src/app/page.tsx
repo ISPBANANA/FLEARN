@@ -186,17 +186,18 @@ export default function Home() {
               />
           </div>
         </div>
+        
         {/* Part 3 */}
-        <div className="w-full max-w-[1420px] flex flex-col items-center md:flex-row px-2 sm:px-6 py-8">
-          <div className="flex justify-center items-center w-full md:w-1/2 mb-6 md:mb-0">
-              <Image
-                src="/landing/main3.png"
-                alt="Value Proposition"
-                height={200}
-                width={200}
-                style={{ objectFit: 'contain' }}
-                className="rounded-2xl drop-shadow-lg w-[140px] sm:w-[200px] md:w-[300px] mb-4 md:mb-0"
-              />
+        <div className="w-full max-w-[1420px] flex flex-col md:flex-row items-center px-2 sm:px-6 py-8">
+          <div className="flex justify-center items-center w-full md:w-1/2 order-last md:order-first">
+            <Image
+              src="/landing/main3.png"
+              alt="Value Proposition"
+              height={200}
+              width={200}
+              style={{ objectFit: 'contain' }}
+              className="rounded-2xl drop-shadow-lg w-[180px] sm:w-[220px] md:w-[300px]"
+            />
           </div>
           <div className="w-full flex flex-col items-center md:items-start md:w-1/2">
             <SplitText
@@ -213,7 +214,7 @@ export default function Home() {
             />
             <SplitText
               text="Out of practice problems? No worries! Access a wide variety of problems from teachers across schools and universities—never run out of challenges again!"
-              className="text-lg text-left text-[#454545] mb-4 py-1 w-2/5 min-w-[300px] md:w-4/5 md:min-w-[300px]"
+              className="text-lg text-center md:text-left text-[#454545] mb-8 py-1 w-full md:w-4/5 min-w-[300px]"
               delay={5}
               duration={0.1}
               ease="power3.out"
