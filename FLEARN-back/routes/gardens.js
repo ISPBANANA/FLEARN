@@ -474,43 +474,31 @@ router.patch('/:gardenId/status', checkJwt, async (req, res) => {
 // Headers: Authorization: Bearer <JWT_TOKEN>
 router.delete('/:gardenId', checkJwt, async (req, res) => {
     try {
-        const googleId = req.user.sub || req.user.id;
-        
-        // First get user_id from google_id
-        const userQuery = `SELECT user_id FROM "user" WHERE google_id = $1`;
-        const userResult = await pgPool.query(userQuery, [googleId]);
-        
-        if (userResult.rows.length === 0) {
-            return res.status(404).json({
-                error: 'User not found',
-                message: 'Please complete your profile setup first'
-            });
-        }
-        
-        const userId = userResult.rows[0].user_id;
+        const userId = await ensureUserFromReq(req, res);
+        if (!userId) return;
+
         const { gardenId } = req.params;
-        
-        // Delete garden (only if the current user is involved)
+
         const deleteQuery = `
             DELETE FROM garden 
             WHERE row_id = $1 AND (user1_id = $2 OR user2_id = $2)
             RETURNING *
         `;
-        
+
         const result = await pgPool.query(deleteQuery, [gardenId, userId]);
-        
+
         if (result.rows.length === 0) {
             return res.status(404).json({
                 error: 'Garden not found',
                 message: 'Garden not found or you are not authorized to delete it'
             });
         }
-        
+
         res.json({
             message: 'Garden deleted successfully',
             deletedGarden: result.rows[0]
         });
-        
+
     } catch (error) {
         console.error('Error deleting garden:', error);
         res.status(500).json({
