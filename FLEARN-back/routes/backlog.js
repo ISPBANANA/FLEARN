@@ -152,8 +152,8 @@ router.get('/stats/:user_id', checkJwt, async (req, res) => {
         const { subject_id, topic_id, start_date, end_date } = req.query;
         
         const filters = {
-            subject_id: subject_id ? parseInt(subject_id) : undefined,
-            topic_id: topic_id ? parseInt(topic_id) : undefined,
+            subject_id: toIntIfPresent(subject_id),
+            topic_id: toIntIfPresent(topic_id),
             start_date: start_date || undefined,
             end_date: end_date || undefined
         };
