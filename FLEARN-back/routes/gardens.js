@@ -129,7 +129,7 @@ router.get('/', checkJwt, async (req, res) => {
 router.get('/user/:userId', checkJwt, async (req, res) => {
     try {
         const { userId } = req.params;
-        
+
         if (!userId) {
             return res.status(400).json({
                 error: 'Bad request',
@@ -140,61 +140,29 @@ router.get('/user/:userId', checkJwt, async (req, res) => {
         // Verify that the user exists
         const userExistsQuery = `SELECT user_id FROM "user" WHERE user_id = $1`;
         const userExistsResult = await pgPool.query(userExistsQuery, [userId]);
-        
+
         if (userExistsResult.rows.length === 0) {
             return res.status(404).json({
                 error: 'User not found',
                 message: 'User with this ID does not exist'
             });
         }
-        
+
         const query = `
-            SELECT 
-                g.row_id,
-                g.status,
-                g.streak,
-                g.uptime_streak,
-                g.created_at,
-                g.updated_at,
-                g.user1_id,
-                g.user2_id,
-                CASE 
-                    WHEN g.user1_id = $1 THEN u2.name
-                    ELSE u1.name
-                END as partner_name,
-                CASE 
-                    WHEN g.user1_id = $1 THEN u2.email
-                    ELSE u1.email
-                END as partner_email,
-                CASE 
-                    WHEN g.user1_id = $1 THEN u2.profile_pic
-                    ELSE u1.profile_pic
-                END as partner_profile_pic,
-                CASE 
-                    WHEN g.user1_id = $1 THEN g.user2_id
-                    ELSE g.user1_id
-                END as partner_user_id
-            FROM garden g
-            JOIN "user" u1 ON g.user1_id = u1.user_id
-            JOIN "user" u2 ON g.user2_id = u2.user_id
-            WHERE (g.user1_id = $1 OR g.user2_id = $1) AND g.status = 'active'
+            ${GARDEN_SELECT}
+            WHERE (g.user1_id = $1 OR g.user2_id = $1)
+              AND g.status = 'active'
             ORDER BY g.updated_at DESC
         `;
-        
+
         const result = await pgPool.query(query, [userId]);
-        
-        // Check and reset streak for each garden if needed (if uptime_streak - todayDate >= 2 days)
-        // Then check and increment garden streak if both users are active today
+
         const updatedGardens = await Promise.all(
             result.rows.map(async (garden) => {
-                // First, check and reset if needed
                 const resetGarden = await checkAndResetGardenStreak(pgPool, garden.row_id);
-                
-                // Then, check and increment if both users are active today
                 const incrementResult = await incrementGardenStreakIfBothUsersActive(pgPool, garden.row_id);
                 const finalGarden = incrementResult.garden || resetGarden;
-                
-                // Preserve the joined fields from the original query
+
                 return {
                     ...finalGarden,
                     partner_name: garden.partner_name,
@@ -204,12 +172,12 @@ router.get('/user/:userId', checkJwt, async (req, res) => {
                 };
             })
         );
-        
+
         res.json({
             message: 'Gardens retrieved successfully',
             gardens: updatedGardens
         });
-        
+
     } catch (error) {
         console.error('Error fetching gardens for user:', error);
         res.status(500).json({
