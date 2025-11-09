@@ -194,44 +194,34 @@ router.get('/user/:userId', checkJwt, async (req, res) => {
 // Body: {
 //   "partner_email": "friend@example.com"
 // }
+
 router.post('/', checkJwt, async (req, res) => {
     try {
-        const googleId = req.user.sub || req.user.id;
         const { partner_email } = req.body;
-        
+
         if (!partner_email) {
             return res.status(400).json({
                 error: 'Bad request',
                 message: 'Partner email is required'
             });
         }
-        
-        // First get user_id from google_id
-        const userQuery = `SELECT user_id FROM "user" WHERE google_id = $1`;
-        const userResult = await pgPool.query(userQuery, [googleId]);
-        
-        if (userResult.rows.length === 0) {
-            return res.status(404).json({
-                error: 'User not found',
-                message: 'Please complete your profile setup first'
-            });
-        }
-        
-        const userId = userResult.rows[0].user_id;
-        
+
+        const userId = await ensureUserFromReq(req, res);
+        if (!userId) return;
+
         // Get partner user_id
         const partnerQuery = `SELECT user_id FROM "user" WHERE email = $1`;
         const partnerResult = await pgPool.query(partnerQuery, [partner_email]);
-        
+
         if (partnerResult.rows.length === 0) {
             return res.status(404).json({
                 error: 'Partner not found',
                 message: 'User with this email does not exist'
             });
         }
-        
+
         const partnerUserId = partnerResult.rows[0].user_id;
-        
+
         // Check if they're trying to create a garden with themselves
         if (userId === partnerUserId) {
             return res.status(400).json({
@@ -239,51 +229,52 @@ router.post('/', checkJwt, async (req, res) => {
                 message: 'You cannot create a garden with yourself'
             });
         }
-        
+
         // Check if they are friends first
         const friendshipQuery = `
             SELECT * FROM friend 
             WHERE ((user1_id = $1 AND user2_id = $2) OR (user1_id = $2 AND user2_id = $1))
-            AND status = 'accepted'
+              AND status = 'accepted'
         `;
         const friendshipResult = await pgPool.query(friendshipQuery, [userId, partnerUserId]);
-        
+
         if (friendshipResult.rows.length === 0) {
             return res.status(400).json({
                 error: 'Not friends',
                 message: 'You must be friends with this user to create a garden together'
             });
         }
-        
+
         // Check if garden already exists
         const existingGardenQuery = `
             SELECT * FROM garden 
-            WHERE (user1_id = $1 AND user2_id = $2) OR (user1_id = $2 AND user2_id = $1)
+            WHERE (user1_id = $1 AND user2_id = $2)
+               OR (user1_id = $2 AND user2_id = $1)
         `;
         const existingGarden = await pgPool.query(existingGardenQuery, [userId, partnerUserId]);
-        
+
         if (existingGarden.rows.length > 0) {
             return res.status(409).json({
                 error: 'Garden already exists',
                 message: 'You already have a garden with this user'
             });
         }
-        
-        // Create garden invitation (similar to friend request)
+
+        // Create garden invitation
         // user1_id = receiver (partnerUserId), user2_id = sender (userId)
         const insertQuery = `
             INSERT INTO garden (user1_id, user2_id, status, streak, uptime_streak)
             VALUES ($1, $2, 'pending', 0, NULL)
             RETURNING *
         `;
-        
+
         const result = await pgPool.query(insertQuery, [partnerUserId, userId]);
-        
+
         res.status(201).json({
             message: 'Garden invitation sent successfully',
             garden: result.rows[0]
         });
-        
+
     } catch (error) {
         console.error('Error creating garden:', error);
         res.status(500).json({
