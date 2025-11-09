@@ -44,6 +44,68 @@ async function getUserFromReq(req) {
  * For routes that *require* an authenticated user (checkJwt).
  * Sends 401/404 itself and returns null if something’s wrong.
  */
+async function ensureUserFromReq(req, res) {
+    if (!req.user) {
+        res.status(401).json({
+            success: false,
+            error: 'Unauthorized: missing authentication data'
+        });
+        return null;
+    }
+
+    const user = await getUserFromReq(req);
+
+    if (!user) {
+        res.status(404).json({
+            success: false,
+            error: 'User not found'
+        });
+        return null;
+    }
+
+    return user;
+}
+
+// Validation rules for question content, same logic as before
+const validationRules = {
+    multiple_choice: (c) => {
+        if (!c.options || c.options.length < 2) {
+            throw new Error('Multiple choice needs at least 2 options');
+        }
+        if (c.options.filter(opt => opt.is_correct).length !== 1) {
+            throw new Error('Multiple choice must have exactly 1 correct answer');
+        }
+    },
+    true_false: (c) => {
+        if (!c.correct_answer) {
+            throw new Error('True/False must have a correct answer');
+        }
+        if (!['true', 'false'].includes(c.correct_answer)) {
+            throw new Error('True/False correct answer must be either "true" or "false"');
+        }
+    },
+    fill_blank: (c) => {
+        if (!c.correct_answer || typeof c.correct_answer !== 'string') {
+            throw new Error('Fill blank needs a correct answer');
+        }
+        if (c.correct_answer.trim().length === 0) {
+            throw new Error('Fill blank correct answer cannot be empty');
+        }
+    },
+    matching: (c) => {
+        if (!c.pairs || !Array.isArray(c.pairs)) {
+            throw new Error('Matching needs pairs array');
+        }
+        if (c.pairs.length === 0) {
+            throw new Error('Matching needs at least one pair');
+        }
+        for (const pair of c.pairs) {
+            if (!pair.left || !pair.right) {
+                throw new Error('Each matching pair must have both left and right values');
+            }
+        }
+    }
+};
 
 router.post('/', checkJwt, async (req, res) => {
     try {
