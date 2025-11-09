@@ -9,6 +9,42 @@ const router = express.Router();
 // Usage Example:
 // GET /api/gardens
 // Headers: Authorization: Bearer <JWT_TOKEN>
+
+async function getUserIdFromReq(req) {
+    const googleId = req.user?.sub || req.user?.id;
+
+    if (!googleId) {
+        // caller will handle 401
+        return null;
+    }
+
+    const userQuery = `SELECT user_id FROM "user" WHERE google_id = $1`;
+    const { rows } = await pgPool.query(userQuery, [googleId]);
+    return rows[0]?.user_id || null;
+}
+
+async function ensureUserFromReq(req, res) {
+    if (!req.user) {
+        res.status(401).json({
+            error: 'Unauthorized',
+            message: 'Missing or invalid authentication data'
+        });
+        return null;
+    }
+
+    const userId = await getUserIdFromReq(req);
+
+    if (!userId) {
+        res.status(404).json({
+            error: 'User not found',
+            message: 'Please complete your profile setup first'
+        });
+        return null;
+    }
+
+    return userId;
+}
+
 router.get('/', checkJwt, async (req, res) => {
     try {
         const googleId = req.user.sub || req.user.id;
