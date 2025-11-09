@@ -178,23 +178,30 @@ router.get('/stats/:user_id', checkJwt, async (req, res) => {
 // Get statistics by subject for a user
 // ============================================
 // GET /api/backlog/stats/subject/:user_id
-router.get('/stats/subject/:user_id', checkJwt, async (req, res) => {
+router.get('/stats/:user_id', checkJwt, async (req, res) => {
     try {
         const { user_id } = req.params;
+        const { subject_id, topic_id, start_date, end_date } = req.query;
         
-        const stats = await Backlog.getStatsBySubject(user_id);
+        const filters = {
+            subject_id: toIntIfPresent(subject_id),
+            topic_id: toIntIfPresent(topic_id),
+            start_date: start_date || undefined,
+            end_date: end_date || undefined
+        };
+        
+        const stats = await Backlog.getStatsByUserId(user_id, filters);
         
         res.json({
-            message: 'Subject statistics retrieved successfully',
-            count: stats.length,
+            message: 'Statistics retrieved successfully',
             data: stats
         });
         
     } catch (error) {
-        console.error('Error retrieving subject statistics:', error);
+        console.error('Error retrieving backlog statistics:', error);
         res.status(500).json({
             error: 'Internal server error',
-            message: 'Failed to retrieve subject statistics'
+            message: 'Failed to retrieve statistics'
         });
     }
 });
