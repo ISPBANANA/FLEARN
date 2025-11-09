@@ -45,6 +45,37 @@ async function ensureUserFromReq(req, res) {
     return userId;
 }
 
+const GARDEN_SELECT = `
+    SELECT 
+        g.row_id,
+        g.status,
+        g.streak,
+        g.uptime_streak,
+        g.created_at,
+        g.updated_at,
+        g.user1_id,
+        g.user2_id,
+        CASE 
+            WHEN g.user1_id = $1 THEN u2.name
+            ELSE u1.name
+        END as partner_name,
+        CASE 
+            WHEN g.user1_id = $1 THEN u2.email
+            ELSE u1.email
+        END as partner_email,
+        CASE 
+            WHEN g.user1_id = $1 THEN u2.profile_pic
+            ELSE u1.profile_pic
+        END as partner_profile_pic,
+        CASE 
+            WHEN g.user1_id = $1 THEN g.user2_id
+            ELSE g.user1_id
+        END as partner_user_id
+    FROM garden g
+    JOIN "user" u1 ON g.user1_id = u1.user_id
+    JOIN "user" u2 ON g.user2_id = u2.user_id
+`;
+
 router.get('/', checkJwt, async (req, res) => {
     try {
         const googleId = req.user.sub || req.user.id;
