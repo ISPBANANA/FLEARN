@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const Question = require('../models/Question');
 const { checkJwt, optionalJwt } = require('../middleware/auth');
+const { pgPool } = require('../config/database');
 
 // ============================================
 // POST /api/questions - Create new question
@@ -26,6 +27,24 @@ const { checkJwt, optionalJwt } = require('../middleware/auth');
 //   }
 // }
 // ============================================
+function getGoogleId(req) {
+    return req.user?.sub || req.user?.id || null;
+}
+
+async function getUserFromReq(req) {
+    const googleId = getGoogleId(req);
+    if (!googleId) return null;
+
+    const userQuery = 'SELECT user_id, role FROM "user" WHERE google_id = $1';
+    const { rows } = await pgPool.query(userQuery, [googleId]);
+    return rows[0] || null;
+}
+
+/**
+ * For routes that *require* an authenticated user (checkJwt).
+ * Sends 401/404 itself and returns null if something’s wrong.
+ */
+
 router.post('/', checkJwt, async (req, res) => {
     try {
         const { subject_id, topic_id, type_name, difficulty, points, status, content } = req.body;
