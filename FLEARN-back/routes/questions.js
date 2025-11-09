@@ -379,53 +379,86 @@ router.get('/:id', optionalJwt, async (req, res) => {
 //   "time_taken": 60
 // }
 // ============================================
+// POST /api/questions/:id/validate - Validate answer (NO DB SAVE)
 router.post('/:id/validate', async (req, res) => {
     try {
         const { answer, time_taken } = req.body;
-        
+
         if (!answer) {
             return res.status(400).json({
                 success: false,
                 error: 'Answer is required'
             });
         }
-        
-        // Normalize answer format based on what was sent
+
+        // Normalize answer format
         let normalizedAnswer = {};
-        
+
         if (typeof answer === 'string') {
-            // Single selection (multiple choice, true/false) or text (fill blank)
-            normalizedAnswer = { 
+            // Single selection or text
+            normalizedAnswer = {
                 selected_option: answer,
                 text_answer: answer
             };
         } else if (Array.isArray(answer)) {
             // Matching
-            if (answer.length > 0 && typeof answer[0] === 'object' && answer[0].left && answer[0].right) {
+            if (
+                answer.length > 0 &&
+                typeof answer[0] === 'object' &&
+                answer[0].left &&
+                answer[0].right
+            ) {
                 normalizedAnswer = { matches: answer };
             }
         } else if (typeof answer === 'object') {
             // Already normalized
             normalizedAnswer = answer;
         }
-        
-        // Add time taken
+
         if (time_taken) {
             normalizedAnswer.time_taken = time_taken;
         }
-        
+
         const result = await Question.validateAnswer(req.params.id, normalizedAnswer);
-        
+
         res.json({
             success: true,
             data: result
         });
-        
+
     } catch (error) {
         console.error('Error validating answer:', error);
-        res.status(500).json({ 
-            success: false, 
-            error: error.message 
+        res.status(500).json({
+            success: false,
+            error: error.message
+        });
+    }
+});
+
+// PUT /api/questions/:id - Update question
+router.put('/:id', checkJwt, async (req, res) => {
+    try {
+        const { id } = req.params;
+        const updated = await Question.update(id, req.body);
+
+        if (!updated) {
+            return res.status(404).json({
+                success: false,
+                error: 'Question not found'
+            });
+        }
+
+        res.json({
+            success: true,
+            data: updated,
+            message: 'Question updated successfully'
+        });
+
+    } catch (error) {
+        console.error('Error updating question:', error);
+        res.status(400).json({
+            success: false,
+            error: error.message
         });
     }
 });
