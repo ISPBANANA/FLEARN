@@ -107,18 +107,35 @@ const validationRules = {
     }
 };
 
+// ---------- routes --------------------------------------------------
+
+// POST /api/questions - Create new question
 router.post('/', checkJwt, async (req, res) => {
     try {
-        const { subject_id, topic_id, type_name, difficulty, points, status, content } = req.body;
-        
-        // Basic validation - use explicit undefined/null checks for numeric fields
-        if (!subject_id || !type_name || difficulty === undefined || difficulty === null || !content) {
+        const {
+            subject_id,
+            topic_id,
+            type_name,
+            difficulty,
+            points,
+            status,
+            content
+        } = req.body;
+
+        // Basic validation - explicit checks for numeric fields
+        if (
+            !subject_id ||
+            !type_name ||
+            difficulty === undefined ||
+            difficulty === null ||
+            !content
+        ) {
             return res.status(400).json({
                 success: false,
                 error: 'Missing required fields: subject_id, type_name, difficulty, content'
             });
         }
-        
+
         // Validate status if provided
         if (status && !['private', 'public'].includes(status)) {
             return res.status(400).json({
@@ -126,72 +143,16 @@ router.post('/', checkJwt, async (req, res) => {
                 error: 'Status must be either "private" or "public"'
             });
         }
-        
-        // Validation rules for each question type
-        const validationRules = {
-            multiple_choice: (c) => {
-                if (!c.options || c.options.length < 2) {
-                    throw new Error('Multiple choice needs at least 2 options');
-                }
-                if (c.options.filter(opt => opt.is_correct).length !== 1) {
-                    throw new Error('Multiple choice must have exactly 1 correct answer');
-                }
-            },
-            true_false: (c) => {
-                // Updated to support simple correct_answer format
-                if (!c.correct_answer) {
-                    throw new Error('True/False must have a correct answer');
-                }
-                if (!['true', 'false'].includes(c.correct_answer)) {
-                    throw new Error('True/False correct answer must be either "true" or "false"');
-                }
-            },
-            fill_blank: (c) => {
-                // Updated to support simple correct_answer format
-                if (!c.correct_answer || typeof c.correct_answer !== 'string') {
-                    throw new Error('Fill blank needs a correct answer');
-                }
-                if (c.correct_answer.trim().length === 0) {
-                    throw new Error('Fill blank correct answer cannot be empty');
-                }
-            },
-            matching: (c) => {
-                // Updated to support pairs format
-                if (!c.pairs || !Array.isArray(c.pairs)) {
-                    throw new Error('Matching needs pairs array');
-                }
-                if (c.pairs.length === 0) {
-                    throw new Error('Matching needs at least one pair');
-                }
-                // Validate each pair has left and right
-                for (const pair of c.pairs) {
-                    if (!pair.left || !pair.right) {
-                        throw new Error('Each matching pair must have both left and right values');
-                    }
-                }
-            }
-        };
-        
+
         // Validate content based on type
         if (validationRules[type_name]) {
             validationRules[type_name](content);
         }
-        
-        // Get user_id from google_id
-        const googleId = req.user.sub || req.user.id;
-        const { pgPool } = require('../config/database');
-        const userQuery = 'SELECT user_id FROM "user" WHERE google_id = $1';
-        const userResult = await pgPool.query(userQuery, [googleId]);
-        
-        if (userResult.rows.length === 0) {
-            return res.status(404).json({
-                success: false,
-                error: 'User not found'
-            });
-        }
-        
-        const userId = userResult.rows[0].user_id;
-        
+
+        // Get user (created_by) from google_id
+        const user = await ensureUserFromReq(req, res);
+        if (!user) return;
+
         const question = await Question.create({
             subject_id,
             topic_id,
@@ -200,20 +161,20 @@ router.post('/', checkJwt, async (req, res) => {
             points,
             status,
             content,
-            created_by: userId
+            created_by: user.user_id
         });
-        
+
         res.status(201).json({
             success: true,
             data: question,
             message: `${type_name} question created successfully`
         });
-        
+
     } catch (error) {
         console.error('Error creating question:', error);
-        res.status(400).json({ 
-            success: false, 
-            error: error.message 
+        res.status(400).json({
+            success: false,
+            error: error.message
         });
     }
 });
