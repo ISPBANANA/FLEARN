@@ -5,6 +5,23 @@ const { pgPool } = require('../config/database');
 
 const router = express.Router();
 
+
+// ---------- helpers -------------------------------------------------
+
+// Keep behaviour identical to existing code:
+// - only parse when value is truthy
+// - otherwise return undefined
+const toIntIfPresent = (value) =>
+  value ? parseInt(value, 10) : undefined;
+
+// For the topic stats route which uses `null` when not provided
+const toIntOrNullIfPresent = (value) =>
+  value ? parseInt(value, 10) : null;
+
+const toBoolFromQuery = (value) =>
+  value !== undefined ? value === 'true' : undefined;
+
+
 // ============================================
 // Create a new backlog entry
 // ============================================
