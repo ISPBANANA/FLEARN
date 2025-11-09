@@ -488,27 +488,29 @@ router.put('/:id', checkJwt, async (req, res) => {
 // Headers: Authorization: Bearer <JWT_TOKEN>
 // Note: This is a soft delete (sets is_active = false)
 // ============================================
+// DELETE /api/questions/:id - Delete question (soft delete)
 router.delete('/:id', checkJwt, async (req, res) => {
     try {
-        const deleted = await Question.delete(req.params.id);
-        
+        const { id } = req.params;
+        const deleted = await Question.delete(id);
+
         if (!deleted) {
             return res.status(404).json({
                 success: false,
                 error: 'Question not found'
             });
         }
-        
+
         res.json({
             success: true,
             message: 'Question deleted successfully'
         });
-        
+
     } catch (error) {
         console.error('Error deleting question:', error);
-        res.status(500).json({ 
-            success: false, 
-            error: error.message 
+        res.status(500).json({
+            success: false,
+            error: error.message
         });
     }
 });
