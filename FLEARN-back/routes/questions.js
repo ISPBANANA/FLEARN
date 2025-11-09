@@ -232,17 +232,17 @@ router.get('/', optionalJwt, async (req, res) => {
 router.get('/subjects', async (req, res) => {
     try {
         const subjects = await Question.getSubjects();
-        
+
         res.json({
             success: true,
             data: subjects
         });
-        
+
     } catch (error) {
         console.error('Error getting subjects:', error);
-        res.status(500).json({ 
-            success: false, 
-            error: error.message 
+        res.status(500).json({
+            success: false,
+            error: error.message
         });
     }
 });
@@ -279,29 +279,25 @@ router.get('/types', async (req, res) => {
 // ============================================
 router.get('/:id', optionalJwt, async (req, res) => {
     try {
-        const question = await Question.getById(req.params.id);
-        
+        const { id } = req.params;
+        const question = await Question.getById(id);
+
         if (!question) {
-            return res.status(404).json({ 
-                success: false, 
-                error: 'Question not found' 
+            return res.status(404).json({
+                success: false,
+                error: 'Question not found'
             });
         }
-        
+
         // Check if user is authenticated and has admin/teacher role
         let isAdminOrTeacher = false;
         if (req.user) {
-            const googleId = req.user.sub || req.user.id;
-            const { pgPool } = require('../config/database');
-            const userQuery = 'SELECT role FROM "user" WHERE google_id = $1';
-            const userResult = await pgPool.query(userQuery, [googleId]);
-            
-            if (userResult.rows.length > 0) {
-                const userRole = userResult.rows[0].role;
-                isAdminOrTeacher = userRole === 'admin' || userRole === 'teacher';
+            const user = await getUserFromReq(req);
+            if (user) {
+                isAdminOrTeacher = user.role === 'admin' || user.role === 'teacher';
             }
         }
-        
+
         // If admin/teacher, return full data with answers
         if (isAdminOrTeacher) {
             return res.json({
@@ -309,43 +305,37 @@ router.get('/:id', optionalJwt, async (req, res) => {
                 data: question
             });
         }
-        
+
         // For regular users, sanitize the data
         const sanitizedContent = { ...question.content };
-        
-        // Remove is_correct flag from options (for multiple choice, true/false, multi-select)
+
+        // Remove is_correct flag from options
         if (sanitizedContent.options) {
             sanitizedContent.options = sanitizedContent.options.map(({ is_correct, ...opt }) => opt);
         }
-        
+
         // Remove correct answers from fill blank
         if (sanitizedContent.blanks) {
             sanitizedContent.blanks = sanitizedContent.blanks.map(({ correct_answers, ...blank }) => blank);
         }
-        
-        // Remove correct_answer field
+
+        // Remove direct answer fields
         if (sanitizedContent.correct_answer) {
             delete sanitizedContent.correct_answer;
         }
-        
-        // Remove pairs from matching
         if (sanitizedContent.pairs) {
             delete sanitizedContent.pairs;
         }
-        
-        // Remove correct matches from matching
         if (sanitizedContent.correct_matches) {
             delete sanitizedContent.correct_matches;
         }
-        
-        // Remove sample answer and keywords from essay
         if (sanitizedContent.sample_answer) {
             delete sanitizedContent.sample_answer;
         }
         if (sanitizedContent.keywords) {
             delete sanitizedContent.keywords;
         }
-        
+
         res.json({
             success: true,
             data: {
@@ -359,12 +349,12 @@ router.get('/:id', optionalJwt, async (req, res) => {
                 ...sanitizedContent
             }
         });
-        
+
     } catch (error) {
         console.error('Error getting question:', error);
-        res.status(500).json({ 
-            success: false, 
-            error: error.message 
+        res.status(500).json({
+            success: false,
+            error: error.message
         });
     }
 });
