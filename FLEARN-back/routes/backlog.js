@@ -87,21 +87,21 @@ router.get('/user/:user_id', checkJwt, async (req, res) => {
         const { subject_id, topic_id, correctness, limit, offset } = req.query;
         
         const filters = {
-            subject_id: subject_id ? parseInt(subject_id) : undefined,
-            topic_id: topic_id ? parseInt(topic_id) : undefined,
-            correctness: correctness !== undefined ? correctness === 'true' : undefined,
-            limit: limit ? parseInt(limit) : 100,
-            offset: offset ? parseInt(offset) : 0
+            subject_id: toIntIfPresent(subject_id),
+            topic_id: toIntIfPresent(topic_id),
+            correctness: toBoolFromQuery(correctness),
+            limit: limit ? parseInt(limit, 10) : 100,
+            offset: offset ? parseInt(offset, 10) : 0
         };
-        
+
         const entries = await Backlog.getByUserId(user_id, filters);
-        
+
         res.json({
             message: 'Backlog entries retrieved successfully',
             count: entries.length,
             data: entries
         });
-        
+
     } catch (error) {
         console.error('Error retrieving backlog entries:', error);
         res.status(500).json({
