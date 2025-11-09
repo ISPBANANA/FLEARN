@@ -435,6 +435,24 @@ router.post('/:id/validate', async (req, res) => {
     }
 });
 
+
+
+// ============================================
+// PUT /api/questions/:id - Update question
+// Usage Example:
+// PUT /api/questions/123e4567-e89b-12d3-a456-426614174000
+// Headers: Authorization: Bearer <JWT_TOKEN>
+// Body: {
+//   "difficulty": 3,
+//   "points": 15,
+//   "topic_id": 2,  // Optional - update topic
+//   "status": "public",  // Optional - change visibility
+//   "content": {
+//     "question_text": "Updated question text",
+//     "options": [...]
+//   }
+// }
+// ============================================
 // PUT /api/questions/:id - Update question
 router.put('/:id', checkJwt, async (req, res) => {
     try {
@@ -459,48 +477,6 @@ router.put('/:id', checkJwt, async (req, res) => {
         res.status(400).json({
             success: false,
             error: error.message
-        });
-    }
-});
-
-// ============================================
-// PUT /api/questions/:id - Update question
-// Usage Example:
-// PUT /api/questions/123e4567-e89b-12d3-a456-426614174000
-// Headers: Authorization: Bearer <JWT_TOKEN>
-// Body: {
-//   "difficulty": 3,
-//   "points": 15,
-//   "topic_id": 2,  // Optional - update topic
-//   "status": "public",  // Optional - change visibility
-//   "content": {
-//     "question_text": "Updated question text",
-//     "options": [...]
-//   }
-// }
-// ============================================
-router.put('/:id', checkJwt, async (req, res) => {
-    try {
-        const updated = await Question.update(req.params.id, req.body);
-        
-        if (!updated) {
-            return res.status(404).json({
-                success: false,
-                error: 'Question not found'
-            });
-        }
-        
-        res.json({
-            success: true,
-            data: updated,
-            message: 'Question updated successfully'
-        });
-        
-    } catch (error) {
-        console.error('Error updating question:', error);
-        res.status(400).json({ 
-            success: false, 
-            error: error.message 
         });
     }
 });
