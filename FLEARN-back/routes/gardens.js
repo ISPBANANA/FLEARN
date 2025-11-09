@@ -232,7 +232,7 @@ router.post('/', checkJwt, async (req, res) => {
 
         // Check if they are friends first
         const friendshipQuery = `
-            SELECT * FROM friend 
+            SELECT * FROM friend
             WHERE ((user1_id = $1 AND user2_id = $2) OR (user1_id = $2 AND user2_id = $1))
               AND status = 'accepted'
         `;
@@ -247,7 +247,7 @@ router.post('/', checkJwt, async (req, res) => {
 
         // Check if garden already exists
         const existingGardenQuery = `
-            SELECT * FROM garden 
+            SELECT * FROM garden
             WHERE (user1_id = $1 AND user2_id = $2)
                OR (user1_id = $2 AND user2_id = $1)
         `;
@@ -293,31 +293,20 @@ router.post('/', checkJwt, async (req, res) => {
 // }
 router.patch('/:gardenId/streak', checkJwt, async (req, res) => {
     try {
-        const googleId = req.user.sub || req.user.id;
-        
-        // First get user_id from google_id
-        const userQuery = `SELECT user_id FROM "user" WHERE google_id = $1`;
-        const userResult = await pgPool.query(userQuery, [googleId]);
-        
-        if (userResult.rows.length === 0) {
-            return res.status(404).json({
-                error: 'User not found',
-                message: 'Please complete your profile setup first'
-            });
-        }
-        
-        const userId = userResult.rows[0].user_id;
+        const userId = await ensureUserFromReq(req, res);
+        if (!userId) return;
+
         const { gardenId } = req.params;
         const { increment } = req.body; // true to increment, false to reset
-        
+
         let updateQuery;
         let queryParams;
-        
+
         if (increment) {
-            // Increment streak and update uptime_streak (using Thailand timezone)
+            // Increment streak and update uptime_streak (Thailand timezone)
             updateQuery = `
-                UPDATE garden 
-                SET streak = streak + 1, 
+                UPDATE garden
+                SET streak = streak + 1,
                     uptime_streak = (CURRENT_DATE AT TIME ZONE 'UTC' AT TIME ZONE 'Asia/Bangkok')::date,
                     updated_at = NOW()
                 WHERE row_id = $1 AND (user1_id = $2 OR user2_id = $2)
@@ -335,21 +324,21 @@ router.patch('/:gardenId/streak', checkJwt, async (req, res) => {
             `;
             queryParams = [gardenId, userId];
         }
-        
+
         const result = await pgPool.query(updateQuery, queryParams);
-        
+
         if (result.rows.length === 0) {
             return res.status(404).json({
                 error: 'Garden not found',
                 message: 'Garden not found or you are not authorized to update it'
             });
         }
-        
+
         res.json({
             message: `Garden streak ${increment ? 'incremented' : 'reset'} successfully`,
             garden: result.rows[0]
         });
-        
+
     } catch (error) {
         console.error('Error updating garden streak:', error);
         res.status(500).json({
