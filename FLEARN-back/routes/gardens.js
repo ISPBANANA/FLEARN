@@ -357,69 +357,55 @@ router.patch('/:gardenId/streak', checkJwt, async (req, res) => {
 // }
 router.patch('/:gardenId/invitation', checkJwt, async (req, res) => {
     try {
-        const googleId = req.user.sub || req.user.id;
-        
-        // First get user_id from google_id
-        const userQuery = `SELECT user_id FROM "user" WHERE google_id = $1`;
-        const userResult = await pgPool.query(userQuery, [googleId]);
-        
-        if (userResult.rows.length === 0) {
-            return res.status(404).json({
-                error: 'User not found',
-                message: 'Please complete your profile setup first'
-            });
-        }
-        
-        const userId = userResult.rows[0].user_id;
+        const userId = await ensureUserFromReq(req, res);
+        if (!userId) return;
+
         const { gardenId } = req.params;
         const { status } = req.body;
-        
+
         if (!status || !['accepted', 'rejected'].includes(status)) {
             return res.status(400).json({
                 error: 'Bad request',
                 message: 'Status must be either "accepted" or "rejected"'
             });
         }
-        
-        // Handle different status actions
+
         let result;
         let message;
-        
+
         if (status === 'rejected') {
-            // Delete the row completely when rejected
             const deleteQuery = `
-                DELETE FROM garden 
+                DELETE FROM garden
                 WHERE row_id = $1 AND user1_id = $2 AND status = 'pending'
                 RETURNING *
             `;
-            
+
             result = await pgPool.query(deleteQuery, [gardenId, userId]);
             message = 'Garden invitation rejected and removed successfully';
         } else {
-            // Update status to active
             const updateQuery = `
-                UPDATE garden 
+                UPDATE garden
                 SET status = 'active', updated_at = NOW()
                 WHERE row_id = $1 AND user1_id = $2 AND status = 'pending'
                 RETURNING *
             `;
-            
+
             result = await pgPool.query(updateQuery, [gardenId, userId]);
             message = 'Garden invitation accepted successfully';
         }
-        
+
         if (result.rows.length === 0) {
             return res.status(404).json({
                 error: 'Garden invitation not found',
                 message: 'Garden invitation not found or you are not authorized to update it'
             });
         }
-        
+
         res.json({
-            message: message,
+            message,
             garden: result.rows[0]
         });
-        
+
     } catch (error) {
         console.error('Error updating garden invitation status:', error);
         res.status(500).json({
