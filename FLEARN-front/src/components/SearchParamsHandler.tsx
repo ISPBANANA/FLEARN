@@ -23,7 +23,7 @@ export default function SearchParamsHandler() {
           id_token: sessionData.id_token
         });
         
-        console.log('✅ User session restored from login');
+        //console.log('✅ User session restored from login');
         
         // After successful login, try to get user profile and redirect to profile page
         const fetchProfileAndRedirect = async () => {
@@ -66,7 +66,7 @@ export default function SearchParamsHandler() {
     // Check if user is already logged in
     const existingSession = SessionManager.getSession();
     if (existingSession) {
-      console.log('User is already logged in:', existingSession.user.name);
+      //console.log('User is already logged in:', existingSession.user.name);
       // Optionally redirect logged-in users to dashboard
       // router.replace('/dashboard');
     }
