@@ -635,53 +635,49 @@ router.get('/preferred-subjects', checkJwt, async (req, res) => {
 // }
 router.post('/preferred-subjects', checkJwt, async (req, res) => {
     try {
-        const googleId = req.user.sub || req.user.id;
         const { subject } = req.body;
-        
+
         if (!subject || subject.trim() === '') {
             return res.status(400).json({
                 error: 'Bad request',
                 message: 'Subject is required and cannot be empty'
             });
         }
-        
-        // First get user_id from google_id
-        const userQuery = `SELECT user_id, name FROM "user" WHERE google_id = $1`;
-        const userResult = await pgPool.query(userQuery, [googleId]);
-        
-        if (userResult.rows.length === 0) {
-            return res.status(404).json({
-                error: 'User not found',
-                message: 'Please complete your profile setup first'
-            });
-        }
-        
-        const userId = userResult.rows[0].user_id;
-        const userName = userResult.rows[0].name;
-        
+
+        const userRow = await ensureUserFromReq(req, res, 'Please complete your profile setup first');
+        if (!userRow) return;
+
+        const userId = userRow.user_id;
+        const userName = userRow.name;
+
         const insertQuery = `
             INSERT INTO prefered (user_id, subject)
             VALUES ($1, $2)
             RETURNING *
         `;
-        
-        const result = await pgPool.query(insertQuery, [userId, subject.trim().toLowerCase()]);
-        
-        res.status(201).json({
-            message: 'Preferred subject added successfully',
-            user_name: userName,
-            preference: result.rows[0]
-        });
-        
-    } catch (error) {
-        // Handle unique constraint violation
-        if (error.code === '23505') {
-            return res.status(409).json({
-                error: 'Duplicate preference',
-                message: 'This subject is already in your preferred subjects list'
+
+        try {
+            const result = await pgPool.query(insertQuery, [
+                userId,
+                subject.trim().toLowerCase()
+            ]);
+
+            res.status(201).json({
+                message: 'Preferred subject added successfully',
+                user_name: userName,
+                preference: result.rows[0]
             });
+        } catch (error) {
+            if (error.code === '23505') {
+                return res.status(409).json({
+                    error: 'Duplicate preference',
+                    message: 'This subject is already in your preferred subjects list'
+                });
+            }
+            throw error;
         }
-        
+
+    } catch (error) {
         console.error('Error adding preferred subject:', error);
         res.status(500).json({
             error: 'Internal server error',
