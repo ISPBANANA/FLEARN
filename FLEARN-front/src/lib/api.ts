@@ -101,14 +101,14 @@ export async function diagnoseCORSIssue(apiUrl: string = API_BASE_URL, silent: b
   if (cachedResult && cacheTime) {
     const age = Date.now() - parseInt(cacheTime);
     if (age < 30000) { // Cache for 30 seconds
-      if (!silent) console.log('🔄 Using cached CORS diagnostic result');
+      if (!silent) //console.log('🔄 Using cached CORS diagnostic result');
       return JSON.parse(cachedResult);
     }
   }
 
   try {
     // Test 1: Basic connectivity
-    if (!silent) console.log('🔍 CORS Diagnostic: Testing basic connectivity...');
+    if (!silent) //console.log('🔍 CORS Diagnostic: Testing basic connectivity...');
   const healthResponse = await fetch(`${resolvedApiUrl}/health`, {
       method: 'GET',
       mode: 'cors',
@@ -119,10 +119,10 @@ export async function diagnoseCORSIssue(apiUrl: string = API_BASE_URL, silent: b
     results.healthCheck = healthResponse.ok;
     results.details.healthStatus = healthResponse.status;
     
-    if (!silent) console.log(`✅ Basic connectivity: OK (${healthResponse.status})`);
+    if (!silent)// console.log(`✅ Basic connectivity: OK (${healthResponse.status})`);
 
     // Test 2: CORS preflight
-    if (!silent) console.log('🔍 CORS Diagnostic: Testing CORS preflight...');
+    if (!silent)// console.log('🔍 CORS Diagnostic: Testing CORS preflight...');
     try {
   const preflightResponse = await fetch(`${resolvedApiUrl}/api/users/profile`, {
         method: 'OPTIONS',
@@ -153,14 +153,14 @@ export async function diagnoseCORSIssue(apiUrl: string = API_BASE_URL, silent: b
         }
       });
       
-      if (!silent) console.log(`✅ CORS preflight: ${preflightResponse.ok ? 'OK' : 'Failed'} (${preflightResponse.status})`);
+      if (!silent) //console.log(`✅ CORS preflight: ${preflightResponse.ok ? 'OK' : 'Failed'} (${preflightResponse.status})`);
     } catch (preflightError) {
-      if (!silent) console.log('❌ CORS preflight failed:', preflightError);
+      if (!silent) //console.log('❌ CORS preflight failed:', preflightError);
       results.details.preflightError = preflightError instanceof Error ? preflightError.message : String(preflightError);
     }
 
   } catch (connectError) {
-    if (!silent) console.log('❌ Basic connectivity failed:', connectError);
+    if (!silent) //console.log('❌ Basic connectivity failed:', connectError);
     results.details.connectError = connectError instanceof Error ? connectError.message : String(connectError);
     
     // Check if it's a CORS error even on basic connectivity
@@ -339,7 +339,7 @@ async function apiCall(endpoint: string, options: RequestInit = {}) {
       console.error('Error Details:', corsError.message);
       console.group('💡 Suggestions:');
       corsError.suggestions.forEach((suggestion, index) => {
-        console.log(`${index + 1}. ${suggestion}`);
+        //console.log(`${index + 1}. ${suggestion}`);
       });
       console.groupEnd();
       console.groupEnd();
