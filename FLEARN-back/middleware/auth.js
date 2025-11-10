@@ -7,16 +7,16 @@ const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID;
 const isGoogleConfigured = GOOGLE_CLIENT_ID && 
     GOOGLE_CLIENT_ID !== 'your-google-client-id';
 
-console.log('🔍 Google Cloud Authentication Configuration Debug:');
-console.log('  GOOGLE_CLIENT_ID:', GOOGLE_CLIENT_ID);
-console.log('  isGoogleConfigured:', isGoogleConfigured);
+// console.log('🔍 Google Cloud Authentication Configuration Debug:');
+// console.log('  GOOGLE_CLIENT_ID:', GOOGLE_CLIENT_ID);
+// console.log('  isGoogleConfigured:', isGoogleConfigured);
 
 // Initialize Google Auth client
 const googleClient = new OAuth2Client(GOOGLE_CLIENT_ID);
 
 // Mock middleware for development when Google Cloud is not configured
 const mockAuth = (req, res, next) => {
-    console.log('⚠️  Using mock authentication middleware - Google Cloud not configured');
+    //console.log('⚠️  Using mock authentication middleware - Google Cloud not configured');
     // Mock user object for development
     req.user = {
         id: 'google|mock-user-id',
@@ -30,7 +30,7 @@ const mockAuth = (req, res, next) => {
 
 // Debug middleware to check authenticated users
 const debugAuth = (req, res, next) => {
-    console.log('✅ User authenticated:', req.user?.email);
+    // console.log('✅ User authenticated:', req.user?.email);
     next();
 };
 
@@ -72,7 +72,7 @@ const googleAuthMiddleware = async (req, res, next) => {
         req.user = user;
         debugAuth(req, res, next);
     } catch (error) {
-        console.log('❌ Google Auth Error:', error.message);
+        //console.log('❌ Google Auth Error:', error.message);
         return res.status(401).json({
             error: 'Unauthorized',
             message: 'Invalid token'
@@ -97,7 +97,7 @@ const optionalGoogleAuth = async (req, res, next) => {
         debugAuth(req, res, next);
     } catch (error) {
         // Token is invalid, but continue without authentication
-        console.log('⚠️  Optional Google Auth Warning:', error.message);
+        //console.log('⚠️  Optional Google Auth Warning:', error.message);
         next();
     }
 };
