@@ -10,6 +10,47 @@ const router = express.Router();
 // Usage Example:
 // GET /api/users/profile
 // Headers: Authorization: Bearer <GOOGLE_ID_TOKEN>
+
+// ---------- helpers -------------------------------------------------
+
+function getGoogleId(req) {
+    return req.user?.sub || req.user?.id || null;
+}
+
+async function getUserFromReq(req) {
+    const googleId = getGoogleId(req);
+    if (!googleId) return null;
+
+    const query = 'SELECT * FROM "user" WHERE google_id = $1';
+    const { rows } = await pgPool.query(query, [googleId]);
+    return rows[0] || null;
+}
+
+/**
+ * For routes that REQUIRE an authenticated user row.
+ * Sends 404 if not found and returns null.
+ * (checkJwt should already ensure req.user exists.)
+ */
+async function ensureUserFromReq(req, res, notFoundMessage = 'Please complete your profile setup first') {
+    const user = await getUserFromReq(req);
+
+    if (!user) {
+        res.status(404).json({
+            error: 'User not found',
+            message: notFoundMessage
+        });
+        return null;
+    }
+
+    return user;
+}
+
+const parseLimit = (value, fallback) => {
+    const n = parseInt(value, 10);
+    return Number.isNaN(n) ? fallback : n;
+};
+
+
 router.get('/profile', checkJwt, async (req, res) => {
     try {
         const googleId = req.user.sub || req.user.id;
