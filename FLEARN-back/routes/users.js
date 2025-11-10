@@ -745,95 +745,53 @@ router.delete('/preferred-subjects/:preferenceId', checkJwt, async (req, res) =>
 // Body: {
 //   "subjects": ["mathematics", "physics", "chemistry"]
 // }
-router.put('/preferred-subjects', checkJwt, async (req, res) => {
+router.delete('/preferred-subjects/:preferenceId', checkJwt, async (req, res) => {
     try {
-        const googleId = req.user.sub || req.user.id;
-        const { subjects } = req.body;
-        
-        if (!Array.isArray(subjects)) {
+        const { preferenceId } = req.params;
+
+        if (!preferenceId || isNaN(preferenceId)) {
             return res.status(400).json({
                 error: 'Bad request',
-                message: 'Subjects must be provided as an array'
+                message: 'Valid preference ID is required'
             });
         }
-        
-        // Validate and clean subjects
-        const cleanSubjects = subjects
-            .map(s => s?.toString().trim().toLowerCase())
-            .filter(s => s && s.length > 0);
-        
-        if (cleanSubjects.length !== subjects.length) {
-            return res.status(400).json({
-                error: 'Bad request',
-                message: 'All subjects must be non-empty strings'
-            });
-        }
-        
-        // Check for duplicates
-        const uniqueSubjects = [...new Set(cleanSubjects)];
-        if (uniqueSubjects.length !== cleanSubjects.length) {
-            return res.status(400).json({
-                error: 'Bad request',
-                message: 'Duplicate subjects are not allowed'
-            });
-        }
-        
-        // First get user_id from google_id
-        const userQuery = `SELECT user_id, name FROM "user" WHERE google_id = $1`;
-        const userResult = await pgPool.query(userQuery, [googleId]);
-        
-        if (userResult.rows.length === 0) {
+
+        const userRow = await ensureUserFromReq(req, res, 'Please complete your profile setup first');
+        if (!userRow) return;
+
+        const userId = userRow.user_id;
+        const userName = userRow.name;
+
+        const deleteQuery = `
+            DELETE FROM prefered 
+            WHERE row_id = $1 AND user_id = $2
+            RETURNING *
+        `;
+
+        const result = await pgPool.query(deleteQuery, [preferenceId, userId]);
+
+        if (result.rows.length === 0) {
             return res.status(404).json({
-                error: 'User not found',
-                message: 'Please complete your profile setup first'
+                error: 'Preference not found',
+                message: 'The specified preference was not found or does not belong to you'
             });
         }
-        
-        const userId = userResult.rows[0].user_id;
-        const userName = userResult.rows[0].name;
-        
-        // Use transaction to ensure consistency
-        const client = await pgPool.connect();
-        try {
-            await client.query('BEGIN');
-            
-            // Remove all existing preferences
-            await client.query('DELETE FROM prefered WHERE user_id = $1', [userId]);
-            
-            // Add new preferences
-            const insertedPreferences = [];
-            for (const subject of uniqueSubjects) {
-                const result = await client.query(
-                    'INSERT INTO prefered (user_id, subject) VALUES ($1, $2) RETURNING *',
-                    [userId, subject]
-                );
-                insertedPreferences.push(result.rows[0]);
-            }
-            
-            await client.query('COMMIT');
-            
-            res.json({
-                message: 'Preferred subjects updated successfully',
-                user_name: userName,
-                preferred_subjects: insertedPreferences,
-                total_count: insertedPreferences.length
-            });
-            
-        } catch (error) {
-            await client.query('ROLLBACK');
-            throw error;
-        } finally {
-            client.release();
-        }
-        
+
+        res.json({
+            message: 'Preferred subject removed successfully',
+            user_name: userName,
+            removed_preference: result.rows[0]
+        });
+
     } catch (error) {
-        console.error('Error updating preferred subjects:', error);
+        console.error('Error removing preferred subject:', error);
         res.status(500).json({
             error: 'Internal server error',
-            message: 'Failed to update preferred subjects'
+            message: 'Failed to remove preferred subject'
         });
     }
 });
+
 
 // Update only profile picture and name (protected route)
 // Usage Example:
