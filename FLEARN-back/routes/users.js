@@ -961,39 +961,26 @@ router.get('/leaderboard', async (req, res) => {
 // Headers: Authorization: Bearer <JWT_TOKEN>
 router.get('/admin/all', checkJwt, async (req, res) => {
     try {
-        const googleId = req.user.sub || req.user.id;
-        const limit = parseInt(req.query.limit) || 50;
-        const offset = parseInt(req.query.offset) || 0;
-        
-        // Validate pagination parameters
+        const currentUser = await ensureUserFromReq(req, res, 'Please complete your profile setup first');
+        if (!currentUser) return;
+
+        const limit = parseLimit(req.query.limit, 50);
+        const offset = parseLimit(req.query.offset, 0);
+
         if (limit > 100) {
             return res.status(400).json({
                 error: 'Bad request',
                 message: 'Limit cannot exceed 100'
             });
         }
-        
-        // First get current user info and check if they're admin or teacher
-        const userQuery = `SELECT user_id, role FROM "user" WHERE google_id = $1`;
-        const userResult = await pgPool.query(userQuery, [googleId]);
-        
-        if (userResult.rows.length === 0) {
-            return res.status(404).json({
-                error: 'User not found',
-                message: 'Please complete your profile setup first'
-            });
-        }
-        
-        const currentUser = userResult.rows[0];
-        
-        // Check if user has admin or teacher role
+
         if (currentUser.role !== 'admin' && currentUser.role !== 'teacher') {
             return res.status(403).json({
                 error: 'Forbidden',
                 message: 'Access denied. Admin or teacher role required.'
             });
         }
-        
+
         const query = `
             SELECT 
                 u.user_id,
@@ -1016,14 +1003,13 @@ router.get('/admin/all', checkJwt, async (req, res) => {
             ORDER BY u.created_at DESC
             LIMIT $1 OFFSET $2
         `;
-        
+
         const result = await pgPool.query(query, [limit, offset]);
-        
-        // Get total count for pagination
+
         const countQuery = `SELECT COUNT(*) as total FROM "user"`;
         const countResult = await pgPool.query(countQuery);
-        const totalUsers = parseInt(countResult.rows[0].total);
-        
+        const totalUsers = parseInt(countResult.rows[0].total, 10);
+
         res.json({
             message: 'All users retrieved successfully',
             users: result.rows,
@@ -1032,7 +1018,7 @@ router.get('/admin/all', checkJwt, async (req, res) => {
             limit: limit,
             offset: offset
         });
-        
+
     } catch (error) {
         console.error('Error fetching all users for admin:', error);
         res.status(500).json({
