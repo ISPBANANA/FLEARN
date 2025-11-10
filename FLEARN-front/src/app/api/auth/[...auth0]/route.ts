@@ -41,18 +41,18 @@ function handleLogin() {
   const nonce = Math.random().toString(36).substring(7);
   
   // Debug environment variables
-  console.log('All environment variables for NEXTAUTH:', {
-    NEXTAUTH_URL: process.env.NEXTAUTH_URL,
-    NODE_ENV: process.env.NODE_ENV,
-    NEXT_PUBLIC_API_BASE_URL: process.env.NEXT_PUBLIC_API_BASE_URL,
-    HOSTNAME: process.env.HOSTNAME,
-    HOST: process.env.HOST
-  });
+  // console.log('All environment variables for NEXTAUTH:', {
+  //   NEXTAUTH_URL: process.env.NEXTAUTH_URL,
+  //   NODE_ENV: process.env.NODE_ENV,
+  //   NEXT_PUBLIC_API_BASE_URL: process.env.NEXT_PUBLIC_API_BASE_URL,
+  //   HOSTNAME: process.env.HOSTNAME,
+  //   HOST: process.env.HOST
+  // });
 
   // Force the correct URL if NEXTAUTH_URL is not set properly
   const baseUrl = process.env.NEXTAUTH_URL || 'http://hongrocker49.thddns.net:2725';
   const redirectUri = `${baseUrl}/api/auth/callback`;
-  console.log('OAuth redirect URI:', redirectUri);
+  // console.log('OAuth redirect URI:', redirectUri);
   
   // Use the newer OAuth 2.0 endpoint
   const authUrl = new URL('https://accounts.google.com/o/oauth2/v2/auth');

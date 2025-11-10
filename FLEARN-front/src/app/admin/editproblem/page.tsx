@@ -303,18 +303,18 @@ function EditProblemContent() {
       return;
     }
 
-    // Debug: Log current state before validation
-    console.log('Current form state:', {
-      subjectId,
-      topicId,
-      questionType,
-      difficulty,
-      status,
-      questionText: questionText.substring(0, 50) + '...',
-      hasOptions: options.length > 0,
-      trueFalseAnswer,
-      fillBlankAnswer
-    });
+    // // Debug: Log current state before validation
+    // console.log('Current form state:', {
+    //   subjectId,
+    //   topicId,
+    //   questionType,
+    //   difficulty,
+    //   status,
+    //   questionText: questionText.substring(0, 50) + '...',
+    //   hasOptions: options.length > 0,
+    //   trueFalseAnswer,
+    //   fillBlankAnswer
+    // });
 
     // Validate based on question type
     if (questionType === 'multiple_choice') {
@@ -405,18 +405,18 @@ function EditProblemContent() {
         questionData.topic_id = undefined;
       }
 
-      // Debug: Log the data being sent
-      console.log('Saving question with data:', {
-        subject_id: questionData.subject_id,
-        topic_id: questionData.topic_id,
-        type_name: questionData.type_name,
-        difficulty: questionData.difficulty,
-        points: questionData.points,
-        status: questionData.status,
-        content: questionData.content,
-        isEditMode,
-        questionId
-      });
+      // // Debug: Log the data being sent
+      // console.log('Saving question with data:', {
+      //   subject_id: questionData.subject_id,
+      //   topic_id: questionData.topic_id,
+      //   type_name: questionData.type_name,
+      //   difficulty: questionData.difficulty,
+      //   points: questionData.points,
+      //   status: questionData.status,
+      //   content: questionData.content,
+      //   isEditMode,
+      //   questionId
+      // });
 
       // Call API to create or update question
       let response;
