@@ -595,53 +595,33 @@ router.patch('/streak', checkJwt, async (req, res) => {
 // Usage Example:
 // GET /api/users/preferred-subjects
 // Headers: Authorization: Bearer <JWT_TOKEN>
-router.patch('/streak', checkJwt, async (req, res) => {
+router.get('/preferred-subjects', checkJwt, async (req, res) => {
     try {
         const userRow = await ensureUserFromReq(req, res, 'Please complete your profile setup first');
         if (!userRow) return;
 
         const userId = userRow.user_id;
+        const userName = userRow.name;
 
-        const result = await incrementUserStreakIfNeeded(pgPool, userId);
-
-        if (result.error) {
-            return res.status(404).json({
-                error: 'User not found',
-                message: result.error
-            });
-        }
-
-        const gardensQuery = `
-            SELECT row_id FROM garden 
-            WHERE (user1_id = $1 OR user2_id = $1) AND status = 'active'
+        const query = `
+            SELECT row_id, subject, created_at FROM prefered 
+            WHERE user_id = $1
+            ORDER BY created_at ASC
         `;
-        const gardensResult = await pgPool.query(gardensQuery, [userId]);
-
-        const gardenUpdates = [];
-        for (const garden of gardensResult.rows) {
-            const gardenResult = await incrementGardenStreakIfBothUsersActive(pgPool, garden.row_id);
-            if (gardenResult.updated) {
-                gardenUpdates.push({
-                    garden_id: garden.row_id,
-                    updated: true,
-                    message: gardenResult.message
-                });
-            }
-        }
+        const result = await pgPool.query(query, [userId]);
 
         res.json({
-            message: result.message,
-            updated: result.updated,
-            user: result.user,
-            gardens_updated: gardenUpdates.length,
-            garden_updates: gardenUpdates
+            message: 'Preferred subjects retrieved successfully',
+            user_name: userName,
+            preferred_subjects: result.rows,
+            total_count: result.rows.length
         });
 
     } catch (error) {
-        console.error('Error updating user streak:', error);
+        console.error('Error fetching preferred subjects:', error);
         res.status(500).json({
             error: 'Internal server error',
-            message: 'Failed to update user streak'
+            message: 'Failed to fetch preferred subjects'
         });
     }
 });
