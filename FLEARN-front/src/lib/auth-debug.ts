@@ -7,19 +7,19 @@ import { getCurrentUser, isAuthenticated } from './api';
 export const AuthDebug = {
   // Check all authentication states
   checkAuthStatus() {
-    console.log('=== Auth Status Debug ===');
+    //console.log('=== Auth Status Debug ===');
     
     // SessionManager status
-    console.log('SessionManager:');
-    console.log('  - isAuthenticated():', SessionManager.isAuthenticated());
-    console.log('  - getSession():', SessionManager.getSession());
-    console.log('  - getCurrentUser():', SessionManager.getCurrentUser());
-    console.log('  - getAuthToken():', SessionManager.getAuthToken() ? 'Token present' : 'No token');
+    //console.log('SessionManager:');
+    //console.log('  - isAuthenticated():', SessionManager.isAuthenticated());
+    //console.log('  - getSession():', SessionManager.getSession());
+    //console.log('  - getCurrentUser():', SessionManager.getCurrentUser());
+    //console.log('  - getAuthToken():', SessionManager.getAuthToken() ? 'Token present' : 'No token');
     
     // API utils status
-    console.log('API Utils:');
-    console.log('  - isAuthenticated():', isAuthenticated());
-    console.log('  - getCurrentUser():', getCurrentUser());
+    //console.log('API Utils:');
+    //console.log('  - isAuthenticated():', isAuthenticated());
+    //console.log('  - getCurrentUser():', getCurrentUser());
     
     // Cookie status
     if (typeof document !== 'undefined') {
