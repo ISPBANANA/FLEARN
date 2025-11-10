@@ -388,33 +388,22 @@ router.post('/profile', checkJwt, async (req, res) => {
 // Headers: Authorization: Bearer <JWT_TOKEN>
 router.get('/preferences', checkJwt, async (req, res) => {
     try {
-        const googleId = req.user.sub || req.user.id;
-        
-        // First get user_id from google_id
-        const userQuery = `SELECT user_id FROM "user" WHERE google_id = $1`;
-        const userResult = await pgPool.query(userQuery, [googleId]);
-        
-        if (userResult.rows.length === 0) {
-            return res.status(404).json({
-                error: 'User not found',
-                message: 'Please complete your profile setup first'
-            });
-        }
-        
-        const userId = userResult.rows[0].user_id;
-        
+        const userRow = await ensureUserFromReq(req, res, 'Please complete your profile setup first');
+        if (!userRow) return;
+
+        const userId = userRow.user_id;
+
         const query = `
             SELECT * FROM prefered 
             WHERE user_id = $1
         `;
-        
         const result = await pgPool.query(query, [userId]);
-        
+
         res.json({
             message: 'User preferences retrieved successfully',
             preferences: result.rows
         });
-        
+
     } catch (error) {
         console.error('Error fetching user preferences:', error);
         res.status(500).json({
@@ -424,6 +413,45 @@ router.get('/preferences', checkJwt, async (req, res) => {
     }
 });
 
+// Add user preference
+// POST /api/users/preferences
+router.post('/preferences', checkJwt, async (req, res) => {
+    try {
+        const { subject } = req.body;
+
+        if (!subject) {
+            return res.status(400).json({
+                error: 'Bad request',
+                message: 'Subject is required'
+            });
+        }
+
+        const userRow = await ensureUserFromReq(req, res, 'Please complete your profile setup first');
+        if (!userRow) return;
+
+        const userId = userRow.user_id;
+
+        const insertQuery = `
+            INSERT INTO prefered (user_id, subject)
+            VALUES ($1, $2)
+            RETURNING *
+        `;
+
+        const result = await pgPool.query(insertQuery, [userId, subject]);
+
+        res.status(201).json({
+            message: 'Preference added successfully',
+            preference: result.rows[0]
+        });
+
+    } catch (error) {
+        console.error('Error adding user preference:', error);
+        res.status(500).json({
+            error: 'Internal server error',
+            message: 'Failed to add user preference'
+        });
+    }
+});
 // Add user preference
 // Usage Example:
 // POST /api/users/preferences
