@@ -50,31 +50,20 @@ const parseLimit = (value, fallback) => {
     return Number.isNaN(n) ? fallback : n;
 };
 
+// ---------- routes --------------------------------------------------
 
+// Get user profile (protected route)
+// GET /api/users/profile
 router.get('/profile', checkJwt, async (req, res) => {
     try {
-        const googleId = req.user.sub || req.user.id;
-        
-        const query = `
-            SELECT * FROM "user" 
-            WHERE google_id = $1
-        `;
-        
-        const result = await pgPool.query(query, [googleId]);
-        
-        if (result.rows.length === 0) {
-            return res.status(404).json({
-                error: 'User not found',
-                message: 'Please complete your profile setup'
-            });
-        }
-        
-        const userId = result.rows[0].user_id;
-        
-        // Check and reset streak/daily exp if needed FIRST (before updating anything)
-        // This must be done before updating updated_at timestamp
+        const userRow = await ensureUserFromReq(req, res, 'Please complete your profile setup');
+        if (!userRow) return;
+
+        const userId = userRow.user_id;
+
+        // Reset streak/daily exp if needed BEFORE any updates
         const user = await checkAndResetUserStreak(pgPool, userId);
-        
+
         // Count completed tasks from backlog
         const countQuery = `
             SELECT COUNT(*) as completed_count
@@ -82,21 +71,21 @@ router.get('/profile', checkJwt, async (req, res) => {
             WHERE user_id = $1
         `;
         const countResult = await pgPool.query(countQuery, [userId]);
-        const completedCount = parseInt(countResult.rows[0].completed_count);
-        
-        // Update the completed_task column (without updating updated_at to preserve exp tracking)
+        const completedCount = parseInt(countResult.rows[0].completed_count, 10);
+
+        // Update completed_task (no updated_at change)
         const updateQuery = `
             UPDATE "user"
             SET completed_task = $1
             WHERE user_id = $2
         `;
         await pgPool.query(updateQuery, [completedCount, userId]);
-        
+
         res.json({
             message: 'User profile retrieved successfully',
             user: user
         });
-        
+
     } catch (error) {
         console.error('Error fetching user profile:', error);
         res.status(500).json({
