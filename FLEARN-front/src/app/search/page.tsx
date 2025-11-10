@@ -36,6 +36,7 @@ export default function Home() {
   const [searchTerm, setSearchTerm] = useState("");
   const [searchResults, setSearchResults] = useState<UserProfile[]>([]);
   const [pendingRequests, setPendingRequests] = useState<FriendProfile[]>([]);
+  const [pendingRequestsCount, setPendingRequestsCount] = useState<number>(0);
   const [showRequests, setShowRequests] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -52,6 +53,13 @@ export default function Home() {
     }
   }, [hasLoadedInitial]);
 
+  // Fetch pending requests count on component mount
+  useEffect(() => {
+    if (currentUserProfile?.user_id) {
+      fetchPendingRequestsCount();
+    }
+  }, [currentUserProfile]);
+
   // Auto-search effect with debounce
   useEffect(() => {
     if (!hasLoadedInitial || showRequests) return; // Don't auto-search until initial load is complete or if showing requests
@@ -66,6 +74,26 @@ export default function Home() {
 
     return () => clearTimeout(timeoutId);
   }, [searchTerm, hasLoadedInitial, showRequests]);
+
+  // Fetch pending requests count (for notification dot)
+  const fetchPendingRequestsCount = async () => {
+    if (!currentUserProfile || !currentUserProfile.user_id) return;
+    
+    try {
+      const friendsData = await friendsAPI.getFriends();
+      const friendships: FriendProfile[] = friendsData.friends || [];
+      
+      // Count pending requests where the current user is the recipient (user1_id)
+      const count = friendships.filter(f => 
+        f.status === 'pending' && f.user1_id === currentUserProfile.user_id
+      ).length;
+      
+      setPendingRequestsCount(count);
+    } catch (err: unknown) {
+      console.error("Failed to fetch pending requests count:", err);
+      setPendingRequestsCount(0);
+    }
+  };
 
   // Request handler: show pending friend requests
   const handleShowRequests = async () => {
@@ -89,6 +117,7 @@ export default function Home() {
         f.status === 'pending' && f.user1_id === currentUserProfile.user_id
       );
       setPendingRequests(pending);
+      setPendingRequestsCount(pending.length); // Update count
       if (pending.length === 0) {
         setError("No pending requests");
       }
@@ -96,6 +125,7 @@ export default function Home() {
       const errorMessage = err instanceof Error ? err.message : "Failed to fetch requests";
       setError(errorMessage);
       setPendingRequests([]);
+      setPendingRequestsCount(0);
     } finally {
       setIsLoading(false);
     }
@@ -234,6 +264,8 @@ export default function Home() {
       await friendsAPI.acceptFriendRequest(request.row_id);
       // Remove from pending requests
       setPendingRequests(prev => prev.filter(r => r.row_id !== request.row_id));
+      // Update count
+      setPendingRequestsCount(prev => Math.max(0, prev - 1));
     } catch (err: unknown) {
       console.error('Error accepting friend request:', err);
       const errorMessage = err instanceof Error ? err.message : "Failed to accept friend request";
@@ -248,6 +280,8 @@ export default function Home() {
       await friendsAPI.blockFriendRequest(request.row_id);
       // Remove from pending requests
       setPendingRequests(prev => prev.filter(r => r.row_id !== request.row_id));
+      // Update count
+      setPendingRequestsCount(prev => Math.max(0, prev - 1));
     } catch (err: unknown) {
       console.error('Error rejecting friend request:', err);
       const errorMessage = err instanceof Error ? err.message : "Failed to reject friend request";
@@ -338,13 +372,16 @@ export default function Home() {
               </button>
               <button
                 onClick={handleShowRequests}
-                className={`px-8 py-1 bg-white rounded-xl transition-colors shadow-md ${
+                className={`px-8 py-1 bg-white rounded-xl transition-colors shadow-md relative ${
                   showRequests 
                     ? "cursor-pointer text-purple-500 border border-purple-500 hover:border-purple-600 hover:text-purple-600" 
                     : "cursor-pointer text-[#454545] border border-[#454545] hover:border-gray-600 hover:text-gray-600"
                 }`}
               >
                 Request
+                {pendingRequestsCount > 0 && (
+                  <span className="absolute top-1 right-1 w-2.5 h-2.5 bg-red-500 rounded-full animate-pulse"></span>
+                )}
               </button>
             </div>
           </div>

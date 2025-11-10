@@ -5,7 +5,7 @@ import { Nav } from "@/components/nav";
 import { Footer } from "@/components/footer";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
 import { useUserProfile } from '@/hooks/useUserProfile';
-import { userAPI, friendsAPI } from '@/lib/api';
+import { userAPI, friendsAPI, gardensAPI } from '@/lib/api';
 import Link from "next/link";
 import { UserRound, LogOut, Users, TreePine, LayoutDashboard } from 'lucide-react';
 import { useEffect, useState } from 'react';
@@ -47,6 +47,8 @@ export default function ProfilePage({ params }: ProfilePageProps) {
   const [friendsData, setFriendsData] = useState<FriendData[]>([]);
   const [friendsLoading, setFriendsLoading] = useState<boolean>(false);
   const [friendsError, setFriendsError] = useState<string | null>(null);
+  const [pendingFriendRequestsCount, setPendingFriendRequestsCount] = useState<number>(0);
+  const [pendingGardenInvitesCount, setPendingGardenInvitesCount] = useState<number>(0);
   const { profile, isLoading, error } = useUserProfile();
   const pathname = usePathname();
   const router = useRouter();
@@ -133,6 +135,48 @@ export default function ProfilePage({ params }: ProfilePageProps) {
     }
   };
 
+  // Fetch pending friend requests count for the authenticated user
+  const fetchPendingFriendRequests = async () => {
+    if (!profile?.user_id) return;
+
+    try {
+      // Get all friendships for the authenticated user
+      const friendsResponse = await friendsAPI.getFriends();
+      const friendships = friendsResponse.friends || [];
+      
+      // Count pending requests where the current user is user1_id (receiver)
+      const pendingCount = friendships.filter((friendship: any) => 
+        friendship.status === 'pending' && friendship.user1_id === profile.user_id
+      ).length;
+
+      setPendingFriendRequestsCount(pendingCount);
+    } catch (err: unknown) {
+      console.error("Failed to fetch pending friend requests:", err);
+      setPendingFriendRequestsCount(0);
+    }
+  };
+
+  // Fetch pending garden invitations count for the authenticated user
+  const fetchPendingGardenInvites = async () => {
+    if (!profile?.user_id) return;
+
+    try {
+      // Get all gardens for the authenticated user
+      const gardensResponse = await gardensAPI.getGardens();
+      const gardens = gardensResponse.gardens || [];
+      
+      // Count pending invitations where the current user is user1_id (receiver)
+      const pendingCount = gardens.filter((garden: any) => 
+        garden.status === 'pending' && garden.user1_id === profile.user_id
+      ).length;
+
+      setPendingGardenInvitesCount(pendingCount);
+    } catch (err: unknown) {
+      console.error("Failed to fetch pending garden invites:", err);
+      setPendingGardenInvitesCount(0);
+    }
+  };
+
   useEffect(() => {
     params.then((resolvedParams) => {
       setUuid(resolvedParams.uuid);
@@ -145,7 +189,13 @@ export default function ProfilePage({ params }: ProfilePageProps) {
     });
     // Fetch leaderboard data
     fetchLeaderboard();
-  }, [params]);
+    
+    // Fetch pending requests for authenticated user (only if profile is loaded)
+    if (profile?.user_id) {
+      fetchPendingFriendRequests();
+      fetchPendingGardenInvites();
+    }
+  }, [params, profile]);
 
   // Handle redirects when profile is not found or there's an error
   useEffect(() => {
@@ -563,9 +613,12 @@ export default function ProfilePage({ params }: ProfilePageProps) {
                     {isOwnProfile && (
                       <>
                         <Link href="/search">
-                          <button className="cursor-pointer w-full bg-purple-50 text-purple-600 py-3 px-4 rounded border border-purple-200 hover:bg-purple-100 transition-colors flex items-center justify-center gap-2 text-sm font-medium">
+                          <button className="cursor-pointer w-full bg-purple-50 text-purple-600 py-3 px-4 rounded border border-purple-200 hover:bg-purple-100 transition-colors flex items-center justify-center gap-2 text-sm font-medium relative">
                             <Users size={18} />
                             Find Friend
+                            {pendingFriendRequestsCount > 0 && (
+                              <span className="absolute top-2 right-2 w-2.5 h-2.5 bg-red-500 rounded-full animate-pulse"></span>
+                            )}
                             <svg className="w-4 h-4 ml-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
                             </svg>
@@ -584,9 +637,12 @@ export default function ProfilePage({ params }: ProfilePageProps) {
                     )}
 
                     <Link href={`${pathname}/garden`}>
-                      <button className="cursor-pointer w-full bg-green-50 text-green-600 py-3 px-4 rounded border border-green-200 hover:bg-green-100 transition-colors flex items-center justify-center gap-2 text-sm font-medium">
+                      <button className="cursor-pointer w-full bg-green-50 text-green-600 py-3 px-4 rounded border border-green-200 hover:bg-green-100 transition-colors flex items-center justify-center gap-2 text-sm font-medium relative">
                         <TreePine size={18} />
                         Garden
+                        {pendingGardenInvitesCount > 0 && (
+                          <span className="absolute top-2 right-2 w-2.5 h-2.5 bg-red-500 rounded-full animate-pulse"></span>
+                        )}
                         <svg className="w-4 h-4 ml-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
                         </svg>
