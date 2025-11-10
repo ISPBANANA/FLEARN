@@ -458,53 +458,6 @@ router.post('/preferences', checkJwt, async (req, res) => {
     }
 });
 
-router.post('/preferences', checkJwt, async (req, res) => {
-    try {
-        const googleId = req.user.sub || req.user.id;
-        const { subject } = req.body;
-        
-        if (!subject) {
-            return res.status(400).json({
-                error: 'Bad request',
-                message: 'Subject is required'
-            });
-        }
-        
-        // First get user_id from google_id
-        const userQuery = `SELECT user_id FROM "user" WHERE google_id = $1`;
-        const userResult = await pgPool.query(userQuery, [googleId]);
-        
-        if (userResult.rows.length === 0) {
-            return res.status(404).json({
-                error: 'User not found',
-                message: 'Please complete your profile setup first'
-            });
-        }
-        
-        const userId = userResult.rows[0].user_id;
-        
-        const insertQuery = `
-            INSERT INTO prefered (user_id, subject)
-            VALUES ($1, $2)
-            RETURNING *
-        `;
-        
-        const result = await pgPool.query(insertQuery, [userId, subject]);
-        
-        res.status(201).json({
-            message: 'Preference added successfully',
-            preference: result.rows[0]
-        });
-        
-    } catch (error) {
-        console.error('Error adding user preference:', error);
-        res.status(500).json({
-            error: 'Internal server error',
-            message: 'Failed to add user preference'
-        });
-    }
-});
-
 // Update user experience points
 // Usage Example:
 // PATCH /api/users/experience
@@ -589,24 +542,13 @@ router.patch('/experience', checkJwt, async (req, res) => {
 // Headers: Authorization: Bearer <JWT_TOKEN>
 router.patch('/streak', checkJwt, async (req, res) => {
     try {
-        const googleId = req.user.sub || req.user.id;
-        
-        // First get user_id from google_id
-        const userQuery = `SELECT user_id FROM "user" WHERE google_id = $1`;
-        const userResult = await pgPool.query(userQuery, [googleId]);
-        
-        if (userResult.rows.length === 0) {
-            return res.status(404).json({
-                error: 'User not found',
-                message: 'Please complete your profile setup first'
-            });
-        }
-        
-        const userId = userResult.rows[0].user_id;
-        
-        // Increment streak if needed (if uptime_streak is not today)
+        const userRow = await ensureUserFromReq(req, res, 'Please complete your profile setup first');
+        if (!userRow) return;
+
+        const userId = userRow.user_id;
+
         const result = await incrementUserStreakIfNeeded(pgPool, userId);
-        
+
         if (result.error) {
             return res.status(404).json({
                 error: 'User not found',
@@ -614,14 +556,12 @@ router.patch('/streak', checkJwt, async (req, res) => {
             });
         }
 
-        // After updating user streak, check and update all active gardens for this user
-        // This ensures garden streaks are updated immediately when both users complete their daily activity
         const gardensQuery = `
             SELECT row_id FROM garden 
             WHERE (user1_id = $1 OR user2_id = $1) AND status = 'active'
         `;
         const gardensResult = await pgPool.query(gardensQuery, [userId]);
-        
+
         const gardenUpdates = [];
         for (const garden of gardensResult.rows) {
             const gardenResult = await incrementGardenStreakIfBothUsersActive(pgPool, garden.row_id);
@@ -633,7 +573,7 @@ router.patch('/streak', checkJwt, async (req, res) => {
                 });
             }
         }
-        
+
         res.json({
             message: result.message,
             updated: result.updated,
@@ -641,7 +581,7 @@ router.patch('/streak', checkJwt, async (req, res) => {
             gardens_updated: gardenUpdates.length,
             garden_updates: gardenUpdates
         });
-        
+
     } catch (error) {
         console.error('Error updating user streak:', error);
         res.status(500).json({
