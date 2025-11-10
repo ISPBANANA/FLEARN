@@ -91,10 +91,10 @@ const nextConfig: NextConfig = {
 };
 
 // Debug logging
-console.log("Next.js Config - Environment Variables:", {
-  NEXTAUTH_URL: process.env.NEXTAUTH_URL,
-  NEXT_PUBLIC_API_BASE_URL: process.env.NEXT_PUBLIC_API_BASE_URL,
-  NODE_ENV: process.env.NODE_ENV
-});
+// console.log("Next.js Config - Environment Variables:", {
+//   NEXTAUTH_URL: process.env.NEXTAUTH_URL,
+//   NEXT_PUBLIC_API_BASE_URL: process.env.NEXT_PUBLIC_API_BASE_URL,
+//   NODE_ENV: process.env.NODE_ENV
+// });
 
 export default nextConfig;
