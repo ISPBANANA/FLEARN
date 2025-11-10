@@ -692,51 +692,42 @@ router.post('/preferred-subjects', checkJwt, async (req, res) => {
 // Headers: Authorization: Bearer <JWT_TOKEN>
 router.delete('/preferred-subjects/:preferenceId', checkJwt, async (req, res) => {
     try {
-        const googleId = req.user.sub || req.user.id;
         const { preferenceId } = req.params;
-        
+
         if (!preferenceId || isNaN(preferenceId)) {
             return res.status(400).json({
                 error: 'Bad request',
                 message: 'Valid preference ID is required'
             });
         }
-        
-        // First get user_id from google_id
-        const userQuery = `SELECT user_id, name FROM "user" WHERE google_id = $1`;
-        const userResult = await pgPool.query(userQuery, [googleId]);
-        
-        if (userResult.rows.length === 0) {
-            return res.status(404).json({
-                error: 'User not found',
-                message: 'Please complete your profile setup first'
-            });
-        }
-        
-        const userId = userResult.rows[0].user_id;
-        const userName = userResult.rows[0].name;
-        
+
+        const userRow = await ensureUserFromReq(req, res, 'Please complete your profile setup first');
+        if (!userRow) return;
+
+        const userId = userRow.user_id;
+        const userName = userRow.name;
+
         const deleteQuery = `
             DELETE FROM prefered 
             WHERE row_id = $1 AND user_id = $2
             RETURNING *
         `;
-        
+
         const result = await pgPool.query(deleteQuery, [preferenceId, userId]);
-        
+
         if (result.rows.length === 0) {
             return res.status(404).json({
                 error: 'Preference not found',
                 message: 'The specified preference was not found or does not belong to you'
             });
         }
-        
+
         res.json({
             message: 'Preferred subject removed successfully',
             user_name: userName,
             removed_preference: result.rows[0]
         });
-        
+
     } catch (error) {
         console.error('Error removing preferred subject:', error);
         res.status(500).json({
@@ -745,6 +736,7 @@ router.delete('/preferred-subjects/:preferenceId', checkJwt, async (req, res) =>
         });
     }
 });
+
 
 // Update/replace all preferred subjects at once
 // Usage Example:
