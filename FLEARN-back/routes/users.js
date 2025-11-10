@@ -132,7 +132,7 @@ router.get('/profilebyid', checkJwt, async (req, res) => {
             WHERE user_id = $1
         `;
         const countResult = await pgPool.query(countQuery, [userId]);
-        const completedCount = parseInt(countResult.rows[0].completed_count);
+        const completedCount = parseInt(countResult.rows[0].completed_count, 10);
         
         // Update the completed_task column (without updating updated_at to preserve exp tracking)
         const updateQuery = `
@@ -162,31 +162,21 @@ router.get('/profilebyid', checkJwt, async (req, res) => {
 // Headers: Authorization: Bearer <JWT_TOKEN>
 router.get('/all', checkJwt, async (req, res) => {
     try {
-        const googleId = req.user.sub || req.user.id;
-        const limit = parseInt(req.query.limit) || 50;
-        const offset = parseInt(req.query.offset) || 0;
-        
-        // Validate pagination parameters
+        const currentUser = await ensureUserFromReq(req, res, 'Please complete your profile setup first');
+        if (!currentUser) return;
+
+        const limit = parseLimit(req.query.limit, 50);
+        const offset = parseLimit(req.query.offset, 0);
+
         if (limit > 100) {
             return res.status(400).json({
                 error: 'Bad request',
                 message: 'Limit cannot exceed 100'
             });
         }
-        
-        // First get user_id from google_id
-        const userQuery = `SELECT user_id FROM "user" WHERE google_id = $1`;
-        const userResult = await pgPool.query(userQuery, [googleId]);
-        
-        if (userResult.rows.length === 0) {
-            return res.status(404).json({
-                error: 'User not found',
-                message: 'Please complete your profile setup first'
-            });
-        }
-        
-        const currentUserId = userResult.rows[0].user_id;
-        
+
+        const currentUserId = currentUser.user_id;
+
         const query = `
             SELECT 
                 u.user_id,
@@ -208,9 +198,9 @@ router.get('/all', checkJwt, async (req, res) => {
             ORDER BY u.name, u.created_at DESC
             LIMIT $2 OFFSET $3
         `;
-        
+
         const result = await pgPool.query(query, [currentUserId, limit, offset]);
-        
+
         res.json({
             message: 'All users retrieved successfully',
             users: result.rows,
@@ -218,7 +208,7 @@ router.get('/all', checkJwt, async (req, res) => {
             limit: limit,
             offset: offset
         });
-        
+
     } catch (error) {
         console.error('Error fetching all users:', error);
         res.status(500).json({
