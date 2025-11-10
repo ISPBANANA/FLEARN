@@ -313,7 +313,7 @@ export default function BacklogAnalyticsPage() {
   // Generate PDF Report using jsPDF and html2canvas
   const generatePDFReport = async () => {
     if (isGeneratingPDF || !dailyTasksChartRef.current || !accuracyChartRef.current || !dailyExpChartRef.current) {
-      console.log('PDF generation cancelled: refs not available or already generating');
+      // console.log('PDF generation cancelled: refs not available or already generating');
       return;
     }
 
@@ -411,7 +411,7 @@ export default function BacklogAnalyticsPage() {
       };
 
       // Capture and add Daily Completed Tasks chart
-      console.log('Capturing Daily Completed Tasks chart...');
+      // console.log('Capturing Daily Completed Tasks chart...');
       if (!dailyTasksChartRef.current) {
         throw new Error('Daily tasks chart reference is null');
       }
@@ -430,7 +430,7 @@ export default function BacklogAnalyticsPage() {
       yPosition += chartHeight + 10;
 
       // Capture and add Accuracy Overview chart
-      console.log('Capturing Accuracy Overview chart...');
+      // console.log('Capturing Accuracy Overview chart...');
       if (!accuracyChartRef.current) {
         throw new Error('Accuracy chart reference is null');
       }
@@ -449,7 +449,7 @@ export default function BacklogAnalyticsPage() {
       yPosition += accuracyHeight + 10;
 
       // Capture and add Daily EXP Earned chart
-      console.log('Capturing Daily EXP Earned chart...');
+      // console.log('Capturing Daily EXP Earned chart...');
       if (!dailyExpChartRef.current) {
         throw new Error('Daily EXP chart reference is null');
       }
@@ -485,10 +485,10 @@ export default function BacklogAnalyticsPage() {
       const sanitizedEnd = end.replace(/[/:]/g, '-');
       const fileName = `Learning_Analytics_${sanitizedStart}_to_${sanitizedEnd}.pdf`;
       
-      console.log('Saving PDF as:', fileName);
+      // console.log('Saving PDF as:', fileName);
       pdf.save(fileName);
       
-      console.log('PDF generated successfully!');
+      // console.log('PDF generated successfully!');
 
     } catch (error) {
       console.error('Error generating PDF:', error);

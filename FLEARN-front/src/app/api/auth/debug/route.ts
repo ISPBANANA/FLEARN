@@ -55,7 +55,7 @@ export async function GET(request: NextRequest) {
       break;
   }
   
-  console.log(`Testing OAuth with ${testType}:`, authUrl.toString());
+  //console.log(`Testing OAuth with ${testType}:`, authUrl.toString());
   
   return NextResponse.json({
     testType,
