@@ -412,9 +412,14 @@ router.get('/preferences', checkJwt, async (req, res) => {
         });
     }
 });
-
 // Add user preference
+// Usage Example:
 // POST /api/users/preferences
+// Headers: Authorization: Bearer <JWT_TOKEN>
+// Body: {
+//   "subject": "mathematics"
+// }
+
 router.post('/preferences', checkJwt, async (req, res) => {
     try {
         const { subject } = req.body;
@@ -452,13 +457,7 @@ router.post('/preferences', checkJwt, async (req, res) => {
         });
     }
 });
-// Add user preference
-// Usage Example:
-// POST /api/users/preferences
-// Headers: Authorization: Bearer <JWT_TOKEN>
-// Body: {
-//   "subject": "mathematics"
-// }
+
 router.post('/preferences', checkJwt, async (req, res) => {
     try {
         const googleId = req.user.sub || req.user.id;
