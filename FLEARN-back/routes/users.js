@@ -1130,72 +1130,55 @@ router.patch('/admin/update/:userId', checkJwt, async (req, res) => {
     }
 });
 
-// DELETE /api/users/admin/delete/12345678-1234-1234-1234-123456789012
-// Headers: Authorization: Bearer <JWT_TOKEN>
+// Admin delete user
+// DELETE /api/users/admin/delete/:userId
 router.delete('/admin/delete/:userId', checkJwt, async (req, res) => {
     try {
-        const requestingUserGoogleId = req.user.sub || req.user.id;
         const { userId } = req.params;
-        
+
         if (!userId) {
             return res.status(400).json({
                 error: 'Bad request',
                 message: 'User ID is required'
             });
         }
-        
-        // First verify that the requesting user is an admin
-        const adminQuery = `SELECT user_id, role FROM "user" WHERE google_id = $1`;
-        const adminResult = await pgPool.query(adminQuery, [requestingUserGoogleId]);
-        
-        if (adminResult.rows.length === 0) {
-            return res.status(404).json({
-                error: 'User not found',
-                message: 'Requesting user not found'
-            });
-        }
-        
-        if (adminResult.rows[0].role !== 'admin') {
+
+        const requestingUser = await ensureUserFromReq(req, res, 'Requesting user not found');
+        if (!requestingUser) return;
+
+        if (requestingUser.role !== 'admin') {
             return res.status(403).json({
                 error: 'Forbidden',
                 message: 'Only admins can delete user accounts'
             });
         }
-        
-        // Check if the user to be deleted exists
+
         const userToDeleteQuery = `SELECT user_id, name, email FROM "user" WHERE user_id = $1`;
         const userToDeleteResult = await pgPool.query(userToDeleteQuery, [userId]);
-        
+
         if (userToDeleteResult.rows.length === 0) {
             return res.status(404).json({
                 error: 'User not found',
                 message: 'User to delete does not exist'
             });
         }
-        
+
         const userToDelete = userToDeleteResult.rows[0];
-        
-        // Prevent admin from deleting themselves
-        if (adminResult.rows[0].user_id === userId) {
+
+        if (requestingUser.user_id === userId) {
             return res.status(400).json({
                 error: 'Bad request',
                 message: 'You cannot delete your own account'
             });
         }
-        
-        // Use transaction to ensure data consistency
+
         const client = await pgPool.connect();
         try {
             await client.query('BEGIN');
-            
-            // Delete user (CASCADE will automatically delete related records)
-            // This will delete:
-            // - prefered (user preferences)
-            // - friend (friend relationships)
-            // - garden (garden relationships)
+
             const deleteQuery = `DELETE FROM "user" WHERE user_id = $1`;
             const deleteResult = await client.query(deleteQuery, [userId]);
-            
+
             if (deleteResult.rowCount === 0) {
                 await client.query('ROLLBACK');
                 return res.status(404).json({
@@ -1203,9 +1186,9 @@ router.delete('/admin/delete/:userId', checkJwt, async (req, res) => {
                     message: 'User could not be deleted'
                 });
             }
-            
+
             await client.query('COMMIT');
-            
+
             res.json({
                 message: 'User account deleted successfully',
                 deletedUser: {
@@ -1214,14 +1197,14 @@ router.delete('/admin/delete/:userId', checkJwt, async (req, res) => {
                     email: userToDelete.email
                 }
             });
-            
+
         } catch (error) {
             await client.query('ROLLBACK');
             throw error;
         } finally {
             client.release();
         }
-        
+
     } catch (error) {
         console.error('Error deleting user account:', error);
         res.status(500).json({
