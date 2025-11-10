@@ -309,25 +309,20 @@ router.get('/search', checkJwt, async (req, res) => {
 // }
 router.post('/profile', checkJwt, async (req, res) => {
     try {
-        const googleId = req.user.sub || req.user.id;
+        const googleId = getGoogleId(req);
         const email = req.body.email || req.user.email;
         const name = req.body.name || req.user.name;
         const profile_pic = req.body.profile_pic || req.user.picture;
-        
-        const {
-            birthdate,
-            edu_level
-        } = req.body;
-        
-        // Check if user already exists
+
+        const { birthdate, edu_level } = req.body;
+
         const existingUserQuery = `
             SELECT user_id FROM "user" 
             WHERE google_id = $1
         `;
         const existingUser = await pgPool.query(existingUserQuery, [googleId]);
-        
+
         if (existingUser.rows.length > 0) {
-            // Update existing user
             const updateQuery = `
                 UPDATE "user" 
                 SET profile_pic = $1, name = $2, email = $3, birthdate = $4, edu_level = $5,
@@ -335,36 +330,49 @@ router.post('/profile', checkJwt, async (req, res) => {
                 WHERE google_id = $6
                 RETURNING *
             `;
-            
+
             const result = await pgPool.query(updateQuery, [
-                profile_pic, name, email, birthdate, edu_level, googleId
+                profile_pic,
+                name,
+                email,
+                birthdate,
+                edu_level,
+                googleId
             ]);
-            
+
             res.json({
                 message: 'User profile updated successfully',
                 user: result.rows[0]
             });
         } else {
-            // Create new user
             const userId = uuidv4();
             const insertQuery = `
                 INSERT INTO "user" (
                     user_id, google_id, profile_pic, name, email, birthdate, edu_level,
                     rank, streak, completed_task, daily_exp, math_exp, phy_exp, bio_exp, chem_exp, role
-                ) VALUES ($1, $2, $3, $4, $5, $6, $7, 'Beginner', 0, 0, 0, 0, 0, 0, 0, 'user')
+                ) VALUES (
+                    $1, $2, $3, $4, $5, $6, $7,
+                    'Beginner', 0, 0, 0, 0, 0, 0, 0, 'user'
+                )
                 RETURNING *
             `;
-            
+
             const result = await pgPool.query(insertQuery, [
-                userId, googleId, profile_pic, name, email, birthdate, edu_level
+                userId,
+                googleId,
+                profile_pic,
+                name,
+                email,
+                birthdate,
+                edu_level
             ]);
-            
+
             res.status(201).json({
                 message: 'User profile created successfully',
                 user: result.rows[0]
             });
         }
-        
+
     } catch (error) {
         console.error('Error creating/updating user profile:', error);
         res.status(500).json({
