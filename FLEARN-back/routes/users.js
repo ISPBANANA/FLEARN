@@ -803,68 +803,63 @@ router.delete('/preferred-subjects/:preferenceId', checkJwt, async (req, res) =>
 // }
 router.patch('/profile-basic', checkJwt, async (req, res) => {
     try {
-        const googleId = req.user.sub || req.user.id;
+        const googleId = getGoogleId(req);
         const { profile_pic, name } = req.body;
-        
-        // Validate that at least one field is provided
+
         if (!profile_pic && !name) {
             return res.status(400).json({
                 error: 'Bad request',
                 message: 'At least one field (profile_pic or name) is required'
             });
         }
-        
-        // Check if user exists
+
         const existingUserQuery = `
             SELECT user_id FROM "user" 
             WHERE google_id = $1
         `;
         const existingUser = await pgPool.query(existingUserQuery, [googleId]);
-        
+
         if (existingUser.rows.length === 0) {
             return res.status(404).json({
                 error: 'User not found',
                 message: 'Please complete your profile setup first'
             });
         }
-        
-        // Build dynamic update query based on provided fields
-        let updateFields = [];
-        let values = [];
+
+        const updateFields = [];
+        const values = [];
         let paramCount = 1;
-        
+
         if (profile_pic !== undefined) {
             updateFields.push(`profile_pic = $${paramCount}`);
             values.push(profile_pic);
             paramCount++;
         }
-        
+
         if (name !== undefined && name.trim() !== '') {
             updateFields.push(`name = $${paramCount}`);
             values.push(name.trim());
             paramCount++;
         }
-        
-        // Always update the updated_at timestamp
+
         updateFields.push('updated_at = NOW()');
-        
-        // Add google_id for WHERE clause
+
         values.push(googleId);
-        
+
         const updateQuery = `
             UPDATE "user" 
             SET ${updateFields.join(', ')}
             WHERE google_id = $${paramCount}
             RETURNING *
         `;
-        
+
         const result = await pgPool.query(updateQuery, values);
-        
+
         res.json({
             message: 'Profile updated successfully',
             user: result.rows[0]
         });
-        
+
     } catch (error) {
         console.error('Error updating profile basic info:', error);
         res.status(500).json({
@@ -873,6 +868,7 @@ router.patch('/profile-basic', checkJwt, async (req, res) => {
         });
     }
 });
+
 
 // Get username by user ID (public endpoint)
 // Usage Example:
