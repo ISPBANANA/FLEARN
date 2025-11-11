@@ -1,11 +1,14 @@
 # Use Node.js 18 LTS as base image
 FROM node:18-alpine
 
+# Set timezone to Bangkok
+ENV TZ=Asia/Bangkok
+
 # Cache bust argument to force fresh git clone
 ARG CACHEBUST=1
 
-# Update Alpine packages to latest security patches and install git
-RUN apk update && apk upgrade --no-cache && apk add --no-cache git
+# Update Alpine packages to latest security patches and install git and tzdata
+RUN apk update && apk upgrade --no-cache && apk add --no-cache git tzdata
 
 # Set working directory
 WORKDIR /app

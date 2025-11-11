@@ -1,8 +1,11 @@
 # Development Dockerfile - Uses local files instead of Git
 FROM node:18-alpine
 
-# Update Alpine packages to latest security patches
-RUN apk update && apk upgrade --no-cache
+# Set timezone to Bangkok
+ENV TZ=Asia/Bangkok
+
+# Update Alpine packages to latest security patches and install tzdata
+RUN apk update && apk upgrade --no-cache && apk add --no-cache tzdata
 
 # Set working directory
 WORKDIR /app
