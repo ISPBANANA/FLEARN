@@ -75,23 +75,30 @@ const shouldResetStreak = (uptimeStreak) => {
 };
 
 /**
- * Check if daily exp should be reset based on the last update timestamp
+ * Check if daily exp should be reset based on uptime_streak date
  * Uses server's local timezone for comparison
- * @param {Date|string} updatedAt - The last updated_at timestamp
- * @returns {boolean} - True if daily exp should be reset (not updated today)
+ * IMPORTANT: This now uses uptime_streak instead of updated_at because:
+ * - updated_at changes on EVERY user action (profile updates, etc.)
+ * - uptime_streak only changes once per day when user completes a level
+ * - This ensures daily_exp resets properly at midnight
+ * @param {Date|string} uptimeStreak - The last uptime_streak date
+ * @returns {boolean} - True if daily exp should be reset (uptime_streak is not today)
  */
-const shouldResetDailyExp = (updatedAt) => {
-    if (!updatedAt) {
-        return false; // No updated_at means daily_exp is already 0 or never set
+const shouldResetDailyExp = (uptimeStreak) => {
+    if (!uptimeStreak) {
+        // No uptime_streak means user hasn't completed a level today yet
+        // Don't reset daily_exp in this case (it's either 0 or accumulating for today)
+        return false;
     }
 
     const today = getLocalDate();
     
-    const lastUpdate = new Date(updatedAt);
-    lastUpdate.setHours(0, 0, 0, 0);
+    const lastStreakUpdate = new Date(uptimeStreak);
+    lastStreakUpdate.setHours(0, 0, 0, 0);
     
-    // Reset if it's a different day (1 or more days have passed)
-    return today > lastUpdate;
+    // Reset if uptime_streak is not today (meaning user hasn't completed a level today yet)
+    // This ensures daily_exp resets at the start of each new day
+    return today > lastStreakUpdate;
 };
 
 /**
@@ -288,14 +295,14 @@ const updateUserRankIfNeeded = async (pgPool, userId, user) => {
 };
 
 /**
- * Reset daily exp if needed (if not updated today)
+ * Reset daily exp if needed (if uptime_streak is not today)
  * @param {object} pgPool - PostgreSQL connection pool
  * @param {string} userId - User ID
- * @param {Date|string} updatedAt - Last updated_at timestamp
+ * @param {Date|string} uptimeStreak - Last uptime_streak date
  * @returns {Promise<boolean>} - True if daily_exp was reset
  */
-const resetDailyExpIfNeeded = async (pgPool, userId, updatedAt) => {
-    if (shouldResetDailyExp(updatedAt)) {
+const resetDailyExpIfNeeded = async (pgPool, userId, uptimeStreak) => {
+    if (shouldResetDailyExp(uptimeStreak)) {
         const updateQuery = `
             UPDATE "user" 
             SET daily_exp = 0,
@@ -312,7 +319,7 @@ const resetDailyExpIfNeeded = async (pgPool, userId, updatedAt) => {
 /**
  * Check and reset streak for a user, returning updated user data
  * Also updates rank based on experience
- * Also resets daily_exp if not updated today
+ * Also resets daily_exp if uptime_streak is not today
  * @param {object} pgPool - PostgreSQL connection pool
  * @param {string} userId - User ID
  * @returns {Promise<object|null>} - Updated user object or null if not found
@@ -334,8 +341,8 @@ const checkAndResetUserStreak = async (pgPool, userId) => {
     // Check if rank update is needed
     const rankWasUpdated = await updateUserRankIfNeeded(pgPool, userId, user);
     
-    // Check if daily exp reset is needed
-    const dailyExpWasReset = await resetDailyExpIfNeeded(pgPool, userId, user.updated_at);
+    // Check if daily exp reset is needed (using uptime_streak instead of updated_at)
+    const dailyExpWasReset = await resetDailyExpIfNeeded(pgPool, userId, user.uptime_streak);
     
     // If any was updated, fetch fresh data
     if (streakWasReset || rankWasUpdated || dailyExpWasReset) {
