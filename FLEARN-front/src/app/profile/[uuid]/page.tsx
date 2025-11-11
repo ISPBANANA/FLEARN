@@ -530,7 +530,7 @@ export default function ProfilePage({ params }: ProfilePageProps) {
                         <span className="text-sm text-[#454545]">{profileData.math_exp % 1000}/1000 EXPs</span>
                       </div>
                       <div className="w-full bg-gray-200 rounded-full h-2.5">
-                        <div className="bg-gradient-to-r from-green-400 to-green-600 h-2.5 rounded-full" style={{ width: `${Math.floor(profileData.math_exp / 10)}%` }}></div>
+                        <div className="bg-gradient-to-r from-green-400 to-green-600 h-2.5 rounded-full" style={{ width: `${Math.floor(profileData.math_exp % 1000)/10}%` }}></div>
                       </div>
                     </div>
                     <div>
@@ -539,7 +539,7 @@ export default function ProfilePage({ params }: ProfilePageProps) {
                         <span className="text-sm text-[#454545]">{profileData.phy_exp % 1000}/1000 EXPs</span>
                       </div>
                       <div className="w-full bg-gray-200 rounded-full h-2.5">
-                        <div className="bg-gradient-to-r from-green-400 to-green-600 h-2.5 rounded-full" style={{ width: `${Math.floor(profileData.phy_exp / 10)}%` }}></div>
+                        <div className="bg-gradient-to-r from-green-400 to-green-600 h-2.5 rounded-full" style={{ width: `${Math.floor(profileData.phy_exp % 1000)/10}%` }}></div>
                       </div>
                     </div>
                     <div>
@@ -548,7 +548,7 @@ export default function ProfilePage({ params }: ProfilePageProps) {
                         <span className="text-sm text-[#454545]">{profileData.chem_exp % 1000}/1000 EXPs</span>
                       </div>
                       <div className="w-full bg-gray-200 rounded-full h-2.5">
-                        <div className="bg-gradient-to-r from-green-400 to-green-600 h-2.5 rounded-full" style={{ width: `${Math.floor(profileData.chem_exp / 10)}%` }}></div>
+                        <div className="bg-gradient-to-r from-green-400 to-green-600 h-2.5 rounded-full" style={{ width: `${Math.floor(profileData.chem_exp % 1000)/10}%` }}></div>
                       </div>
                     </div>
                     <div>
@@ -557,7 +557,7 @@ export default function ProfilePage({ params }: ProfilePageProps) {
                         <span className="text-sm text-[#454545]">{profileData.bio_exp % 1000}/1000 EXPs</span>
                       </div>
                       <div className="w-full bg-gray-200 rounded-full h-2.5">
-                        <div className="bg-gradient-to-r from-green-400 to-green-600 h-2.5 rounded-full" style={{ width: `${Math.floor(profileData.bio_exp / 10)}%` }}></div>
+                        <div className="bg-gradient-to-r from-green-400 to-green-600 h-2.5 rounded-full" style={{ width: `${Math.floor(profileData.bio_exp % 1000)/10}%` }}></div>
                       </div>
                     </div>
                   </div>
