@@ -159,7 +159,7 @@ export default function BacklogAnalyticsPage() {
   // Calculate date range using Bangkok timezone
   const getDateRange = () => {
     if (dateRange === 'custom' && customStartDate && customEndDate) {
-      // For custom range, add one day to end date to include the entire end date
+      // For custom range, add one day to end date for the query (SQL uses <, not <=)
       const endDateObj = new Date(customEndDate + 'T00:00:00');
       endDateObj.setDate(endDateObj.getDate() + 1);
       
@@ -173,7 +173,8 @@ export default function BacklogAnalyticsPage() {
     const start = getBangkokDateNDaysAgo(days);
     const end = getBangkokDateString();
     
-    // Add one day to end date to include today
+    // Add one day to end date for the query (SQL uses <, not <=)
+    // This ensures we include all of today's data
     const endDateObj = new Date(end + 'T00:00:00');
     endDateObj.setDate(endDateObj.getDate() + 1);
 

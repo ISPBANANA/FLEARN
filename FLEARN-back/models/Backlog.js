@@ -237,17 +237,18 @@ class Backlog {
     static async getAnalytics(user_id, start_date, end_date) {
         try {
             // Get daily task completion by subject
+            // Convert do_date to Asia/Bangkok timezone for date grouping
             const dailyTasksQuery = `
                 SELECT 
-                    DATE(b.do_date) as date,
+                    DATE(b.do_date AT TIME ZONE 'Asia/Bangkok') as date,
                     s.name as subject_name,
                     COUNT(*) as completed_tasks
                 FROM backlog b
                 LEFT JOIN subject s ON b.subject_id = s.subject_id
                 WHERE b.user_id = $1
-                    AND b.do_date >= $2
-                    AND b.do_date <= $3
-                GROUP BY DATE(b.do_date), s.name
+                    AND DATE(b.do_date AT TIME ZONE 'Asia/Bangkok') >= $2::date
+                    AND DATE(b.do_date AT TIME ZONE 'Asia/Bangkok') < $3::date
+                GROUP BY DATE(b.do_date AT TIME ZONE 'Asia/Bangkok'), s.name
                 ORDER BY date ASC, s.name
             `;
             
@@ -258,22 +259,22 @@ class Backlog {
                     SUM(CASE WHEN correctness = false THEN 1 ELSE 0 END) as incorrect_count
                 FROM backlog
                 WHERE user_id = $1
-                    AND do_date >= $2
-                    AND do_date <= $3
+                    AND DATE(do_date AT TIME ZONE 'Asia/Bangkok') >= $2::date
+                    AND DATE(do_date AT TIME ZONE 'Asia/Bangkok') < $3::date
             `;
             
             // Get daily exp earned (sum actual points_earned from each backlog entry)
             const dailyExpQuery = `
                 SELECT 
-                    DATE(b.do_date) as date,
+                    DATE(b.do_date AT TIME ZONE 'Asia/Bangkok') as date,
                     s.name as subject_name,
                     SUM(b.points_earned) as exp_earned
                 FROM backlog b
                 LEFT JOIN subject s ON b.subject_id = s.subject_id
                 WHERE b.user_id = $1
-                    AND b.do_date >= $2
-                    AND b.do_date <= $3
-                GROUP BY DATE(b.do_date), s.name
+                    AND DATE(b.do_date AT TIME ZONE 'Asia/Bangkok') >= $2::date
+                    AND DATE(b.do_date AT TIME ZONE 'Asia/Bangkok') < $3::date
+                GROUP BY DATE(b.do_date AT TIME ZONE 'Asia/Bangkok'), s.name
                 ORDER BY date ASC, s.name
             `;
             
