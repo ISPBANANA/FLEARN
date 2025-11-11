@@ -220,7 +220,11 @@ router.get('/analytics/:user_id', checkJwt, async (req, res) => {
         const { user_id } = req.params;
         const { start_date, end_date } = req.query;
         
+        console.log(`📊 Analytics request for user ${user_id}: start_date=${start_date}, end_date=${end_date}`);
+        
         const analytics = await Backlog.getAnalytics(user_id, start_date, end_date);
+        
+        console.log(`📊 Analytics results: daily tasks count=${analytics.dailyTasks.length}, correct=${analytics.correctness.correct_count}, incorrect=${analytics.correctness.incorrect_count}`);
         
         res.json({
             message: 'Analytics data retrieved successfully',

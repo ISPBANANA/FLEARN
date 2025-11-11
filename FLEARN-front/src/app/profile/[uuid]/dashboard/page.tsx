@@ -166,8 +166,12 @@ export default function BacklogAnalyticsPage() {
   const getDateRange = () => {
     if (dateRange === 'custom' && customStartDate && customEndDate) {
       // For custom range, add one day to end date for the query (SQL uses <, not <=)
-      const endDateObj = new Date(customEndDate + 'T00:00:00');
-      endDateObj.setDate(endDateObj.getDate() + 1);
+      const endDate = customEndDate.split('-');
+      const endDateObj = new Date(Date.UTC(
+        parseInt(endDate[0]), 
+        parseInt(endDate[1]) - 1, 
+        parseInt(endDate[2]) + 1
+      ));
       
       return {
         start: customStartDate,
@@ -181,8 +185,12 @@ export default function BacklogAnalyticsPage() {
     
     // Add one day to end date for the query (SQL uses <, not <=)
     // This ensures we include all of today's data
-    const endDateObj = new Date(end + 'T00:00:00');
-    endDateObj.setDate(endDateObj.getDate() + 1);
+    const endParts = end.split('-');
+    const endDateObj = new Date(Date.UTC(
+      parseInt(endParts[0]), 
+      parseInt(endParts[1]) - 1, 
+      parseInt(endParts[2]) + 1
+    ));
 
     return {
       start: start,
