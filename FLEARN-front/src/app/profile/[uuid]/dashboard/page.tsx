@@ -31,10 +31,16 @@ const getBangkokDateString = () => {
 
 // Get date N days ago in Bangkok timezone
 const getBangkokDateNDaysAgo = (days: number) => {
-  const date = new Date();
-  const bangkokDate = new Date(date.toLocaleString('en-US', { timeZone: 'Asia/Bangkok' }));
-  bangkokDate.setDate(bangkokDate.getDate() - days);
-  return bangkokDate.toLocaleDateString('en-CA'); // YYYY-MM-DD format
+  // Get current date in Bangkok timezone as YYYY-MM-DD
+  const todayStr = getBangkokDateString();
+  const today = new Date(todayStr + 'T00:00:00'); // Parse as local date
+  today.setDate(today.getDate() - days);
+  
+  // Format as YYYY-MM-DD
+  const year = today.getFullYear();
+  const month = String(today.getMonth() + 1).padStart(2, '0');
+  const day = String(today.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
 };
 
 // Subject colors matching common subjects
