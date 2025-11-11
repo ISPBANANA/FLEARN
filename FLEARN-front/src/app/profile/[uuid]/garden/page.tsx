@@ -17,6 +17,11 @@ import { UserRoundPlus, X } from 'lucide-react';
 // Force dynamic rendering to avoid build-time issues with useSearchParams
 export const dynamic = 'force-dynamic';
 
+// Get current date in Bangkok timezone
+const getBangkokDate = () => {
+  return new Date().toLocaleDateString('en-US', { timeZone: 'Asia/Bangkok' });
+};
+
 // Get API base URL for backend calls
 const getApiBaseUrl = () => {
   if (typeof window !== 'undefined') {
@@ -374,8 +379,8 @@ export default function garden({ params }: ProfilePageProps) {
                           <Image
                             src={(() => {
                                 if (!garden?.uptime_streak) return "/stopSteak.png";
-                                const today = new Date().toDateString();
-                                const streakDate = new Date(garden.uptime_streak).toDateString();
+                                const today = getBangkokDate();
+                                const streakDate = new Date(garden.uptime_streak).toLocaleDateString('en-US', { timeZone: 'Asia/Bangkok' });
                                 return streakDate === today ? "/onSteak.png" : "/stopSteak.png";
                               })()}
                             alt="Streak"

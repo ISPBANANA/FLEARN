@@ -13,6 +13,11 @@ import { useRouter } from 'next/navigation';
 import { useAuth } from '@/hooks/useAuth';
 import { usePathname } from 'next/navigation';
 
+// Get current date in Bangkok timezone
+const getBangkokDate = () => {
+  return new Date().toLocaleDateString('en-US', { timeZone: 'Asia/Bangkok' });
+};
+
 interface ProfilePageProps {
   params: Promise<{
     uuid: string;
@@ -475,8 +480,8 @@ export default function ProfilePage({ params }: ProfilePageProps) {
                         <Image
                           src={(() => {
                             if (!profileData?.uptime_streak) return "/stopSteak.png";
-                            const today = new Date().toDateString();
-                            const streakDate = new Date(profileData.uptime_streak).toDateString();
+                            const today = getBangkokDate();
+                            const streakDate = new Date(profileData.uptime_streak).toLocaleDateString('en-US', { timeZone: 'Asia/Bangkok' });
                             return streakDate === today ? "/onSteak.png" : "/stopSteak.png";
                           })()}
                           alt="Streak"
