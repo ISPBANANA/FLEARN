@@ -23,6 +23,20 @@ import {
 import html2canvas from 'html2canvas';
 import jsPDF from 'jspdf';
 
+// Get current date in Bangkok timezone (YYYY-MM-DD format)
+const getBangkokDateString = () => {
+  const date = new Date();
+  return date.toLocaleDateString('en-CA', { timeZone: 'Asia/Bangkok' }); // en-CA gives YYYY-MM-DD format
+};
+
+// Get date N days ago in Bangkok timezone
+const getBangkokDateNDaysAgo = (days: number) => {
+  const date = new Date();
+  const bangkokDate = new Date(date.toLocaleString('en-US', { timeZone: 'Asia/Bangkok' }));
+  bangkokDate.setDate(bangkokDate.getDate() - days);
+  return bangkokDate.toLocaleDateString('en-CA'); // YYYY-MM-DD format
+};
+
 // Subject colors matching common subjects
 const SUBJECT_COLORS: { [key: string]: string } = {
   'Mathematics': '#8B5CF6', // Purple
@@ -101,14 +115,13 @@ export default function BacklogAnalyticsPage() {
   const handleDateRangeChange = (value: '7' | '14' | '28' | 'custom') => {
     setDateRange(value);
     
-    // If switching to custom and dates are empty, set them to past 7 days
+    // If switching to custom and dates are empty, set them to past 7 days (Bangkok timezone)
     if (value === 'custom' && !customStartDate && !customEndDate) {
-      const end = new Date();
-      const start = new Date();
-      start.setDate(start.getDate() - 7);
+      const end = getBangkokDateString();
+      const start = getBangkokDateNDaysAgo(7);
       
-      setCustomStartDate(start.toISOString().split('T')[0]);
-      setCustomEndDate(end.toISOString().split('T')[0]);
+      setCustomStartDate(start);
+      setCustomEndDate(end);
     }
   };
 
@@ -139,14 +152,11 @@ export default function BacklogAnalyticsPage() {
     }
   }, [isAuthenticated, profile, authLoading, profileLoading, userId]);
 
-  // Calculate date range
+  // Calculate date range using Bangkok timezone
   const getDateRange = () => {
-    const end = new Date();
-    const start = new Date();
-
     if (dateRange === 'custom' && customStartDate && customEndDate) {
       // For custom range, add one day to end date to include the entire end date
-      const endDateObj = new Date(customEndDate);
+      const endDateObj = new Date(customEndDate + 'T00:00:00');
       endDateObj.setDate(endDateObj.getDate() + 1);
       
       return {
@@ -156,14 +166,16 @@ export default function BacklogAnalyticsPage() {
     }
 
     const days = parseInt(dateRange);
-    start.setDate(start.getDate() - days);
+    const start = getBangkokDateNDaysAgo(days);
+    const end = getBangkokDateString();
     
     // Add one day to end date to include today
-    end.setDate(end.getDate() + 1);
+    const endDateObj = new Date(end + 'T00:00:00');
+    endDateObj.setDate(endDateObj.getDate() + 1);
 
     return {
-      start: start.toISOString().split('T')[0],
-      end: end.toISOString().split('T')[0],
+      start: start,
+      end: endDateObj.toISOString().split('T')[0],
     };
   };
 
