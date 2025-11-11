@@ -134,6 +134,10 @@ export default function BacklogAnalyticsPage() {
   const [dailyTasksData, setDailyTasksData] = useState<DailyData[]>([]);
   const [dailyExpData, setDailyExpData] = useState<ExpData[]>([]);
   const [donutData, setDonutData] = useState<Array<{ name: string; value: number }>>([]);
+  
+  // Refresh trigger
+  const [refreshKey, setRefreshKey] = useState(0);
+  const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
 
   useEffect(() => {
     setIsMounted(true);
@@ -192,6 +196,7 @@ export default function BacklogAnalyticsPage() {
         if (response.data) {
           setAnalyticsData(response.data);
           processAnalyticsData(response.data);
+          setLastUpdated(new Date());
         } else {
           // Even if no data, process empty data to show date range
           processAnalyticsData({
@@ -199,6 +204,7 @@ export default function BacklogAnalyticsPage() {
             correctness: { correct_count: '0', incorrect_count: '0' },
             dailyExp: []
           });
+          setLastUpdated(new Date());
         }
       } catch (error) {
         console.error('Error fetching analytics:', error);
@@ -208,6 +214,7 @@ export default function BacklogAnalyticsPage() {
           correctness: { correct_count: '0', incorrect_count: '0' },
           dailyExp: []
         });
+        setLastUpdated(new Date());
       } finally {
         setIsLoading(false);
       }
@@ -216,7 +223,7 @@ export default function BacklogAnalyticsPage() {
     if (profile && userId) {
       fetchAnalytics();
     }
-  }, [profile, userId, dateRange, customStartDate, customEndDate]);
+  }, [profile, userId, dateRange, customStartDate, customEndDate, refreshKey]);
 
   // Process analytics data for charts
   const processAnalyticsData = (data: AnalyticsData) => {
@@ -629,43 +636,75 @@ export default function BacklogAnalyticsPage() {
         {/* Date Range Selector */}
         <div className="bg-white rounded-lg shadow-md p-4 sm:p-6 mb-6 lg:mb-8 no-print">
           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 gap-4">
-            <h2 className="text-lg sm:text-xl font-semibold text-gray-800">Date Range</h2>
-            <button
-              onClick={generatePDFReport}
-              disabled={isLoading || isGeneratingPDF}
-              className={`px-3 sm:px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors flex items-center gap-2 text-sm sm:text-base ${
-                (isLoading || isGeneratingPDF) ? 'opacity-50 cursor-not-allowed' : ''
-              }`}
-            >
-              {isGeneratingPDF ? (
-                <>
-                  <svg className="animate-spin h-4 w-4 sm:h-5 sm:w-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                  </svg>
-                  <span className="hidden sm:inline">Generating PDF...</span>
-                  <span className="sm:hidden">PDF...</span>
-                </>
-              ) : (
-                <>
-                  <svg
-                    className="w-4 h-4 sm:w-5 sm:h-5"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
-                    />
-                  </svg>
-                  <span className="hidden sm:inline">Download PDF</span>
-                  <span className="sm:hidden">PDF</span>
-                </>
+            <div>
+              <h2 className="text-lg sm:text-xl font-semibold text-gray-800">Date Range</h2>
+              {lastUpdated && (
+                <p className="text-xs text-gray-500 mt-1">
+                  Last updated: {lastUpdated.toLocaleTimeString()}
+                </p>
               )}
-            </button>
+            </div>
+            <div className="flex gap-2 sm:gap-3">
+              <button
+                onClick={() => setRefreshKey(prev => prev + 1)}
+                disabled={isLoading}
+                className={`px-3 sm:px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center gap-2 text-sm sm:text-base ${
+                  isLoading ? 'opacity-50 cursor-not-allowed' : ''
+                }`}
+                title="Refresh analytics data"
+              >
+                <svg
+                  className={`w-4 h-4 sm:w-5 sm:h-5 ${isLoading ? 'animate-spin' : ''}`}
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
+                  />
+                </svg>
+                <span className="hidden sm:inline">Refresh</span>
+              </button>
+              <button
+                onClick={generatePDFReport}
+                disabled={isLoading || isGeneratingPDF}
+                className={`px-3 sm:px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors flex items-center gap-2 text-sm sm:text-base ${
+                  (isLoading || isGeneratingPDF) ? 'opacity-50 cursor-not-allowed' : ''
+                }`}
+              >
+                {isGeneratingPDF ? (
+                  <>
+                    <svg className="animate-spin h-4 w-4 sm:h-5 sm:w-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                    <span className="hidden sm:inline">Generating PDF...</span>
+                    <span className="sm:hidden">PDF...</span>
+                  </>
+                ) : (
+                  <>
+                    <svg
+                      className="w-4 h-4 sm:w-5 sm:h-5"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+                      />
+                    </svg>
+                    <span className="hidden sm:inline">Download PDF</span>
+                    <span className="sm:hidden">PDF</span>
+                  </>
+                )}
+              </button>
+            </div>
           </div>
           
           <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-end">

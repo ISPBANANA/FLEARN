@@ -620,7 +620,11 @@ export const backlogAPI = {
     const params = new URLSearchParams();
     params.append('start_date', startDate);
     params.append('end_date', endDate);
-    return apiCall(`/api/backlog/analytics/${userId}?${params.toString()}`);
+    // Add cache-busting timestamp to prevent stale data
+    params.append('_t', Date.now().toString());
+    return apiCall(`/api/backlog/analytics/${userId}?${params.toString()}`, {
+      cache: 'no-store', // Prevent caching
+    });
   },
 };
 
