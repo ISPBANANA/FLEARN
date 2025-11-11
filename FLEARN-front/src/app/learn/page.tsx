@@ -216,22 +216,30 @@ export default function Home() {
 
   const fetchBacklogStats = async (userId: string, topicId: number) => {
     try {
-      // Fetch backlog entries for this specific topic
-      const response = await backlogAPI.getByUser(userId, { topic_id: topicId });
+      // Use the stats API to get accurate counts (not limited by pagination)
+      const response = await backlogAPI.getStatsByTopic(userId);
       
-      // Backend returns { message, count, data } structure
-      if (response.data && Array.isArray(response.data)) {
-        // Create a stats object from the entries
-        // Count is simply the number of entries returned
-        const stats: BacklogStats = {
-          topic_id: topicId,
-          topic_name: selectedTopic?.name || '',
-          total_attempts: response.data.length,
-          correct_count: response.data.filter((entry: any) => entry.correctness === true).length,
-          incorrect_count: response.data.filter((entry: any) => entry.correctness === false).length,
-        };
+      // Backend returns { message, count, data } structure (no 'success' field)
+      if (response && response.data && Array.isArray(response.data)) {
+        // Find the stats for this specific topic
+        const topicStats = response.data.find((stat: any) => stat.topic_id === topicId);
         
-        setBacklogStats([stats]);
+        if (topicStats) {
+          // Use the aggregated counts from the database (not limited by API pagination)
+          const stats: BacklogStats = {
+            topic_id: topicId,
+            topic_name: topicStats.topic_name || selectedTopic?.name || '',
+            total_attempts: parseInt(String(topicStats.total_attempts || '0')),
+            correct_count: parseInt(String(topicStats.correct_count || '0')),
+            incorrect_count: parseInt(String(topicStats.incorrect_count || '0')),
+            accuracy_percentage: topicStats.accuracy_percentage,
+          };
+          
+          setBacklogStats([stats]);
+        } else {
+          // No backlog entries for this topic
+          setBacklogStats([]);
+        }
       } else {
         // No backlog entries for this topic
         setBacklogStats([]);

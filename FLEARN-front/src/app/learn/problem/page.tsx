@@ -140,18 +140,19 @@ function ProblemPageContent() {
 
       try {
         const response = await backlogAPI.getStatsByTopic(currentUserId);
-        if (response.success && response.data) {
+        if (response && response.data) {
           // Find stats for this specific topic
           const topicStats = response.data.find((stat: any) => 
             stat.topic_id === parseInt(topicId)
           );
           
           if (topicStats) {
-            setCorrectBacklogCount(topicStats.correct_answers || 0);
+            // Fix: API returns correct_count, not correct_answers
+            setCorrectBacklogCount(parseInt(topicStats.correct_count || '0'));
             
             // Validate that user is accessing the correct level
             // Current level should be: floor(total_attempts / 3) + 1
-            const userCurrentLevel = Math.floor((topicStats.total_attempts || 0) / 3) + 1;
+            const userCurrentLevel = Math.floor(parseInt(topicStats.total_attempts || '0') / 3) + 1;
             const requestedLevel = parseInt(level || '1');
             
             if (requestedLevel !== userCurrentLevel) {
