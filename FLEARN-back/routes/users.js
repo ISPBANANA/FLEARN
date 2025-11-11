@@ -999,21 +999,22 @@ router.get('/username/:userId', async (req, res) => {
 // Get top 50 users with highest daily_exp (public route)
 // Usage Example:
 // GET /api/users/leaderboard
-// Note: Automatically shows 0 for daily_exp if user hasn't been updated today
+// Note: Automatically shows 0 for daily_exp if user hasn't completed a level today
+// Uses uptime_streak instead of updated_at to properly detect daily activity
 router.get('/leaderboard', async (req, res) => {
     try {
         const query = `
             SELECT 
                 name,
                 CASE 
-                    WHEN DATE(updated_at) = CURRENT_DATE THEN daily_exp
+                    WHEN uptime_streak = CURRENT_DATE THEN daily_exp
                     ELSE 0
                 END as daily_exp
             FROM "user" 
             WHERE name IS NOT NULL 
             ORDER BY 
                 CASE 
-                    WHEN DATE(updated_at) = CURRENT_DATE THEN daily_exp
+                    WHEN uptime_streak = CURRENT_DATE THEN daily_exp
                     ELSE 0
                 END DESC
             LIMIT 50
