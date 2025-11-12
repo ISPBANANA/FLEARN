@@ -509,7 +509,8 @@ function EditProblemContent() {
                   setSubjectId(e.target.value);
                   setTopicId(''); // Reset topic when subject changes
                 }}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500 text-[#454545] bg-white"
+                disabled={isEditMode}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500 text-[#454545] bg-white disabled:bg-gray-100 disabled:cursor-not-allowed"
               >
                 <option value="">Select Subject</option>
                 {subjects.map((subject) => (
@@ -518,6 +519,11 @@ function EditProblemContent() {
                   </option>
                 ))}
               </select>
+              {isEditMode && (
+                <p className="text-xs text-gray-500 mt-1">
+                  Subject cannot be changed for existing questions
+                </p>
+              )}
             </div>
 
             {/* Sub-Topic */}
@@ -528,7 +534,7 @@ function EditProblemContent() {
               <select
                 value={topicId}
                 onChange={(e) => setTopicId(e.target.value)}
-                disabled={!subjectId}
+                disabled={!subjectId || isEditMode}
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500 text-[#454545] bg-white disabled:bg-gray-100 disabled:cursor-not-allowed"
               >
                 <option value="">Select Topic</option>
@@ -538,6 +544,11 @@ function EditProblemContent() {
                   </option>
                 ))}
               </select>
+              {isEditMode && (
+                <p className="text-xs text-gray-500 mt-1">
+                  Sub-topic cannot be changed for existing questions
+                </p>
+              )}
             </div>
           </div>
 
@@ -551,7 +562,8 @@ function EditProblemContent() {
               <select
                 value={questionType}
                 onChange={(e) => setQuestionType(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500 text-gray-900 bg-white"
+                disabled={isEditMode}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500 text-gray-900 bg-white disabled:bg-gray-100 disabled:cursor-not-allowed"
               >
                 <option value="">Select Type</option>
                 {questionTypes.map((type) => (
@@ -560,6 +572,11 @@ function EditProblemContent() {
                   </option>
                 ))}
               </select>
+              {isEditMode && (
+                <p className="text-xs text-gray-500 mt-1">
+                  Type cannot be changed
+                </p>
+              )}
             </div>
 
             {/* Status */}
