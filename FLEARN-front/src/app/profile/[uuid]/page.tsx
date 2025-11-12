@@ -306,8 +306,8 @@ export default function ProfilePage({ params }: ProfilePageProps) {
         // Close popup
         setShowEditPopup(false);
         
-        // Optional: Show success message
-        console.log('Profile updated successfully:', response.user);
+      //   // Optional: Show success message
+      //   console.log('Profile updated successfully:', response.user);
       }
 
     } catch (error) {

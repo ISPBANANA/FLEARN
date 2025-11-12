@@ -357,11 +357,11 @@ export default function AdminPage() {
         description: '', // Add empty description to avoid backend issues
       };
       
-      console.log('Creating topic with data:', topicData);
+      //console.log('Creating topic with data:', topicData);
       
       const response = await questionsAPI.createTopic(topicData);
       
-      console.log('Topic created successfully:', response);
+      //console.log('Topic created successfully:', response);
       
       // Update local state with new topic
       setSubjects(subjects.map(subject => 
@@ -429,11 +429,11 @@ export default function AdminPage() {
         name: editTopicForm.name.trim(),
       };
       
-      console.log('Updating topic with data:', topicData);
+      // console.log('Updating topic with data:', topicData);
       
       const response = await questionsAPI.updateTopic(editTopicDialog.topic.topic_id, topicData);
       
-      console.log('Topic updated successfully:', response);
+      //console.log('Topic updated successfully:', response);
       
       // Update local state
       setSubjects(subjects.map(subject => ({

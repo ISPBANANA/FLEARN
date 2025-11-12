@@ -1,11 +1,13 @@
 import { NextResponse } from 'next/server';
 
 export async function GET() {
-  console.log('Debug: Environment Variables:', {
-    NEXTAUTH_URL: process.env.NEXTAUTH_URL,
-    NEXT_PUBLIC_API_BASE_URL: process.env.NEXT_PUBLIC_API_BASE_URL,
-    NODE_ENV: process.env.NODE_ENV
-  });
+  // console.log('Debug: Environment Variables:', {
+  //   NEXTAUTH_URL: process.env.NEXTAUTH_URL,
+  //   NEXT_PUBLIC_API_BASE_URL: process.env.NEXT_PUBLIC_API_BASE_URL,
+  //   NODE_ENV: process.env.NODE_ENV
+  // }
+//)
+// ;
   
   return NextResponse.json({
     NEXTAUTH_URL: process.env.NEXTAUTH_URL,

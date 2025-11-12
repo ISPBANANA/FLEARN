@@ -201,9 +201,9 @@ export default function Home() {
           if (response.ok) {
             // Get user profile data from the creation response
             const profileData = await response.json();
-            console.log('Profile creation response:', profileData);
+            //console.log('Profile creation response:', profileData);
             const userId = profileData.user.user_id;
-            console.log('Profile created successfully, user_id:', userId);
+            //console.log('Profile created successfully, user_id:', userId);
               
             // Save preferred subjects separately (don't let this block the redirect)
             if (formData.preferredSubjects.trim() !== '') {
@@ -227,10 +227,10 @@ export default function Home() {
                   });
                   
                   if (subjectResponse.ok) {
-                    console.log(`Subject ${subject} saved successfully`);
+                    //console.log(`Subject ${subject} saved successfully`);
                   } else if (subjectResponse.status === 409) {
                     // Subject already exists, this is OK
-                    console.log(`Subject ${subject} already exists for user`);
+                    //console.log(`Subject ${subject} already exists for user`);
                   } else {
                     console.error(`Failed to save subject ${subject}:`, subjectResponse.status);
                   }
@@ -263,7 +263,7 @@ export default function Home() {
             // Clear signup data from localStorage
             localStorage.removeItem('signup_data');
             
-            console.log('Redirecting to profile:', `/profile/${userId}`);
+            //console.log('Redirecting to profile:', `/profile/${userId}`);
             
             // Use a small delay to ensure state updates are complete before redirect
             setTimeout(() => {

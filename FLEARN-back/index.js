@@ -198,9 +198,9 @@ process.on('SIGTERM', async () => {
 // Start the server
 app.listen(PORT, () => {
     console.log('\n🚀 FLEARN Backend Server Started!');
-    console.log(`📍 Server URL: http://localhost:${PORT}`);
-    console.log(`🌍 Environment: ${NODE_ENV}`);
-    console.log(`🔑 Google Client ID: ${process.env.GOOGLE_CLIENT_ID ? 'Configured' : 'Not configured'}`);
-    console.log(`📅 Started at: ${new Date().toISOString()}`);
+    // console.log(`📍 Server URL: http://localhost:${PORT}`);
+    // console.log(`🌍 Environment: ${NODE_ENV}`);
+    // console.log(`🔑 Google Client ID: ${process.env.GOOGLE_CLIENT_ID ? 'Configured' : 'Not configured'}`);
+    // console.log(`📅 Started at: ${new Date().toISOString()}`);
     console.log('====================================\n');
 });

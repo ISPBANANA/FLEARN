@@ -260,7 +260,7 @@ export default function Home() {
   // Accept friend request handler
   const handleAcceptRequest = async (request: FriendProfile) => {
     try {
-      console.log('Accepting friend request:', request.row_id);
+      // console.log('Accepting friend request:', request.row_id);
       await friendsAPI.acceptFriendRequest(request.row_id);
       // Remove from pending requests
       setPendingRequests(prev => prev.filter(r => r.row_id !== request.row_id));
@@ -276,7 +276,7 @@ export default function Home() {
   // Reject friend request handler
   const handleRejectRequest = async (request: FriendProfile) => {
     try {
-      console.log('Rejecting friend request:', request.row_id);
+      //console.log('Rejecting friend request:', request.row_id);
       await friendsAPI.blockFriendRequest(request.row_id);
       // Remove from pending requests
       setPendingRequests(prev => prev.filter(r => r.row_id !== request.row_id));

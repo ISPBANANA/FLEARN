@@ -21,14 +21,14 @@ export function useCORSMonitor(checkInterval?: number) {
 
   const checkCORSHealth = useCallback(async () => {
     if (isChecking) {
-      console.log('CORS check already in progress, skipping...');
+      //console.log('CORS check already in progress, skipping...');
       return;
     }
     
     // Prevent excessive calls - minimum 5 seconds between checks
     const now = new Date();
     if (corsStatus.lastChecked && (now.getTime() - corsStatus.lastChecked.getTime()) < 5000) {
-      console.log('CORS check called too recently, skipping...');
+      //console.log('CORS check called too recently, skipping...');
       return;
     }
     
@@ -139,9 +139,9 @@ export function useCORSDebugger() {
     if (typeof window === 'undefined') return;
 
     console.group('🔍 CORS Debug Information');
-    console.log('Current Origin:', window.location.origin);
-    console.log('API Base URL:', process.env.NEXT_PUBLIC_API_BASE_URL);
-    console.log('Environment:', process.env.NODE_ENV);
+    // console.log('Current Origin:', window.location.origin);
+    // console.log('API Base URL:', process.env.NEXT_PUBLIC_API_BASE_URL);
+    // console.log('Environment:', process.env.NODE_ENV);
     
     // Check common CORS-related environment variables
     const envVars = [
@@ -152,7 +152,7 @@ export function useCORSDebugger() {
     
     console.group('Environment Variables:');
     envVars.forEach(varName => {
-      console.log(`${varName}:`, process.env[varName] || 'NOT SET');
+      //console.log(`${varName}:`, process.env[varName] || 'NOT SET');
     });
     console.groupEnd();
 
@@ -165,7 +165,7 @@ export function useCORSDebugger() {
         cookie.trim().includes('token') ||
         cookie.trim().includes('session')
       );
-      authCookies.forEach(cookie => console.log(cookie.trim()));
+      //authCookies.forEach(cookie => console.log(cookie.trim()));
       console.groupEnd();
     }
 
@@ -189,11 +189,11 @@ export function useCORSDebugger() {
 
       for (const test of tests) {
         try {
-          console.log(`Testing: ${test.name}`);
+          //console.log(`Testing: ${test.name}`);
           const response = await fetch(fullUrl, test.options);
-          console.log(`✅ ${test.name}: Status ${response.status}, Type: ${response.type}`);
+          //console.log(`✅ ${test.name}: Status ${response.status}, Type: ${response.type}`);
         } catch (error) {
-          console.log(`❌ ${test.name}:`, error instanceof Error ? error.message : String(error));
+          //console.log(`❌ ${test.name}:`, error instanceof Error ? error.message : String(error));
         }
       }
     } catch (error) {
@@ -215,8 +215,8 @@ if (typeof window !== 'undefined' && process.env.NODE_ENV === 'development') {
     checkHealth: diagnoseCORSIssue,
     logInfo: () => {
       console.group('🔍 CORS Debug Information');
-      console.log('Current Origin:', window.location.origin);
-      console.log('API Base URL:', process.env.NEXT_PUBLIC_API_BASE_URL);
+      //console.log('Current Origin:', window.location.origin);
+      //console.log('API Base URL:', process.env.NEXT_PUBLIC_API_BASE_URL);
       console.groupEnd();
     }
   };
