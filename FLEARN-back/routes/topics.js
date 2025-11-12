@@ -2,7 +2,7 @@ const express = require('express');
 const router = express.Router();
 const Topic = require('../models/Topic');
 const { checkJwt } = require('../middleware/auth');
-
+const { pgPool } = require('../config/database');
 // ============================================
 // GET /api/topics - Get all topics (with filters)
 // Usage Example:
@@ -11,6 +11,45 @@ const { checkJwt } = require('../middleware/auth');
 // GET /api/topics?status=public
 // GET /api/topics?subject_id=1&status=public&limit=10&offset=0
 // ============================================
+
+// ---------- helpers -------------------------------------------------
+
+async function getUserIdFromReq(req) {
+    const googleId = req.user?.sub || req.user?.id;
+
+    if (!googleId) {
+        // caller decides how to respond (usually 401)
+        return null;
+    }
+
+    const userQuery = 'SELECT user_id FROM "user" WHERE google_id = $1';
+    const { rows } = await pgPool.query(userQuery, [googleId]);
+    return rows[0]?.user_id || null;
+}
+
+async function ensureUserFromReq(req, res) {
+    // if checkJwt didn’t attach user correctly, fail early
+    if (!req.user) {
+        res.status(401).json({
+            success: false,
+            error: 'Unauthorized: missing authentication data'
+        });
+        return null;
+    }
+
+    const userId = await getUserIdFromReq(req);
+
+    if (!userId) {
+        res.status(404).json({
+            success: false,
+            error: 'User not found'
+        });
+        return null;
+    }
+
+    return userId;
+}
+
 router.get('/', async (req, res) => {
     try {
         const topics = await Topic.getAll(req.query);
@@ -35,9 +74,35 @@ router.get('/', async (req, res) => {
 // Usage Example:
 // GET /api/topics/subject/1
 // ============================================
+
+
+// ---------- routes --------------------------------------------------
+
+// GET /api/topics - Get all topics (with filters)
+router.get('/', async (req, res) => {
+    try {
+        const topics = await Topic.getAll(req.query);
+
+        res.json({
+            success: true,
+            data: topics,
+            count: topics.length
+        });
+
+    } catch (error) {
+        console.error('Error getting topics:', error);
+        res.status(500).json({
+            success: false,
+            error: error.message
+        });
+    }
+});
+
+// GET /api/topics/subject/:subject_id - Get topics by subject
 router.get('/subject/:subject_id', async (req, res) => {
     try {
-        const topics = await Topic.getBySubject(req.params.subject_id);
+                const { subject_id } = req.params;
+        const topics = await Topic.getBySubject(subject_id);
         
         res.json({
             success: true,
@@ -61,8 +126,9 @@ router.get('/subject/:subject_id', async (req, res) => {
 // ============================================
 router.get('/:id', async (req, res) => {
     try {
-        const topic = await Topic.getById(req.params.id);
-        
+                const { id } = req.params;
+        const topic = await Topic.getById(id);
+
         if (!topic) {
             return res.status(404).json({ 
                 success: false, 
@@ -91,8 +157,8 @@ router.get('/:id', async (req, res) => {
 // ============================================
 router.get('/:id/statistics', async (req, res) => {
     try {
-        const stats = await Topic.getStatistics(req.params.id);
-        
+        const { id } = req.params;
+        const stats = await Topic.getStatistics(id);
         res.json({
             success: true,
             data: stats
@@ -122,7 +188,7 @@ router.get('/:id/statistics', async (req, res) => {
 router.post('/', checkJwt, async (req, res) => {
     try {
         const { subject_id, name, description, status } = req.body;
-        
+
         // Basic validation
         if (!subject_id || !name) {
             return res.status(400).json({
@@ -130,30 +196,19 @@ router.post('/', checkJwt, async (req, res) => {
                 error: 'Missing required fields: subject_id, name'
             });
         }
-        
-        // Validate status if provided
+
+        // Validate status if provided (keep same semantics)
         if (status && !['private', 'public'].includes(status)) {
             return res.status(400).json({
                 success: false,
                 error: 'Status must be either "private" or "public"'
             });
         }
-        
+
         // Get user_id from google_id
-        const googleId = req.user.sub || req.user.id;
-        const { pgPool } = require('../config/database');
-        const userQuery = 'SELECT user_id FROM "user" WHERE google_id = $1';
-        const userResult = await pgPool.query(userQuery, [googleId]);
-        
-        if (userResult.rows.length === 0) {
-            return res.status(404).json({
-                success: false,
-                error: 'User not found'
-            });
-        }
-        
-        const userId = userResult.rows[0].user_id;
-        
+        const userId = await ensureUserFromReq(req, res);
+        if (!userId) return; // response already sent
+
         const topic = await Topic.create({
             subject_id,
             name,
@@ -161,27 +216,27 @@ router.post('/', checkJwt, async (req, res) => {
             status,
             created_by: userId
         });
-        
+
         res.status(201).json({
             success: true,
             data: topic,
             message: 'Topic created successfully'
         });
-        
+
     } catch (error) {
         console.error('Error creating topic:', error);
-        
+
         // Handle unique constraint violation
         if (error.code === '23505') {
-            return res.status(400).json({ 
-                success: false, 
-                error: 'A topic with this name already exists for this subject' 
+            return res.status(400).json({
+                success: false,
+                error: 'A topic with this name already exists for this subject'
             });
         }
-        
-        res.status(400).json({ 
-            success: false, 
-            error: error.message 
+
+        res.status(400).json({
+            success: false,
+            error: error.message
         });
     }
 });
@@ -199,7 +254,8 @@ router.post('/', checkJwt, async (req, res) => {
 // ============================================
 router.put('/:id', checkJwt, async (req, res) => {
     try {
-        const updated = await Topic.update(req.params.id, req.body);
+                const { id } = req.params;
+        const updated = await Topic.update(id, req.body);
         
         if (!updated) {
             return res.status(404).json({
@@ -241,8 +297,9 @@ router.put('/:id', checkJwt, async (req, res) => {
 // ============================================
 router.delete('/:id', checkJwt, async (req, res) => {
     try {
-        const deleted = await Topic.delete(req.params.id);
-        
+        const { id } = req.params;
+        const deleted = await Topic.delete(id);
+
         if (!deleted) {
             return res.status(404).json({
                 success: false,

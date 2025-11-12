@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const Question = require('../models/Question');
 const { checkJwt, optionalJwt } = require('../middleware/auth');
+const { pgPool } = require('../config/database');
 
 // ============================================
 // POST /api/questions - Create new question
@@ -26,18 +27,115 @@ const { checkJwt, optionalJwt } = require('../middleware/auth');
 //   }
 // }
 // ============================================
+function getGoogleId(req) {
+    return req.user?.sub || req.user?.id || null;
+}
+
+async function getUserFromReq(req) {
+    const googleId = getGoogleId(req);
+    if (!googleId) return null;
+
+    const userQuery = 'SELECT user_id, role FROM "user" WHERE google_id = $1';
+    const { rows } = await pgPool.query(userQuery, [googleId]);
+    return rows[0] || null;
+}
+
+/**
+ * For routes that *require* an authenticated user (checkJwt).
+ * Sends 401/404 itself and returns null if something’s wrong.
+ */
+async function ensureUserFromReq(req, res) {
+    if (!req.user) {
+        res.status(401).json({
+            success: false,
+            error: 'Unauthorized: missing authentication data'
+        });
+        return null;
+    }
+
+    const user = await getUserFromReq(req);
+
+    if (!user) {
+        res.status(404).json({
+            success: false,
+            error: 'User not found'
+        });
+        return null;
+    }
+
+    return user;
+}
+
+// Validation rules for question content, same logic as before
+const validationRules = {
+    multiple_choice: (c) => {
+        if (!c.options || c.options.length < 2) {
+            throw new Error('Multiple choice needs at least 2 options');
+        }
+        if (c.options.filter(opt => opt.is_correct).length !== 1) {
+            throw new Error('Multiple choice must have exactly 1 correct answer');
+        }
+    },
+    true_false: (c) => {
+        if (!c.correct_answer) {
+            throw new Error('True/False must have a correct answer');
+        }
+        if (!['true', 'false'].includes(c.correct_answer)) {
+            throw new Error('True/False correct answer must be either "true" or "false"');
+        }
+    },
+    fill_blank: (c) => {
+        if (!c.correct_answer || typeof c.correct_answer !== 'string') {
+            throw new Error('Fill blank needs a correct answer');
+        }
+        if (c.correct_answer.trim().length === 0) {
+            throw new Error('Fill blank correct answer cannot be empty');
+        }
+    },
+    matching: (c) => {
+        if (!c.pairs || !Array.isArray(c.pairs)) {
+            throw new Error('Matching needs pairs array');
+        }
+        if (c.pairs.length === 0) {
+            throw new Error('Matching needs at least one pair');
+        }
+        for (const pair of c.pairs) {
+            if (!pair.left || !pair.right) {
+                throw new Error('Each matching pair must have both left and right values');
+            }
+        }
+    }
+};
+
+// ---------- routes --------------------------------------------------
+
+// POST /api/questions - Create new question
 router.post('/', checkJwt, async (req, res) => {
     try {
-        const { subject_id, topic_id, type_name, difficulty, points, status, content } = req.body;
-        
-        // Basic validation - use explicit undefined/null checks for numeric fields
-        if (!subject_id || !type_name || difficulty === undefined || difficulty === null || !content) {
+        const {
+            subject_id,
+            topic_id,
+            type_name,
+            difficulty,
+            points,
+            status,
+            content
+        } = req.body;
+
+        // Basic validation - explicit checks for numeric fields
+        if (
+            !subject_id ||
+            !type_name ||
+            difficulty === undefined ||
+            difficulty === null ||
+            !content
+        ) {
             return res.status(400).json({
                 success: false,
                 error: 'Missing required fields: subject_id, type_name, difficulty, content'
             });
         }
-        
+
         // Validate status if provided
         if (status && !['private', 'public'].includes(status)) {
             return res.status(400).json({
@@ -45,72 +143,16 @@ router.post('/', checkJwt, async (req, res) => {
                 error: 'Status must be either "private" or "public"'
             });
         }
-        
-        // Validation rules for each question type
-        const validationRules = {
-            multiple_choice: (c) => {
-                if (!c.options || c.options.length < 2) {
-                    throw new Error('Multiple choice needs at least 2 options');
-                }
-                if (c.options.filter(opt => opt.is_correct).length !== 1) {
-                    throw new Error('Multiple choice must have exactly 1 correct answer');
-                }
-            },
-            true_false: (c) => {
-                // Updated to support simple correct_answer format
-                if (!c.correct_answer) {
-                    throw new Error('True/False must have a correct answer');
-                }
-                if (!['true', 'false'].includes(c.correct_answer)) {
-                    throw new Error('True/False correct answer must be either "true" or "false"');
-                }
-            },
-            fill_blank: (c) => {
-                // Updated to support simple correct_answer format
-                if (!c.correct_answer || typeof c.correct_answer !== 'string') {
-                    throw new Error('Fill blank needs a correct answer');
-                }
-                if (c.correct_answer.trim().length === 0) {
-                    throw new Error('Fill blank correct answer cannot be empty');
-                }
-            },
-            matching: (c) => {
-                // Updated to support pairs format
-                if (!c.pairs || !Array.isArray(c.pairs)) {
-                    throw new Error('Matching needs pairs array');
-                }
-                if (c.pairs.length === 0) {
-                    throw new Error('Matching needs at least one pair');
-                }
-                // Validate each pair has left and right
-                for (const pair of c.pairs) {
-                    if (!pair.left || !pair.right) {
-                        throw new Error('Each matching pair must have both left and right values');
-                    }
-                }
-            }
-        };
-        
+
         // Validate content based on type
         if (validationRules[type_name]) {
             validationRules[type_name](content);
         }
-        
-        // Get user_id from google_id
-        const googleId = req.user.sub || req.user.id;
-        const { pgPool } = require('../config/database');
-        const userQuery = 'SELECT user_id FROM "user" WHERE google_id = $1';
-        const userResult = await pgPool.query(userQuery, [googleId]);
-        
-        if (userResult.rows.length === 0) {
-            return res.status(404).json({
-                success: false,
-                error: 'User not found'
-            });
-        }
-        
-        const userId = userResult.rows[0].user_id;
-        
+
+        // Get user (created_by) from google_id
+        const user = await ensureUserFromReq(req, res);
+        if (!user) return;
+
         const question = await Question.create({
             subject_id,
             topic_id,
@@ -119,20 +161,20 @@ router.post('/', checkJwt, async (req, res) => {
             points,
             status,
             content,
-            created_by: userId
+            created_by: user.user_id
         });
-        
+
         res.status(201).json({
             success: true,
             data: question,
             message: `${type_name} question created successfully`
         });
-        
+
     } catch (error) {
         console.error('Error creating question:', error);
-        res.status(400).json({ 
-            success: false, 
-            error: error.message 
+        res.status(400).json({
+            success: false,
+            error: error.message
         });
     }
 });
@@ -148,43 +190,36 @@ router.post('/', checkJwt, async (req, res) => {
 // GET /api/questions?status=public
 // GET /api/questions?subject_id=1&topic_id=1&type=multiple_choice&difficulty=2&status=public&limit=5&offset=0
 // ============================================
+// GET /api/questions - Get all questions (with filters)
 router.get('/', optionalJwt, async (req, res) => {
     try {
         const filters = { ...req.query };
-        
+
         // If user is authenticated and is a teacher, filter by created_by
         if (req.user) {
-            const googleId = req.user.sub || req.user.id;
-            const { pgPool } = require('../config/database');
-            
-            // Get user info including role
-            const userQuery = 'SELECT user_id, role FROM "user" WHERE google_id = $1';
-            const userResult = await pgPool.query(userQuery, [googleId]);
-            
-            if (userResult.rows.length > 0) {
-                const user = userResult.rows[0];
-                
-                // If user is a teacher (not admin), only show their own questions
+            const user = await getUserFromReq(req);
+            if (user) {
                 if (user.role === 'teacher') {
+                    // teacher: only see their own questions
                     filters.created_by = user.user_id;
                 }
-                // Admin can see all questions (no filter needed)
+                // admin: see all questions (no extra filter)
             }
         }
-        
+
         const questions = await Question.getAll(filters);
-        
+
         res.json({
             success: true,
             data: questions,
             count: questions.length
         });
-        
+
     } catch (error) {
         console.error('Error getting questions:', error);
-        res.status(500).json({ 
-            success: false, 
-            error: error.message 
+        res.status(500).json({
+            success: false,
+            error: error.message
         });
     }
 });
@@ -197,17 +232,17 @@ router.get('/', optionalJwt, async (req, res) => {
 router.get('/subjects', async (req, res) => {
     try {
         const subjects = await Question.getSubjects();
-        
+
         res.json({
             success: true,
             data: subjects
         });
-        
+
     } catch (error) {
         console.error('Error getting subjects:', error);
-        res.status(500).json({ 
-            success: false, 
-            error: error.message 
+        res.status(500).json({
+            success: false,
+            error: error.message
         });
     }
 });
@@ -244,29 +279,25 @@ router.get('/types', async (req, res) => {
 // ============================================
 router.get('/:id', optionalJwt, async (req, res) => {
     try {
-        const question = await Question.getById(req.params.id);
-        
+        const { id } = req.params;
+        const question = await Question.getById(id);
+
         if (!question) {
-            return res.status(404).json({ 
-                success: false, 
-                error: 'Question not found' 
+            return res.status(404).json({
+                success: false,
+                error: 'Question not found'
             });
         }
-        
+
         // Check if user is authenticated and has admin/teacher role
         let isAdminOrTeacher = false;
         if (req.user) {
-            const googleId = req.user.sub || req.user.id;
-            const { pgPool } = require('../config/database');
-            const userQuery = 'SELECT role FROM "user" WHERE google_id = $1';
-            const userResult = await pgPool.query(userQuery, [googleId]);
-            
-            if (userResult.rows.length > 0) {
-                const userRole = userResult.rows[0].role;
-                isAdminOrTeacher = userRole === 'admin' || userRole === 'teacher';
+            const user = await getUserFromReq(req);
+            if (user) {
+                isAdminOrTeacher = user.role === 'admin' || user.role === 'teacher';
             }
         }
-        
+
         // If admin/teacher, return full data with answers
         if (isAdminOrTeacher) {
             return res.json({
@@ -274,43 +305,37 @@ router.get('/:id', optionalJwt, async (req, res) => {
                 data: question
             });
         }
-        
+
         // For regular users, sanitize the data
         const sanitizedContent = { ...question.content };
-        
-        // Remove is_correct flag from options (for multiple choice, true/false, multi-select)
+
+        // Remove is_correct flag from options
         if (sanitizedContent.options) {
             sanitizedContent.options = sanitizedContent.options.map(({ is_correct, ...opt }) => opt);
         }
-        
+
         // Remove correct answers from fill blank
         if (sanitizedContent.blanks) {
             sanitizedContent.blanks = sanitizedContent.blanks.map(({ correct_answers, ...blank }) => blank);
         }
-        
-        // Remove correct_answer field
+
+        // Remove direct answer fields
         if (sanitizedContent.correct_answer) {
             delete sanitizedContent.correct_answer;
         }
-        
-        // Remove pairs from matching
         if (sanitizedContent.pairs) {
             delete sanitizedContent.pairs;
         }
-        
-        // Remove correct matches from matching
         if (sanitizedContent.correct_matches) {
             delete sanitizedContent.correct_matches;
         }
-        
-        // Remove sample answer and keywords from essay
         if (sanitizedContent.sample_answer) {
             delete sanitizedContent.sample_answer;
         }
         if (sanitizedContent.keywords) {
             delete sanitizedContent.keywords;
         }
-        
+
         res.json({
             success: true,
             data: {
@@ -324,12 +349,12 @@ router.get('/:id', optionalJwt, async (req, res) => {
                 ...sanitizedContent
             }
         });
-        
+
     } catch (error) {
         console.error('Error getting question:', error);
-        res.status(500).json({ 
-            success: false, 
-            error: error.message 
+        res.status(500).json({
+            success: false,
+            error: error.message
         });
     }
 });
@@ -354,56 +379,63 @@ router.get('/:id', optionalJwt, async (req, res) => {
 //   "time_taken": 60
 // }
 // ============================================
+// POST /api/questions/:id/validate - Validate answer (NO DB SAVE)
 router.post('/:id/validate', async (req, res) => {
     try {
         const { answer, time_taken } = req.body;
-        
+
         if (!answer) {
             return res.status(400).json({
                 success: false,
                 error: 'Answer is required'
             });
         }
-        
-        // Normalize answer format based on what was sent
+
+        // Normalize answer format
         let normalizedAnswer = {};
-        
+
         if (typeof answer === 'string') {
-            // Single selection (multiple choice, true/false) or text (fill blank)
-            normalizedAnswer = { 
+            // Single selection or text
+            normalizedAnswer = {
                 selected_option: answer,
                 text_answer: answer
             };
         } else if (Array.isArray(answer)) {
             // Matching
-            if (answer.length > 0 && typeof answer[0] === 'object' && answer[0].left && answer[0].right) {
+            if (
+                answer.length > 0 &&
+                typeof answer[0] === 'object' &&
+                answer[0].left &&
+                answer[0].right
+            ) {
                 normalizedAnswer = { matches: answer };
             }
         } else if (typeof answer === 'object') {
             // Already normalized
             normalizedAnswer = answer;
         }
-        
-        // Add time taken
+
         if (time_taken) {
             normalizedAnswer.time_taken = time_taken;
         }
-        
+
         const result = await Question.validateAnswer(req.params.id, normalizedAnswer);
-        
+
         res.json({
             success: true,
             data: result
         });
-        
+
     } catch (error) {
         console.error('Error validating answer:', error);
-        res.status(500).json({ 
-            success: false, 
-            error: error.message 
+        res.status(500).json({
+            success: false,
+            error: error.message
         });
     }
 });
+
+
 
 // ============================================
 // PUT /api/questions/:id - Update question
@@ -421,28 +453,30 @@ router.post('/:id/validate', async (req, res) => {
 //   }
 // }
 // ============================================
+// PUT /api/questions/:id - Update question
 router.put('/:id', checkJwt, async (req, res) => {
     try {
-        const updated = await Question.update(req.params.id, req.body);
-        
+        const { id } = req.params;
+        const updated = await Question.update(id, req.body);
+
         if (!updated) {
             return res.status(404).json({
                 success: false,
                 error: 'Question not found'
             });
         }
-        
+
         res.json({
             success: true,
             data: updated,
             message: 'Question updated successfully'
         });
-        
+
     } catch (error) {
         console.error('Error updating question:', error);
-        res.status(400).json({ 
-            success: false, 
-            error: error.message 
+        res.status(400).json({
+            success: false,
+            error: error.message
         });
     }
 });
@@ -454,27 +488,29 @@ router.put('/:id', checkJwt, async (req, res) => {
 // Headers: Authorization: Bearer <JWT_TOKEN>
 // Note: This is a soft delete (sets is_active = false)
 // ============================================
+// DELETE /api/questions/:id - Delete question (soft delete)
 router.delete('/:id', checkJwt, async (req, res) => {
     try {
-        const deleted = await Question.delete(req.params.id);
-        
+        const { id } = req.params;
+        const deleted = await Question.delete(id);
+
         if (!deleted) {
             return res.status(404).json({
                 success: false,
                 error: 'Question not found'
             });
         }
-        
+
         res.json({
             success: true,
             message: 'Question deleted successfully'
         });
-        
+
     } catch (error) {
         console.error('Error deleting question:', error);
-        res.status(500).json({ 
-            success: false, 
-            error: error.message 
+        res.status(500).json({
+            success: false,
+            error: error.message
         });
     }
 });

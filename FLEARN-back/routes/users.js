@@ -10,30 +10,60 @@ const router = express.Router();
 // Usage Example:
 // GET /api/users/profile
 // Headers: Authorization: Bearer <GOOGLE_ID_TOKEN>
+
+// ---------- helpers -------------------------------------------------
+
+function getGoogleId(req) {
+    return req.user?.sub || req.user?.id || null;
+}
+
+async function getUserFromReq(req) {
+    const googleId = getGoogleId(req);
+    if (!googleId) return null;
+
+    const query = 'SELECT * FROM "user" WHERE google_id = $1';
+    const { rows } = await pgPool.query(query, [googleId]);
+    return rows[0] || null;
+}
+
+/**
+ * For routes that REQUIRE an authenticated user row.
+ * Sends 404 if not found and returns null.
+ * (checkJwt should already ensure req.user exists.)
+ */
+async function ensureUserFromReq(req, res, notFoundMessage = 'Please complete your profile setup first') {
+    const user = await getUserFromReq(req);
+
+    if (!user) {
+        res.status(404).json({
+            error: 'User not found',
+            message: notFoundMessage
+        });
+        return null;
+    }
+
+    return user;
+}
+
+const parseLimit = (value, fallback) => {
+    const n = parseInt(value, 10);
+    return Number.isNaN(n) ? fallback : n;
+};
+
+// ---------- routes --------------------------------------------------
+
+// Get user profile (protected route)
+// GET /api/users/profile
 router.get('/profile', checkJwt, async (req, res) => {
     try {
-        const googleId = req.user.sub || req.user.id;
-        
-        const query = `
-            SELECT * FROM "user" 
-            WHERE google_id = $1
-        `;
-        
-        const result = await pgPool.query(query, [googleId]);
-        
-        if (result.rows.length === 0) {
-            return res.status(404).json({
-                error: 'User not found',
-                message: 'Please complete your profile setup'
-            });
-        }
-        
-        const userId = result.rows[0].user_id;
-        
-        // Check and reset streak/daily exp if needed FIRST (before updating anything)
-        // This must be done before updating updated_at timestamp
+        const userRow = await ensureUserFromReq(req, res, 'Please complete your profile setup');
+        if (!userRow) return;
+
+        const userId = userRow.user_id;
+
+        // Reset streak/daily exp if needed BEFORE any updates
         const user = await checkAndResetUserStreak(pgPool, userId);
-        
+
         // Count completed tasks from backlog
         const countQuery = `
             SELECT COUNT(*) as completed_count
@@ -41,21 +71,21 @@ router.get('/profile', checkJwt, async (req, res) => {
             WHERE user_id = $1
         `;
         const countResult = await pgPool.query(countQuery, [userId]);
-        const completedCount = parseInt(countResult.rows[0].completed_count);
-        
-        // Update the completed_task column (without updating updated_at to preserve exp tracking)
+        const completedCount = parseInt(countResult.rows[0].completed_count, 10);
+
+        // Update completed_task (no updated_at change)
         const updateQuery = `
             UPDATE "user"
             SET completed_task = $1
             WHERE user_id = $2
         `;
         await pgPool.query(updateQuery, [completedCount, userId]);
-        
+
         res.json({
             message: 'User profile retrieved successfully',
             user: user
         });
-        
+
     } catch (error) {
         console.error('Error fetching user profile:', error);
         res.status(500).json({
@@ -102,7 +132,7 @@ router.get('/profilebyid', checkJwt, async (req, res) => {
             WHERE user_id = $1
         `;
         const countResult = await pgPool.query(countQuery, [userId]);
-        const completedCount = parseInt(countResult.rows[0].completed_count);
+        const completedCount = parseInt(countResult.rows[0].completed_count, 10);
         
         // Update the completed_task column (without updating updated_at to preserve exp tracking)
         const updateQuery = `
@@ -132,31 +162,21 @@ router.get('/profilebyid', checkJwt, async (req, res) => {
 // Headers: Authorization: Bearer <JWT_TOKEN>
 router.get('/all', checkJwt, async (req, res) => {
     try {
-        const googleId = req.user.sub || req.user.id;
-        const limit = parseInt(req.query.limit) || 50;
-        const offset = parseInt(req.query.offset) || 0;
-        
-        // Validate pagination parameters
+        const currentUser = await ensureUserFromReq(req, res, 'Please complete your profile setup first');
+        if (!currentUser) return;
+
+        const limit = parseLimit(req.query.limit, 50);
+        const offset = parseLimit(req.query.offset, 0);
+
         if (limit > 100) {
             return res.status(400).json({
                 error: 'Bad request',
                 message: 'Limit cannot exceed 100'
             });
         }
-        
-        // First get user_id from google_id
-        const userQuery = `SELECT user_id FROM "user" WHERE google_id = $1`;
-        const userResult = await pgPool.query(userQuery, [googleId]);
-        
-        if (userResult.rows.length === 0) {
-            return res.status(404).json({
-                error: 'User not found',
-                message: 'Please complete your profile setup first'
-            });
-        }
-        
-        const currentUserId = userResult.rows[0].user_id;
-        
+
+        const currentUserId = currentUser.user_id;
+
         const query = `
             SELECT 
                 u.user_id,
@@ -178,9 +198,9 @@ router.get('/all', checkJwt, async (req, res) => {
             ORDER BY u.name, u.created_at DESC
             LIMIT $2 OFFSET $3
         `;
-        
+
         const result = await pgPool.query(query, [currentUserId, limit, offset]);
-        
+
         res.json({
             message: 'All users retrieved successfully',
             users: result.rows,
@@ -188,7 +208,7 @@ router.get('/all', checkJwt, async (req, res) => {
             limit: limit,
             offset: offset
         });
-        
+
     } catch (error) {
         console.error('Error fetching all users:', error);
         res.status(500).json({
@@ -204,34 +224,24 @@ router.get('/all', checkJwt, async (req, res) => {
 // Headers: Authorization: Bearer <JWT_TOKEN>
 router.get('/search', checkJwt, async (req, res) => {
     try {
-        const googleId = req.user.sub || req.user.id;
         const searchTerm = req.query.q;
-        
-        // Validate that search term is provided
+
         if (!searchTerm || typeof searchTerm !== 'string' || searchTerm.trim().length < 1) {
             return res.status(400).json({
                 error: 'Bad request',
                 message: 'Search query cannot be empty'
             });
         }
-        
-        // First get user_id from google_id
-        const userQuery = `SELECT user_id FROM "user" WHERE google_id = $1`;
-        const userResult = await pgPool.query(userQuery, [googleId]);
-        
-        if (userResult.rows.length === 0) {
-            return res.status(404).json({
-                error: 'User not found',
-                message: 'Please complete your profile setup first'
-            });
-        }
-        
-        const currentUserId = userResult.rows[0].user_id;
+
+        const currentUser = await ensureUserFromReq(req, res, 'Please complete your profile setup first');
+        if (!currentUser) return;
+
+        const currentUserId = currentUser.user_id;
         const searchPattern = `%${searchTerm.toLowerCase()}%`;
-        
-        // Check if search term is a valid UUID format
-        const isValidUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(searchTerm);
-        
+
+        const isValidUUID =
+            /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(searchTerm);
+
         const query = `
             SELECT 
                 u.user_id,
@@ -265,16 +275,19 @@ router.get('/search', checkJwt, async (req, res) => {
                 u.name
             LIMIT 20
         `;
-        
-        const queryParams = isValidUUID ? [currentUserId, searchPattern, searchTerm] : [currentUserId, searchPattern];
+
+        const queryParams = isValidUUID
+            ? [currentUserId, searchPattern, searchTerm]
+            : [currentUserId, searchPattern];
+
         const result = await pgPool.query(query, queryParams);
-        
+
         res.json({
             message: 'User search completed successfully',
             users: result.rows,
             count: result.rows.length
         });
-        
+
     } catch (error) {
         console.error('Error searching users:', error);
         res.status(500).json({
@@ -296,25 +309,20 @@ router.get('/search', checkJwt, async (req, res) => {
 // }
 router.post('/profile', checkJwt, async (req, res) => {
     try {
-        const googleId = req.user.sub || req.user.id;
+        const googleId = getGoogleId(req);
         const email = req.body.email || req.user.email;
         const name = req.body.name || req.user.name;
         const profile_pic = req.body.profile_pic || req.user.picture;
-        
-        const {
-            birthdate,
-            edu_level
-        } = req.body;
-        
-        // Check if user already exists
+
+        const { birthdate, edu_level } = req.body;
+
         const existingUserQuery = `
             SELECT user_id FROM "user" 
             WHERE google_id = $1
         `;
         const existingUser = await pgPool.query(existingUserQuery, [googleId]);
-        
+
         if (existingUser.rows.length > 0) {
-            // Update existing user
             const updateQuery = `
                 UPDATE "user" 
                 SET profile_pic = $1, name = $2, email = $3, birthdate = $4, edu_level = $5,
@@ -322,36 +330,49 @@ router.post('/profile', checkJwt, async (req, res) => {
                 WHERE google_id = $6
                 RETURNING *
             `;
-            
+
             const result = await pgPool.query(updateQuery, [
-                profile_pic, name, email, birthdate, edu_level, googleId
+                profile_pic,
+                name,
+                email,
+                birthdate,
+                edu_level,
+                googleId
             ]);
-            
+
             res.json({
                 message: 'User profile updated successfully',
                 user: result.rows[0]
             });
         } else {
-            // Create new user
             const userId = uuidv4();
             const insertQuery = `
                 INSERT INTO "user" (
                     user_id, google_id, profile_pic, name, email, birthdate, edu_level,
                     rank, streak, completed_task, daily_exp, math_exp, phy_exp, bio_exp, chem_exp, role
-                ) VALUES ($1, $2, $3, $4, $5, $6, $7, 'Beginner', 0, 0, 0, 0, 0, 0, 0, 'user')
+                ) VALUES (
+                    $1, $2, $3, $4, $5, $6, $7,
+                    'Beginner', 0, 0, 0, 0, 0, 0, 0, 'user'
+                )
                 RETURNING *
             `;
-            
+
             const result = await pgPool.query(insertQuery, [
-                userId, googleId, profile_pic, name, email, birthdate, edu_level
+                userId,
+                googleId,
+                profile_pic,
+                name,
+                email,
+                birthdate,
+                edu_level
             ]);
-            
+
             res.status(201).json({
                 message: 'User profile created successfully',
                 user: result.rows[0]
             });
         }
-        
+
     } catch (error) {
         console.error('Error creating/updating user profile:', error);
         res.status(500).json({
@@ -367,33 +388,22 @@ router.post('/profile', checkJwt, async (req, res) => {
 // Headers: Authorization: Bearer <JWT_TOKEN>
 router.get('/preferences', checkJwt, async (req, res) => {
     try {
-        const googleId = req.user.sub || req.user.id;
-        
-        // First get user_id from google_id
-        const userQuery = `SELECT user_id FROM "user" WHERE google_id = $1`;
-        const userResult = await pgPool.query(userQuery, [googleId]);
-        
-        if (userResult.rows.length === 0) {
-            return res.status(404).json({
-                error: 'User not found',
-                message: 'Please complete your profile setup first'
-            });
-        }
-        
-        const userId = userResult.rows[0].user_id;
-        
+        const userRow = await ensureUserFromReq(req, res, 'Please complete your profile setup first');
+        if (!userRow) return;
+
+        const userId = userRow.user_id;
+
         const query = `
             SELECT * FROM prefered 
             WHERE user_id = $1
         `;
-        
         const result = await pgPool.query(query, [userId]);
-        
+
         res.json({
             message: 'User preferences retrieved successfully',
             preferences: result.rows
         });
-        
+
     } catch (error) {
         console.error('Error fetching user preferences:', error);
         res.status(500).json({
@@ -402,7 +412,6 @@ router.get('/preferences', checkJwt, async (req, res) => {
         });
     }
 });
-
 // Add user preference
 // Usage Example:
 // POST /api/users/preferences
@@ -410,44 +419,36 @@ router.get('/preferences', checkJwt, async (req, res) => {
 // Body: {
 //   "subject": "mathematics"
 // }
+
 router.post('/preferences', checkJwt, async (req, res) => {
     try {
-        const googleId = req.user.sub || req.user.id;
         const { subject } = req.body;
-        
+
         if (!subject) {
             return res.status(400).json({
                 error: 'Bad request',
                 message: 'Subject is required'
             });
         }
-        
-        // First get user_id from google_id
-        const userQuery = `SELECT user_id FROM "user" WHERE google_id = $1`;
-        const userResult = await pgPool.query(userQuery, [googleId]);
-        
-        if (userResult.rows.length === 0) {
-            return res.status(404).json({
-                error: 'User not found',
-                message: 'Please complete your profile setup first'
-            });
-        }
-        
-        const userId = userResult.rows[0].user_id;
-        
+
+        const userRow = await ensureUserFromReq(req, res, 'Please complete your profile setup first');
+        if (!userRow) return;
+
+        const userId = userRow.user_id;
+
         const insertQuery = `
             INSERT INTO prefered (user_id, subject)
             VALUES ($1, $2)
             RETURNING *
         `;
-        
+
         const result = await pgPool.query(insertQuery, [userId, subject]);
-        
+
         res.status(201).json({
             message: 'Preference added successfully',
             preference: result.rows[0]
         });
-        
+
     } catch (error) {
         console.error('Error adding user preference:', error);
         res.status(500).json({
@@ -541,24 +542,13 @@ router.patch('/experience', checkJwt, async (req, res) => {
 // Headers: Authorization: Bearer <JWT_TOKEN>
 router.patch('/streak', checkJwt, async (req, res) => {
     try {
-        const googleId = req.user.sub || req.user.id;
-        
-        // First get user_id from google_id
-        const userQuery = `SELECT user_id FROM "user" WHERE google_id = $1`;
-        const userResult = await pgPool.query(userQuery, [googleId]);
-        
-        if (userResult.rows.length === 0) {
-            return res.status(404).json({
-                error: 'User not found',
-                message: 'Please complete your profile setup first'
-            });
-        }
-        
-        const userId = userResult.rows[0].user_id;
-        
-        // Increment streak if needed (if uptime_streak is not today)
+        const userRow = await ensureUserFromReq(req, res, 'Please complete your profile setup first');
+        if (!userRow) return;
+
+        const userId = userRow.user_id;
+
         const result = await incrementUserStreakIfNeeded(pgPool, userId);
-        
+
         if (result.error) {
             return res.status(404).json({
                 error: 'User not found',
@@ -566,14 +556,12 @@ router.patch('/streak', checkJwt, async (req, res) => {
             });
         }
 
-        // After updating user streak, check and update all active gardens for this user
-        // This ensures garden streaks are updated immediately when both users complete their daily activity
         const gardensQuery = `
             SELECT row_id FROM garden 
             WHERE (user1_id = $1 OR user2_id = $1) AND status = 'active'
         `;
         const gardensResult = await pgPool.query(gardensQuery, [userId]);
-        
+
         const gardenUpdates = [];
         for (const garden of gardensResult.rows) {
             const gardenResult = await incrementGardenStreakIfBothUsersActive(pgPool, garden.row_id);
@@ -585,7 +573,7 @@ router.patch('/streak', checkJwt, async (req, res) => {
                 });
             }
         }
-        
+
         res.json({
             message: result.message,
             updated: result.updated,
@@ -593,7 +581,7 @@ router.patch('/streak', checkJwt, async (req, res) => {
             gardens_updated: gardenUpdates.length,
             garden_updates: gardenUpdates
         });
-        
+
     } catch (error) {
         console.error('Error updating user streak:', error);
         res.status(500).json({
@@ -609,37 +597,26 @@ router.patch('/streak', checkJwt, async (req, res) => {
 // Headers: Authorization: Bearer <JWT_TOKEN>
 router.get('/preferred-subjects', checkJwt, async (req, res) => {
     try {
-        const googleId = req.user.sub || req.user.id;
-        
-        // First get user_id from google_id
-        const userQuery = `SELECT user_id, name FROM "user" WHERE google_id = $1`;
-        const userResult = await pgPool.query(userQuery, [googleId]);
-        
-        if (userResult.rows.length === 0) {
-            return res.status(404).json({
-                error: 'User not found',
-                message: 'Please complete your profile setup first'
-            });
-        }
-        
-        const userId = userResult.rows[0].user_id;
-        const userName = userResult.rows[0].name;
-        
+        const userRow = await ensureUserFromReq(req, res, 'Please complete your profile setup first');
+        if (!userRow) return;
+
+        const userId = userRow.user_id;
+        const userName = userRow.name;
+
         const query = `
             SELECT row_id, subject, created_at FROM prefered 
             WHERE user_id = $1
             ORDER BY created_at ASC
         `;
-        
         const result = await pgPool.query(query, [userId]);
-        
+
         res.json({
             message: 'Preferred subjects retrieved successfully',
             user_name: userName,
             preferred_subjects: result.rows,
             total_count: result.rows.length
         });
-        
+
     } catch (error) {
         console.error('Error fetching preferred subjects:', error);
         res.status(500).json({
@@ -658,53 +635,49 @@ router.get('/preferred-subjects', checkJwt, async (req, res) => {
 // }
 router.post('/preferred-subjects', checkJwt, async (req, res) => {
     try {
-        const googleId = req.user.sub || req.user.id;
         const { subject } = req.body;
-        
+
         if (!subject || subject.trim() === '') {
             return res.status(400).json({
                 error: 'Bad request',
                 message: 'Subject is required and cannot be empty'
             });
         }
-        
-        // First get user_id from google_id
-        const userQuery = `SELECT user_id, name FROM "user" WHERE google_id = $1`;
-        const userResult = await pgPool.query(userQuery, [googleId]);
-        
-        if (userResult.rows.length === 0) {
-            return res.status(404).json({
-                error: 'User not found',
-                message: 'Please complete your profile setup first'
-            });
-        }
-        
-        const userId = userResult.rows[0].user_id;
-        const userName = userResult.rows[0].name;
-        
+
+        const userRow = await ensureUserFromReq(req, res, 'Please complete your profile setup first');
+        if (!userRow) return;
+
+        const userId = userRow.user_id;
+        const userName = userRow.name;
+
         const insertQuery = `
             INSERT INTO prefered (user_id, subject)
             VALUES ($1, $2)
             RETURNING *
         `;
-        
-        const result = await pgPool.query(insertQuery, [userId, subject.trim().toLowerCase()]);
-        
-        res.status(201).json({
-            message: 'Preferred subject added successfully',
-            user_name: userName,
-            preference: result.rows[0]
-        });
-        
-    } catch (error) {
-        // Handle unique constraint violation
-        if (error.code === '23505') {
-            return res.status(409).json({
-                error: 'Duplicate preference',
-                message: 'This subject is already in your preferred subjects list'
+
+        try {
+            const result = await pgPool.query(insertQuery, [
+                userId,
+                subject.trim().toLowerCase()
+            ]);
+
+            res.status(201).json({
+                message: 'Preferred subject added successfully',
+                user_name: userName,
+                preference: result.rows[0]
             });
+        } catch (error) {
+            if (error.code === '23505') {
+                return res.status(409).json({
+                    error: 'Duplicate preference',
+                    message: 'This subject is already in your preferred subjects list'
+                });
+            }
+            throw error;
         }
-        
+
+    } catch (error) {
         console.error('Error adding preferred subject:', error);
         res.status(500).json({
             error: 'Internal server error',
@@ -719,51 +692,42 @@ router.post('/preferred-subjects', checkJwt, async (req, res) => {
 // Headers: Authorization: Bearer <JWT_TOKEN>
 router.delete('/preferred-subjects/:preferenceId', checkJwt, async (req, res) => {
     try {
-        const googleId = req.user.sub || req.user.id;
         const { preferenceId } = req.params;
-        
+
         if (!preferenceId || isNaN(preferenceId)) {
             return res.status(400).json({
                 error: 'Bad request',
                 message: 'Valid preference ID is required'
             });
         }
-        
-        // First get user_id from google_id
-        const userQuery = `SELECT user_id, name FROM "user" WHERE google_id = $1`;
-        const userResult = await pgPool.query(userQuery, [googleId]);
-        
-        if (userResult.rows.length === 0) {
-            return res.status(404).json({
-                error: 'User not found',
-                message: 'Please complete your profile setup first'
-            });
-        }
-        
-        const userId = userResult.rows[0].user_id;
-        const userName = userResult.rows[0].name;
-        
+
+        const userRow = await ensureUserFromReq(req, res, 'Please complete your profile setup first');
+        if (!userRow) return;
+
+        const userId = userRow.user_id;
+        const userName = userRow.name;
+
         const deleteQuery = `
             DELETE FROM prefered 
             WHERE row_id = $1 AND user_id = $2
             RETURNING *
         `;
-        
+
         const result = await pgPool.query(deleteQuery, [preferenceId, userId]);
-        
+
         if (result.rows.length === 0) {
             return res.status(404).json({
                 error: 'Preference not found',
                 message: 'The specified preference was not found or does not belong to you'
             });
         }
-        
+
         res.json({
             message: 'Preferred subject removed successfully',
             user_name: userName,
             removed_preference: result.rows[0]
         });
-        
+
     } catch (error) {
         console.error('Error removing preferred subject:', error);
         res.status(500).json({
@@ -773,6 +737,7 @@ router.delete('/preferred-subjects/:preferenceId', checkJwt, async (req, res) =>
     }
 });
 
+
 // Update/replace all preferred subjects at once
 // Usage Example:
 // PUT /api/users/preferred-subjects
@@ -780,95 +745,53 @@ router.delete('/preferred-subjects/:preferenceId', checkJwt, async (req, res) =>
 // Body: {
 //   "subjects": ["mathematics", "physics", "chemistry"]
 // }
-router.put('/preferred-subjects', checkJwt, async (req, res) => {
+router.delete('/preferred-subjects/:preferenceId', checkJwt, async (req, res) => {
     try {
-        const googleId = req.user.sub || req.user.id;
-        const { subjects } = req.body;
-        
-        if (!Array.isArray(subjects)) {
+        const { preferenceId } = req.params;
+
+        if (!preferenceId || isNaN(preferenceId)) {
             return res.status(400).json({
                 error: 'Bad request',
-                message: 'Subjects must be provided as an array'
+                message: 'Valid preference ID is required'
             });
         }
-        
-        // Validate and clean subjects
-        const cleanSubjects = subjects
-            .map(s => s?.toString().trim().toLowerCase())
-            .filter(s => s && s.length > 0);
-        
-        if (cleanSubjects.length !== subjects.length) {
-            return res.status(400).json({
-                error: 'Bad request',
-                message: 'All subjects must be non-empty strings'
-            });
-        }
-        
-        // Check for duplicates
-        const uniqueSubjects = [...new Set(cleanSubjects)];
-        if (uniqueSubjects.length !== cleanSubjects.length) {
-            return res.status(400).json({
-                error: 'Bad request',
-                message: 'Duplicate subjects are not allowed'
-            });
-        }
-        
-        // First get user_id from google_id
-        const userQuery = `SELECT user_id, name FROM "user" WHERE google_id = $1`;
-        const userResult = await pgPool.query(userQuery, [googleId]);
-        
-        if (userResult.rows.length === 0) {
+
+        const userRow = await ensureUserFromReq(req, res, 'Please complete your profile setup first');
+        if (!userRow) return;
+
+        const userId = userRow.user_id;
+        const userName = userRow.name;
+
+        const deleteQuery = `
+            DELETE FROM prefered 
+            WHERE row_id = $1 AND user_id = $2
+            RETURNING *
+        `;
+
+        const result = await pgPool.query(deleteQuery, [preferenceId, userId]);
+
+        if (result.rows.length === 0) {
             return res.status(404).json({
-                error: 'User not found',
-                message: 'Please complete your profile setup first'
+                error: 'Preference not found',
+                message: 'The specified preference was not found or does not belong to you'
             });
         }
-        
-        const userId = userResult.rows[0].user_id;
-        const userName = userResult.rows[0].name;
-        
-        // Use transaction to ensure consistency
-        const client = await pgPool.connect();
-        try {
-            await client.query('BEGIN');
-            
-            // Remove all existing preferences
-            await client.query('DELETE FROM prefered WHERE user_id = $1', [userId]);
-            
-            // Add new preferences
-            const insertedPreferences = [];
-            for (const subject of uniqueSubjects) {
-                const result = await client.query(
-                    'INSERT INTO prefered (user_id, subject) VALUES ($1, $2) RETURNING *',
-                    [userId, subject]
-                );
-                insertedPreferences.push(result.rows[0]);
-            }
-            
-            await client.query('COMMIT');
-            
-            res.json({
-                message: 'Preferred subjects updated successfully',
-                user_name: userName,
-                preferred_subjects: insertedPreferences,
-                total_count: insertedPreferences.length
-            });
-            
-        } catch (error) {
-            await client.query('ROLLBACK');
-            throw error;
-        } finally {
-            client.release();
-        }
-        
+
+        res.json({
+            message: 'Preferred subject removed successfully',
+            user_name: userName,
+            removed_preference: result.rows[0]
+        });
+
     } catch (error) {
-        console.error('Error updating preferred subjects:', error);
+        console.error('Error removing preferred subject:', error);
         res.status(500).json({
             error: 'Internal server error',
-            message: 'Failed to update preferred subjects'
+            message: 'Failed to remove preferred subject'
         });
     }
 });
+
 
 // Update only profile picture and name (protected route)
 // Usage Example:
@@ -880,68 +803,63 @@ router.put('/preferred-subjects', checkJwt, async (req, res) => {
 // }
 router.patch('/profile-basic', checkJwt, async (req, res) => {
     try {
-        const googleId = req.user.sub || req.user.id;
+        const googleId = getGoogleId(req);
         const { profile_pic, name } = req.body;
-        
-        // Validate that at least one field is provided
+
         if (!profile_pic && !name) {
             return res.status(400).json({
                 error: 'Bad request',
                 message: 'At least one field (profile_pic or name) is required'
             });
         }
-        
-        // Check if user exists
+
         const existingUserQuery = `
             SELECT user_id FROM "user" 
             WHERE google_id = $1
         `;
         const existingUser = await pgPool.query(existingUserQuery, [googleId]);
-        
+
         if (existingUser.rows.length === 0) {
             return res.status(404).json({
                 error: 'User not found',
                 message: 'Please complete your profile setup first'
             });
         }
-        
-        // Build dynamic update query based on provided fields
-        let updateFields = [];
-        let values = [];
+
+        const updateFields = [];
+        const values = [];
         let paramCount = 1;
-        
+
         if (profile_pic !== undefined) {
             updateFields.push(`profile_pic = $${paramCount}`);
             values.push(profile_pic);
             paramCount++;
         }
-        
+
         if (name !== undefined && name.trim() !== '') {
             updateFields.push(`name = $${paramCount}`);
             values.push(name.trim());
             paramCount++;
         }
-        
-        // Always update the updated_at timestamp
+
         updateFields.push('updated_at = NOW()');
-        
-        // Add google_id for WHERE clause
+
         values.push(googleId);
-        
+
         const updateQuery = `
             UPDATE "user" 
             SET ${updateFields.join(', ')}
             WHERE google_id = $${paramCount}
             RETURNING *
         `;
-        
+
         const result = await pgPool.query(updateQuery, values);
-        
+
         res.json({
             message: 'Profile updated successfully',
             user: result.rows[0]
         });
-        
+
     } catch (error) {
         console.error('Error updating profile basic info:', error);
         res.status(500).json({
@@ -950,6 +868,7 @@ router.patch('/profile-basic', checkJwt, async (req, res) => {
         });
     }
 });
+
 
 // Get username by user ID (public endpoint)
 // Usage Example:
@@ -1043,39 +962,26 @@ router.get('/leaderboard', async (req, res) => {
 // Headers: Authorization: Bearer <JWT_TOKEN>
 router.get('/admin/all', checkJwt, async (req, res) => {
     try {
-        const googleId = req.user.sub || req.user.id;
-        const limit = parseInt(req.query.limit) || 50;
-        const offset = parseInt(req.query.offset) || 0;
-        
-        // Validate pagination parameters
+        const currentUser = await ensureUserFromReq(req, res, 'Please complete your profile setup first');
+        if (!currentUser) return;
+
+        const limit = parseLimit(req.query.limit, 50);
+        const offset = parseLimit(req.query.offset, 0);
+
         if (limit > 100) {
             return res.status(400).json({
                 error: 'Bad request',
                 message: 'Limit cannot exceed 100'
             });
         }
-        
-        // First get current user info and check if they're admin or teacher
-        const userQuery = `SELECT user_id, role FROM "user" WHERE google_id = $1`;
-        const userResult = await pgPool.query(userQuery, [googleId]);
-        
-        if (userResult.rows.length === 0) {
-            return res.status(404).json({
-                error: 'User not found',
-                message: 'Please complete your profile setup first'
-            });
-        }
-        
-        const currentUser = userResult.rows[0];
-        
-        // Check if user has admin or teacher role
+
         if (currentUser.role !== 'admin' && currentUser.role !== 'teacher') {
             return res.status(403).json({
                 error: 'Forbidden',
                 message: 'Access denied. Admin or teacher role required.'
             });
         }
-        
+
         const query = `
             SELECT 
                 u.user_id,
@@ -1098,14 +1004,13 @@ router.get('/admin/all', checkJwt, async (req, res) => {
             ORDER BY u.created_at DESC
             LIMIT $1 OFFSET $2
         `;
-        
+
         const result = await pgPool.query(query, [limit, offset]);
-        
-        // Get total count for pagination
+
         const countQuery = `SELECT COUNT(*) as total FROM "user"`;
         const countResult = await pgPool.query(countQuery);
-        const totalUsers = parseInt(countResult.rows[0].total);
-        
+        const totalUsers = parseInt(countResult.rows[0].total, 10);
+
         res.json({
             message: 'All users retrieved successfully',
             users: result.rows,
@@ -1114,7 +1019,7 @@ router.get('/admin/all', checkJwt, async (req, res) => {
             limit: limit,
             offset: offset
         });
-        
+
     } catch (error) {
         console.error('Error fetching all users for admin:', error);
         res.status(500).json({
@@ -1124,68 +1029,58 @@ router.get('/admin/all', checkJwt, async (req, res) => {
     }
 });
 
-// Delete user account (admin only)
+
 // Usage Example:
 // PATCH /api/users/admin/update/:userId
 // Headers: Authorization: Bearer <JWT_TOKEN>
 // Body: { name?: string, role?: string, profile_pic?: string }
+// Admin update user account
+// PATCH /api/users/admin/update/:userId
 router.patch('/admin/update/:userId', checkJwt, async (req, res) => {
     try {
-        const requestingUserGoogleId = req.user.sub || req.user.id;
         const { userId } = req.params;
         const { name, role, profile_pic } = req.body;
-        
+
         if (!userId) {
             return res.status(400).json({
                 error: 'Bad request',
                 message: 'User ID is required'
             });
         }
-        
-        // First verify that the requesting user is an admin
-        const adminQuery = `SELECT user_id, role FROM "user" WHERE google_id = $1`;
-        const adminResult = await pgPool.query(adminQuery, [requestingUserGoogleId]);
-        
-        if (adminResult.rows.length === 0) {
-            return res.status(404).json({
-                error: 'User not found',
-                message: 'Requesting user not found'
-            });
-        }
-        
-        if (adminResult.rows[0].role !== 'admin') {
+
+        const requestingUser = await ensureUserFromReq(req, res, 'Requesting user not found');
+        if (!requestingUser) return;
+
+        if (requestingUser.role !== 'admin') {
             return res.status(403).json({
                 error: 'Forbidden',
                 message: 'Only admins can update user accounts'
             });
         }
-        
-        // Check if the user to be updated exists
+
         const userToUpdateQuery = `SELECT * FROM "user" WHERE user_id = $1`;
         const userToUpdateResult = await pgPool.query(userToUpdateQuery, [userId]);
-        
+
         if (userToUpdateResult.rows.length === 0) {
             return res.status(404).json({
                 error: 'User not found',
                 message: 'User to update does not exist'
             });
         }
-        
+
         const currentUser = userToUpdateResult.rows[0];
-        
-        // Build update query dynamically based on provided fields
+
         const updates = [];
         const values = [];
         let paramIndex = 1;
-        
+
         if (name !== undefined) {
             updates.push(`name = $${paramIndex}`);
             values.push(name);
             paramIndex++;
         }
-        
+
         if (role !== undefined) {
-            // Validate role
             const validRoles = ['admin', 'teacher', 'user'];
             if (!validRoles.includes(role)) {
                 return res.status(400).json({
@@ -1197,40 +1092,36 @@ router.patch('/admin/update/:userId', checkJwt, async (req, res) => {
             values.push(role);
             paramIndex++;
         }
-        
+
         if (profile_pic !== undefined) {
-            // If profile_pic is provided, update it
             updates.push(`profile_pic = $${paramIndex}`);
             values.push(profile_pic);
             paramIndex++;
         }
-        
-        // If no fields to update, return current user data
+
         if (updates.length === 0) {
             return res.json({
                 message: 'No changes made',
                 user: currentUser
             });
         }
-        
-        // Add user_id to values
+
         values.push(userId);
-        
-        // Update user
+
         const updateQuery = `
             UPDATE "user" 
             SET ${updates.join(', ')}
             WHERE user_id = $${paramIndex}
             RETURNING *
         `;
-        
+
         const updateResult = await pgPool.query(updateQuery, values);
-        
+
         res.json({
             message: 'User updated successfully',
             user: updateResult.rows[0]
         });
-        
+
     } catch (error) {
         console.error('Error updating user account:', error);
         res.status(500).json({
@@ -1240,72 +1131,55 @@ router.patch('/admin/update/:userId', checkJwt, async (req, res) => {
     }
 });
 
-// DELETE /api/users/admin/delete/12345678-1234-1234-1234-123456789012
-// Headers: Authorization: Bearer <JWT_TOKEN>
+// Admin delete user
+// DELETE /api/users/admin/delete/:userId
 router.delete('/admin/delete/:userId', checkJwt, async (req, res) => {
     try {
-        const requestingUserGoogleId = req.user.sub || req.user.id;
         const { userId } = req.params;
-        
+
         if (!userId) {
             return res.status(400).json({
                 error: 'Bad request',
                 message: 'User ID is required'
             });
         }
-        
-        // First verify that the requesting user is an admin
-        const adminQuery = `SELECT user_id, role FROM "user" WHERE google_id = $1`;
-        const adminResult = await pgPool.query(adminQuery, [requestingUserGoogleId]);
-        
-        if (adminResult.rows.length === 0) {
-            return res.status(404).json({
-                error: 'User not found',
-                message: 'Requesting user not found'
-            });
-        }
-        
-        if (adminResult.rows[0].role !== 'admin') {
+
+        const requestingUser = await ensureUserFromReq(req, res, 'Requesting user not found');
+        if (!requestingUser) return;
+
+        if (requestingUser.role !== 'admin') {
             return res.status(403).json({
                 error: 'Forbidden',
                 message: 'Only admins can delete user accounts'
             });
         }
-        
-        // Check if the user to be deleted exists
+
         const userToDeleteQuery = `SELECT user_id, name, email FROM "user" WHERE user_id = $1`;
         const userToDeleteResult = await pgPool.query(userToDeleteQuery, [userId]);
-        
+
         if (userToDeleteResult.rows.length === 0) {
             return res.status(404).json({
                 error: 'User not found',
                 message: 'User to delete does not exist'
             });
         }
-        
+
         const userToDelete = userToDeleteResult.rows[0];
-        
-        // Prevent admin from deleting themselves
-        if (adminResult.rows[0].user_id === userId) {
+
+        if (requestingUser.user_id === userId) {
             return res.status(400).json({
                 error: 'Bad request',
                 message: 'You cannot delete your own account'
             });
         }
-        
-        // Use transaction to ensure data consistency
+
         const client = await pgPool.connect();
         try {
             await client.query('BEGIN');
-            
-            // Delete user (CASCADE will automatically delete related records)
-            // This will delete:
-            // - prefered (user preferences)
-            // - friend (friend relationships)
-            // - garden (garden relationships)
+
             const deleteQuery = `DELETE FROM "user" WHERE user_id = $1`;
             const deleteResult = await client.query(deleteQuery, [userId]);
-            
+
             if (deleteResult.rowCount === 0) {
                 await client.query('ROLLBACK');
                 return res.status(404).json({
@@ -1313,9 +1187,9 @@ router.delete('/admin/delete/:userId', checkJwt, async (req, res) => {
                     message: 'User could not be deleted'
                 });
             }
-            
+
             await client.query('COMMIT');
-            
+
             res.json({
                 message: 'User account deleted successfully',
                 deletedUser: {
@@ -1324,14 +1198,14 @@ router.delete('/admin/delete/:userId', checkJwt, async (req, res) => {
                     email: userToDelete.email
                 }
             });
-            
+
         } catch (error) {
             await client.query('ROLLBACK');
             throw error;
         } finally {
             client.release();
         }
-        
+
     } catch (error) {
         console.error('Error deleting user account:', error);
         res.status(500).json({
