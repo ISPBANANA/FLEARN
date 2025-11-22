@@ -12,6 +12,7 @@ Before starting, ensure you have the following installed:
 - **[Docker](https://www.docker.com/)** & **Docker Compose** (v2.0+)
 - **[Node.js](https://nodejs.org/)** (v18 or higher)
 - **[Git](https://git-scm.com/)** (latest version)
+- **Google Cloud Account** (for OAuth credentials - free tier available)
 
 ### Optional but Recommended
 - **[Visual Studio Code](https://code.visualstudio.com/)** - IDE with excellent Docker support
@@ -37,12 +38,12 @@ Copy the example environment file:
 cp .env.example .env
 ```
 
-Edit `.env` with your preferred settings:
+Edit `.env` with your configuration (see sample below):
 ```env
 # Application Ports
-FRONTEND_PORT="YOUR CHOSEN PORT"
-API_PORT="YOUR CHOSEN PORT"
-WEBHOOK_PORT="YOUR CHOSEN PORT"
+FRONT_PORT=3000
+PORT=8099
+WEBHOOK_PORT=3001
 
 # PostgreSQL Configuration
 POSTGRES_DB="YOUR DB NAME"
@@ -68,7 +69,16 @@ MONGO_EXPRESS_PORT="YOUR CHOSEN PORT"
 
 # Webhook Configuration (for auto-deployment)
 WEBHOOK_SECRET=your_github_webhook_secret_here
+
+# Google OAuth Configuration (NextAuth)
+NEXTAUTH_URL=http://localhost:3000
+NEXTAUTH_SECRET=your_nextauth_secret_here
+GOOGLE_CLIENT_ID=your_google_client_id.apps.googleusercontent.com
+GOOGLE_CLIENT_SECRET=your_google_client_secret
+NEXT_PUBLIC_GOOGLE_CLIENT_ID=your_google_client_id.apps.googleusercontent.com
 ```
+
+> 🔑 **Get Google OAuth Credentials**: See [API Setup Guide](API-Setup-Guide#step-3-google-oauth-configuration) for detailed instructions on obtaining Google OAuth credentials from Google Cloud Console.
 
 ### 3. Start All Services
 ```bash
@@ -100,11 +110,11 @@ flearn-webhook         flearn_webhook       "npm start"              webhook-ser
 ### 5. Access the Application
 | Service | URL | Credentials |
 |---------|-----|-------------|
-| **Frontend** | http://localhost:[FRONTEND_PORT] | - |
-| **Backend API** | http://localhost:[API_PORT] | - |
-| **pgAdmin** | http://localhost:[PGADMIN_PORT] | admin@flearn.com / [your_password] |
-| **Mongo Express** | http://localhost:[MONGO_EXPRESS_PORT] | admin / [your_password] |
-| **Webhook Health** | http://localhost:[WEBHOOK_PORT]/health | - |
+| **Frontend** | http://localhost:3000 | - |
+| **Backend API** | http://localhost:8099 | - |
+| **pgAdmin** | http://localhost:8088 | admin@flearn.com / [your_password] |
+| **Mongo Express** | http://localhost:8087 | admin / [your_password] |
+| **Webhook Health** | http://localhost:3001/health | - |
 
 ## 🛠️ Manual Development Setup
 
@@ -156,13 +166,13 @@ See [Database Guide](Database-Guide) for detailed instructions.
 - `POSTGRES_*`: PostgreSQL connection settings
 - `MONGO_*`: MongoDB connection settings
 
-#### Auth0 Configuration (Optional for basic setup)
-- `AUTH0_DOMAIN`: Your Auth0 tenant domain
-- `AUTH0_AUDIENCE`: API identifier from Auth0
-- `AUTH0_CLIENT_ID`: Application client ID
-- `AUTH0_CLIENT_SECRET`: Application client secret
+#### Google OAuth Configuration
+- `GOOGLE_CLIENT_ID`: Your OAuth 2.0 Client ID from Google Cloud Console
+- `GOOGLE_CLIENT_SECRET`: Your OAuth 2.0 Client Secret
+- `NEXTAUTH_URL`: Your frontend URL (default: http://localhost:3000)
+- `NEXTAUTH_SECRET`: Random secret string for NextAuth (generate with `openssl rand -base64 32`)
 
-For detailed Auth0 setup, see [Authentication & Auth0](Authentication-Auth0).
+For detailed Google OAuth setup, see [API Setup Guide](API-Setup-Guide#step-3-google-oauth-configuration).
 
 ### Development Workflow
 
@@ -177,13 +187,13 @@ For detailed Auth0 setup, see [Authentication & Auth0](Authentication-Auth0).
 ### 1. Health Checks
 ```bash
 # Test backend health
-curl http://localhost:[API_PORT]/health
+curl http://localhost:8099/health
 
 # Test webhook service
-curl http://localhost:[WEBHOOK_PORT]/health
+curl http://localhost:3001/health
 
 # Test frontend (should return HTML)
-curl http://localhost:[FRONTEND_PORT]
+curl http://localhost:3000
 ```
 
 ### 2. Database Connections
@@ -208,10 +218,11 @@ docker compose exec mongodb mongosh --eval "db.runCommand('ping')"
 
 Once your environment is running:
 
-1. **Explore the API**: Visit [API Reference](API-Reference) for endpoint documentation
-2. **Set up Auth0**: Follow [Authentication & Auth0](Authentication-Auth0) for user authentication
+1. **Explore the API**: Visit [API Setup Guide](API-Setup-Guide) for endpoint documentation
+2. **Set up Google OAuth**: Follow [Authentication Guide](Authentication-Auth0) for user authentication setup
 3. **Configure webhooks**: See [Docker & Deployment](Docker-Deployment) for auto-deployment
-4. **Start developing**: Check [Contributing Guidelines](Contributing-Guidelines) for development practices
+4. **Review security**: Check [Security Guidelines](Security-Guidelines) for critical security practices
+5. **Start developing**: Explore the frontend in `FLEARN-front/src` and backend in `FLEARN-back/routes`
 
 ## ⚠️ Troubleshooting
 
@@ -219,12 +230,16 @@ Once your environment is running:
 
 #### Port Conflicts
 ```bash
-# Check what's using your ports
-netstat -tulpn | grep :[FRONTEND_PORT]
-netstat -tulpn | grep :[API_PORT]
+# Check what's using ports (Linux/Mac)
+netstat -tulpn | grep :3000
+netstat -tulpn | grep :8099
+
+# On Windows PowerShell
+Get-NetTCPConnection -LocalPort 3000,8099
 
 # Kill processes if needed
-sudo kill -9 <pid>
+# Linux/Mac: sudo kill -9 <pid>
+# Windows: Stop-Process -Id <pid> -Force
 ```
 
 #### Docker Issues

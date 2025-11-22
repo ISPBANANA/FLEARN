@@ -2,10 +2,12 @@
 
 ![FLEARN Logo](https://img.shields.io/badge/FLEARN-Learning%20Platform-blue)
 ![Next.js](https://img.shields.io/badge/Next.js-15.5.2-black)
+![React](https://img.shields.io/badge/React-19.1.0-blue)
 ![Node.js](https://img.shields.io/badge/Node.js-Express-green)
 ![MongoDB](https://img.shields.io/badge/MongoDB-7.0-green)
 ![PostgreSQL](https://img.shields.io/badge/PostgreSQL-15-blue)
 ![Docker](https://img.shields.io/badge/Docker-Containerized-blue)
+![TypeScript](https://img.shields.io/badge/TypeScript-5.9-blue)
 
 Welcome to the comprehensive documentation for **FLEARN**, an interactive learning platform designed to make education engaging and fun through gamification, progress tracking, and social learning components.
 
@@ -18,16 +20,13 @@ Welcome to the comprehensive documentation for **FLEARN**, an interactive learni
 
 ### 🏗️ **Technical Documentation**
 - **[Architecture Overview](Architecture)** - System design and components
-- **[Authentication & Auth0](Authentication-Auth0)** - Security implementation
-- **[API Reference](API-Reference)** - Endpoint documentation
-- **[Database Guide](Database-Guide)** - Schema and management
+- **[Authentication Guide](Authentication-Auth0)** - Google OAuth integration
+- **[API Setup Guide](API-Setup-Guide)** - Backend configuration and endpoints
+- **[Docker & Deployment](Docker-Deployment)** - Containerized deployment
 
 ### 🧪 **Development & Testing**
-- **[Testing Guide](Testing-Guide)** - Comprehensive testing documentation
-- **[Scripts & Utilities](Scripts-Utilities)** - Development tools  
 - **[Port Configuration](Port-Configuration)** - Port reference and security
-- **[Contributing Guidelines](Contributing-Guidelines)** - How to contribute
-- **[Troubleshooting](Troubleshooting)** - Common issues and solutions
+- **[Security Guidelines](Security-Guidelines)** - Critical security practices
 
 ### 🔒 **Security & Best Practices**
 - **[Security Guidelines](Security-Guidelines)** - **REQUIRED READING** - Critical security practices
@@ -38,12 +37,15 @@ Welcome to the comprehensive documentation for **FLEARN**, an interactive learni
 FLEARN is built with a modern tech stack and follows microservices architecture:
 
 ### ✨ Key Features
-- **Interactive Learning**: Engaging educational content with gamification
-- **Progress Tracking**: Visual progress indicators and achievement streaks
-- **Social Learning**: Friend system, leaderboards, and collaborative features
-- **Responsive Design**: Seamless experience across all devices
-- **Admin Dashboard**: Comprehensive content and user management
-- **Multi-database Support**: MongoDB and PostgreSQL integration
+- **Interactive Learning**: Multi-subject questions (Math, Physics, Biology, Chemistry) with KaTeX support
+- **Progress Tracking**: Daily experience points, streaks with 1-day tolerance, and visual progress indicators
+- **Rank System**: Dynamic ranking with 6 levels (Beginner → Professor) based on total experience
+- **Social Features**: Friend system, gardens for collaborative learning, and leaderboards
+- **Automatic Updates**: Streak reset, rank calculation, and daily exp reset happen automatically
+- **Admin Dashboard**: Comprehensive question and topic management
+- **Responsive Design**: Seamless experience across desktop, tablet, and mobile
+- **Secure Authentication**: Google OAuth integration with NextAuth
+- **Multi-database Architecture**: PostgreSQL for structured data, MongoDB for flexible content
 
 ### 🎯 **Important Links**
 - **🌐 Live Demo**: [http://hongrocker49.thddns.net:2725/](http://hongrocker49.thddns.net:2725/)
@@ -77,32 +79,42 @@ FLEARN is built with a modern tech stack and follows microservices architecture:
 ```
 
 ### 🔧 Core Services
-- **Frontend Service**: Next.js application with TypeScript
-- **Backend API**: Express.js server with Auth0 integration  
-- **Webhook Service**: Automated deployment system
-- **PostgreSQL**: Relational data storage
-- **MongoDB**: Document-based user data
-- **Management Interfaces**: pgAdmin & Mongo Express
+- **Frontend Service**: Next.js 15.5.2 with React 19, TypeScript, and Tailwind CSS 4.0
+- **Backend API**: Express.js server with Google OAuth authentication via NextAuth
+- **Webhook Service**: GitHub integration for automated deployment (Port 3001)
+- **PostgreSQL 15**: User data, questions, topics, and relationships with pgAdmin interface
+- **MongoDB 7.0**: Backlog and supplementary data with Mongo Express interface
+- **Database Management**: pgAdmin (Port 8088) & Mongo Express (Port 8087)
 
 ## 🚦 Current Status
 
 ### ✅ Completed Features
-- [x] Containerized development environment
-- [x] Webhook-based auto-deployment
-- [x] Auth0 authentication system
-- [x] Database setup (PostgreSQL + MongoDB)
-- [x] Backend API structure
-- [x] Frontend foundation with TypeScript
-- [x] Comprehensive testing suite
-- [x] CI/CD pipeline with GitHub Actions
+- [x] Containerized development environment with Docker Compose (6 services)
+- [x] Webhook-based auto-deployment with GitHub integration
+- [x] Google OAuth authentication system via NextAuth
+- [x] Database setup (PostgreSQL 15 + MongoDB 7.0)
+- [x] Complete backend API with RESTful endpoints
+- [x] Frontend with Next.js 15.5.2, React 19, TypeScript, and Tailwind CSS 4.0
+- [x] Comprehensive testing suite (35+ unit tests)
+- [x] User profile management with automatic updates
+- [x] Experience points and gamification (daily exp, subject exp, ranks)
+- [x] Streak system with 1-day tolerance and automatic reset
+- [x] Rank system with 6 levels (Beginner → Professor)
+- [x] Friends system with requests and status management
+- [x] Gardens for collaborative learning
+- [x] Question and topic management with admin capabilities
+- [x] Backlog system for saved questions
+- [x] Mathematical expression rendering with KaTeX
+- [x] Search functionality for users and content
+- [x] Leaderboard system
+- [x] Automatic daily exp reset at midnight (Bangkok timezone)
 
-### 🚧 In Development (Sprint 2)
-- [ ] User registration and profile management
-- [ ] Experience points and gamification system
-- [ ] Friends and social features
-- [ ] Learning content structure
-- [ ] Interactive learning modules
-- [ ] Progress tracking dashboard
+### 🚧 Current Sprint Features
+- [ ] Enhanced UI/UX with GSAP animations
+- [ ] Profile customization and character systems
+- [ ] Advanced analytics and insights
+- [ ] Performance optimizations
+- [ ] Mobile app development
 
 ## 🛠️ Quick Start Commands
 
@@ -110,13 +122,20 @@ FLEARN is built with a modern tech stack and follows microservices architecture:
 # Clone and start the complete environment
 git clone https://github.com/ISPBANANA/FLEARN.git
 cd FLEARN
+
+# Configure environment (copy and edit .env file)
+cp .env.example .env
+# Edit .env with your Google OAuth credentials and passwords
+
+# Start all services
 docker compose up -d
 
 # Access services
-# Frontend:     http://localhost:[FRONTEND_PORT]
-# Backend API:  http://localhost:[API_PORT]
-# pgAdmin:      http://localhost:[PGADMIN_PORT]
-# Mongo Express: http://localhost:[MONGO_EXPRESS_PORT]
+# Frontend:     http://localhost:3000
+# Backend API:  http://localhost:8099
+# pgAdmin:      http://localhost:8088
+# Mongo Express: http://localhost:8087
+# Webhook:      http://localhost:3001
 ```
 
 ## 👥 Team & Collaboration
@@ -150,5 +169,5 @@ docker compose up -d
 
 ---
 
-*Last updated: September 2025*  
+*Last updated: November 2025*  
 *Built with ❤️ by the ISPBANANA team*

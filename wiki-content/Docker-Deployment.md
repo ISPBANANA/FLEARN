@@ -15,13 +15,13 @@ FLEARN uses a containerized microservices architecture with:
 
 ```
 FLEARN Container Stack
-├── flearn-frontend     (Next.js)      - Port 3000
-├── flearn-backend      (Express.js)   - Port 8099  
-├── flearn-webhook      (Node.js)      - Port 3001
-├── flearn-postgres     (PostgreSQL)   - Port 5432
-├── flearn-mongodb      (MongoDB)      - Port 27017
-├── flearn-pgadmin      (pgAdmin)      - Port 8088
-└── flearn-mongo-express (Mongo Express) - Port 8087
+├── flearn-frontend     (Next.js 15.5.2, React 19)  - Port 3000
+├── flearn-backend      (Express.js, Node.js)      - Port 8099  
+├── flearn-webhook      (Node.js)                  - Port 3001
+├── flearn-postgres     (PostgreSQL 15)            - Port 5432
+├── flearn-mongodb      (MongoDB 7.0)              - Port 27017
+├── flearn-pgadmin      (pgAdmin 4)                - Port 8088
+└── flearn-mongo-express (Mongo Express)            - Port 8087
 ```
 
 ## 🚀 Quick Docker Setup
@@ -123,13 +123,13 @@ MONGO_EXPRESS_PORT=8087
 MONGO_EXPRESS_INTERNAL_PORT=8081
 
 # ===========================================
-# Auth0 Configuration
+# Google OAuth Configuration (NextAuth)
 # ===========================================
-AUTH0_DOMAIN=your-tenant.auth0.com
-AUTH0_AUDIENCE=https://flearn-api.com
-AUTH0_CLIENT_ID=your_auth0_client_id
-AUTH0_CLIENT_SECRET=your_auth0_client_secret
-AUTH0_SECRET=your_nextjs_auth0_secret
+NEXTAUTH_URL=http://localhost:3000
+NEXTAUTH_SECRET=your_nextauth_secret_here
+NEXT_PUBLIC_GOOGLE_CLIENT_ID=your_google_client_id.apps.googleusercontent.com
+GOOGLE_CLIENT_ID=your_google_client_id.apps.googleusercontent.com
+GOOGLE_CLIENT_SECRET=GOCSPX-your_google_client_secret
 
 # ===========================================
 # Webhook Service Configuration
@@ -138,9 +138,10 @@ WEBHOOK_PORT=3001
 WEBHOOK_SECRET=your_github_webhook_secret_here
 
 # ===========================================
-# CORS and Security
+# CORS and API Configuration
 # ===========================================
-ALLOWED_ORIGINS=http://localhost:[FRONTEND_PORT],https://your-domain.com
+ALLOWED_ORIGINS=http://localhost:3000,http://localhost:8099
+NEXT_PUBLIC_API_BASE_URL=http://localhost:8099
 ```
 
 ### 🔒 Critical Security Requirements
@@ -149,9 +150,11 @@ ALLOWED_ORIGINS=http://localhost:[FRONTEND_PORT],https://your-domain.com
 - 🔄 **Rotate all secrets** regularly (every 90 days minimum)
 - 📁 **Add `.env*` to `.gitignore`** before first commit
 - 🌍 **Use environment-specific** configurations (dev/staging/prod)
-- 🔑 **Enable 2FA** on all service accounts (Auth0, GitHub, etc.)
+- 🔑 **Enable 2FA** on all service accounts (Google, GitHub, etc.)
 - 📊 **Monitor access logs** for unauthorized attempts
 - 🛡️ **Use HTTPS only** in production environments
+- 🔒 **Secure Google OAuth** credentials with restricted API access
+- 🏭 **Restrict OAuth consent** to test users during development
 
 ## 🎣 Webhook Auto-Deployment System
 
@@ -462,16 +465,22 @@ sudo certbot --nginx -d your-domain.com
 #### 4. Production Environment Variables
 ```env
 NODE_ENV=production
-FRONTEND_PORT=3000
-API_PORT=8099
+FRONT_PORT=3000
+PORT=8099
 
 # Use production URLs
+NEXTAUTH_URL=https://your-domain.com
+NEXT_PUBLIC_API_BASE_URL=https://api.your-domain.com
 ALLOWED_ORIGINS=https://your-domain.com,https://www.your-domain.com
-AUTH0_BASE_URL=https://your-domain.com
 
 # Strong production passwords
 POSTGRES_PASSWORD=very_secure_production_password
-MONGO_PASSWORD=very_secure_production_mongo_password
+MONGO_INITDB_ROOT_PASSWORD=very_secure_production_mongo_password
+
+# Production Google OAuth (separate from dev)
+GOOGLE_CLIENT_ID=production_client_id.apps.googleusercontent.com
+GOOGLE_CLIENT_SECRET=GOCSPX-production_secret
+NEXTAUTH_SECRET=super_strong_production_nextauth_secret
 ```
 
 ### CI/CD Pipeline Enhancement

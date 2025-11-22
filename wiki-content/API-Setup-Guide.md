@@ -1,6 +1,6 @@
 # 🚀 API Setup Guide
 
-This comprehensive guide will walk you through setting up the FLEARN backend API with Auth0 authentication and PostgreSQL database integration.
+This comprehensive guide will walk you through setting up the FLEARN backend API with Google OAuth authentication and PostgreSQL/MongoDB database integration.
 
 ## 📋 Prerequisites
 
@@ -8,18 +8,22 @@ Ensure you have the following installed before proceeding:
 
 - **[Node.js](https://nodejs.org/)** (v18 or higher) 
 - **[PostgreSQL](https://www.postgresql.org/download/)** (v15 or higher)
+- **[MongoDB](https://www.mongodb.com/try/download/community)** (v7.0 or higher)
 - **[Git](https://git-scm.com/)** (latest version)
-- **Auth0 account** ([free tier available](https://auth0.com))
+- **Google Cloud account** ([free tier available](https://console.cloud.google.com))
 - **Code editor** (VS Code recommended)
 
 ## 🎯 Overview
 
 The FLEARN API provides:
-- **User Management**: Profile creation, preferences, experience tracking
+- **User Management**: Profile creation, experience tracking, streaks, and rankings
 - **Social Features**: Friends system with requests and status management  
 - **Learning Progress**: Garden-based learning with streak tracking
-- **Authentication**: Secure Auth0 JWT integration
-- **Database Integration**: PostgreSQL for relational data, MongoDB for documents
+- **Question Management**: Multi-subject question bank with topics
+- **Backlog System**: Save questions for later review
+- **Authentication**: Secure Google OAuth integration via NextAuth
+- **Database Integration**: PostgreSQL for relational data, MongoDB for flexible content
+- **Automatic Updates**: Streak reset, rank calculation, and daily exp reset
 
 ## 🔧 Step-by-Step Backend Setup
 
@@ -36,13 +40,14 @@ npm install
 ```json
 {
   "express": "^4.18.2",
-  "express-jwt": "^8.4.1", 
-  "jwks-rsa": "^3.0.1",
+  "google-auth-library": "^9.0.0",
   "pg": "^8.11.3",
-  "mongoose": "^7.5.0",
-  "uuid": "^9.0.0",
+  "pg-pool": "^3.6.1",
+  "mongoose": "^7.0.3",
+  "uuid": "^9.0.1",
   "cors": "^2.8.5",
-  "helmet": "^7.0.0"
+  "dotenv": "^17.2.1",
+  "katex": "^0.16.25"
 }
 ```
 
@@ -113,60 +118,62 @@ psql -h localhost -U flearn_user -d flearn_db -f FLEARN-back/init-scripts/02-sch
 ```
 
 **Schema Overview**:
-- `user`: User profiles and experience points
-- `prefered`: User learning preferences  
-- `garden`: Learning progress tracking
-- `friend`: Social connections and requests
+- `user`: User profiles, experience points, streaks, and rankings
+- `garden`: Learning progress tracking with subject-specific gardens
+- `friend`: Social connections and friend requests
+- `question`: Multi-subject question bank
+- `topic`: Question organization by topics
+- MongoDB `backlog` collection: Saved questions for later
 
-### Step 3: Auth0 Configuration
+### Step 3: Google OAuth Configuration
 
-#### 3.1 Create Auth0 Account
-1. Visit [auth0.com](https://auth0.com) and sign up
-2. Create a new tenant (e.g., "flearn-dev")
-3. Complete the initial setup wizard
+#### 3.1 Access Google Cloud Console
+1. Visit [Google Cloud Console](https://console.cloud.google.com)
+2. Sign in with your Google account
+3. Create a new project or select an existing one
 
-#### 3.2 Create Auth0 Application
-1. Go to **Applications** → **Create Application**
-2. **Name**: "FLEARN Frontend"
-3. **Application Type**: "Single Page Web Applications"
-4. Click **Create**
+#### 3.2 Enable Google+ API (if needed)
+1. Go to **APIs & Services** → **Library**
+2. Search for "Google+ API"
+3. Click **Enable** if not already enabled
 
-#### 3.3 Configure Application Settings
+#### 3.3 Create OAuth 2.0 Credentials
+1. Go to **APIs & Services** → **Credentials**
+2. Click **+ CREATE CREDENTIALS** → **OAuth client ID**
+3. If prompted, configure the OAuth consent screen first:
+   - User Type: **External** (for testing) or **Internal** (for organization)
+   - App name: "FLEARN"
+   - User support email: Your email
+   - Developer contact: Your email
+   - Save and continue through scopes and test users
 
-In your Auth0 application **Settings** tab:
+4. Create OAuth Client ID:
+   - Application type: **Web application**
+   - Name: "FLEARN Web Client"
+   
+5. **Authorized JavaScript origins**:
+   ```
+   http://localhost:3000
+   http://localhost:8099
+   ```
 
-```bash
-# Application URIs (adjust ports as needed)
-Allowed Callback URLs: 
-http://localhost:[FRONTEND_PORT]/callback,http://localhost:[WEBHOOK_PORT]/callback
+6. **Authorized redirect URIs**:
+   ```
+   http://localhost:3000/api/auth/callback/google
+   ```
 
-Allowed Logout URLs:
-http://localhost:[FRONTEND_PORT],http://localhost:[WEBHOOK_PORT]
+7. Click **CREATE**
+8. **Copy your Client ID and Client Secret** - you'll need these!
 
-Allowed Web Origins:
-http://localhost:[FRONTEND_PORT],http://localhost:[WEBHOOK_PORT]
+#### 3.4 Configure NextAuth in Frontend
+The frontend uses NextAuth for Google OAuth integration. Configuration is in `.env.local` (covered in frontend setup).
 
-Allowed Origins (CORS):
-http://localhost:[FRONTEND_PORT],http://localhost:[WEBHOOK_PORT]
-```
-
-**Save Changes** at the bottom of the page.
-
-#### 3.4 Create Auth0 API
-
-1. Go to **APIs** → **Create API**
-2. **Name**: "FLEARN API"  
-3. **Identifier**: `https://flearn-api.com` *(this becomes your AUTH0_AUDIENCE)*
-4. **Signing Algorithm**: RS256
-5. Click **Create**
-
-#### 3.5 Enable Social Login (Optional)
-
-For Google OAuth integration:
-1. Go to **Authentication** → **Social**
-2. Click the **Google** provider
-3. Toggle **Enable** 
-4. Add your Google OAuth credentials (can be configured later)
+#### 3.5 Test OAuth Configuration
+Once configured, users will see a "Sign in with Google" button that:
+1. Redirects to Google's secure login page
+2. Requests permission to access basic profile info (name, email, picture)
+3. Returns to your app with an ID token
+4. Creates/updates user profile in database
 
 ### Step 4: Environment Configuration
 
@@ -192,51 +199,92 @@ NODE_ENV=development
 PORT=8099
 
 # ===========================================
+# Frontend Configuration
+# ===========================================
+FRONT_PORT=3000
+
+# ===========================================
 # PostgreSQL Database Configuration
 # ===========================================
 POSTGRES_HOST=localhost
 POSTGRES_PORT=5432
-POSTGRES_DB=flearn_db
+POSTGRES_DB=flearn_test
 POSTGRES_USER=flearn_user
 POSTGRES_PASSWORD=generate_strong_password_here
 
 # ===========================================
-# Auth0 Configuration - REPLACE WITH YOUR VALUES
+# MongoDB Configuration
 # ===========================================
-AUTH0_DOMAIN=YOUR-TENANT.auth0.com
-AUTH0_AUDIENCE=https://flearn-api.com
-AUTH0_CLIENT_ID=your_client_id_from_auth0_dashboard
-AUTH0_CLIENT_SECRET=your_client_secret_from_auth0_dashboard
+MONGO_URL=mongodb://localhost:27017/flearn-db
+# For Docker: mongodb://admin:your_password@localhost:27017/flearn_db?authSource=admin
+MONGO_INITDB_ROOT_USERNAME=admin
+MONGO_INITDB_ROOT_PASSWORD=your_mongo_password_here
+MONGO_INITDB_DATABASE=flearn_db
+MONGO_PORT=27017
+
+# ===========================================
+# Google OAuth Configuration (NextAuth)
+# ===========================================
+NEXTAUTH_URL=http://localhost:3000
+NEXTAUTH_SECRET=generate_strong_random_secret_here
+NEXT_PUBLIC_GOOGLE_CLIENT_ID=your_google_client_id.apps.googleusercontent.com
+GOOGLE_CLIENT_ID=your_google_client_id.apps.googleusercontent.com
+GOOGLE_CLIENT_SECRET=your_google_client_secret
 
 # ===========================================
 # CORS Configuration
 # ===========================================
-ALLOWED_ORIGINS=http://localhost:[FRONTEND_PORT],http://localhost:[WEBHOOK_PORT],http://localhost:[DEV_PORT]
+ALLOWED_ORIGINS=http://localhost:3000,http://localhost:8099,http://localhost:3001
 
 # ===========================================
-# MongoDB Configuration (Optional)
+# API Configuration
 # ===========================================
-MONGO_URL=mongodb://localhost:[MONGO_PORT]/flearn-db
-# Or for Docker: mongodb://flearn_admin:password@localhost:[MONGO_PORT]/flearn_mongo_db?authSource=admin
+NEXT_PUBLIC_API_BASE_URL=http://localhost:8099
+API_VERSION=v1
+
+# ===========================================
+# Webhook Configuration (Optional)
+# ===========================================
+WEBHOOK_PORT=3001
+WEBHOOK_SECRET=your_github_webhook_secret_here
+
+# ===========================================
+# Database Management (Optional - for Docker)
+# ===========================================
+PGADMIN_DEFAULT_EMAIL=admin@flearn.com
+PGADMIN_DEFAULT_PASSWORD=your_pgadmin_password_here
+PGADMIN_PORT=8088
+
+MONGO_EXPRESS_USERNAME=admin
+MONGO_EXPRESS_PASSWORD=your_mongo_express_password_here
+MONGO_EXPRESS_PORT=8087
 
 # ===========================================
 # Development Settings
 # ===========================================
-DEBUG=flearn:*
 LOG_LEVEL=debug
 ```
 
-#### 4.3 Retrieve Auth0 Values
+#### 4.3 Retrieve Google OAuth Values
 
-From your Auth0 dashboard:
+From your Google Cloud Console:
 
-**Application Settings**:
-- `AUTH0_DOMAIN`: Found in Application → Settings → Basic Information
-- `AUTH0_CLIENT_ID`: Found in Application → Settings → Basic Information  
-- `AUTH0_CLIENT_SECRET`: Found in Application → Settings → Basic Information
+**OAuth 2.0 Client IDs**:
+1. Go to **APIs & Services** → **Credentials**
+2. Find your "FLEARN Web Client" OAuth 2.0 Client ID
+3. Click the client name to view details
+4. Copy:
+   - `GOOGLE_CLIENT_ID`: Your client ID (ends with .apps.googleusercontent.com)
+   - `GOOGLE_CLIENT_SECRET`: Your client secret
 
-**API Settings**:
-- `AUTH0_AUDIENCE`: Found in APIs → FLEARN API → Settings → Identifier
+**NextAuth Secret**:
+Generate a secure random string (minimum 32 characters):
+```bash
+# On Linux/Mac:
+openssl rand -base64 32
+
+# Or use any secure password generator
+```
 
 ### Step 5: Start and Test the API Server
 
@@ -250,11 +298,10 @@ npm run dev
 **Expected startup output**:
 ```
 🚀 FLEARN Backend Server Started!
-📍 Server URL: http://localhost:[API_PORT]
+📍 Server URL: http://localhost:8099
 🌍 Environment: development
-🔐 Auth0 Domain: your-tenant.auth0.com
-🎯 Auth0 Audience: https://flearn-api.com
 ✅ PostgreSQL connected successfully
+✅ MongoDB connected successfully
 ✅ Server is ready to accept connections
 ```
 
@@ -262,14 +309,14 @@ npm run dev
 
 Test the server is running:
 ```bash
-curl http://localhost:[API_PORT]/health
+curl http://localhost:8099/health
 ```
 
 Expected response:
 ```json
 {
   "status": "OK",
-  "timestamp": "2025-09-13T13:00:00.000Z",
+  "timestamp": "2025-11-22T13:00:00.000Z",
   "environment": "development",
   "database": "connected"
 }
@@ -277,27 +324,25 @@ Expected response:
 
 ## 🧪 API Testing
 
-### Mock Authentication (Development Mode)
+### Development Testing (Without Full OAuth)
 
-When Auth0 is not fully configured, the API uses mock authentication for development:
+For quick development testing, you can test endpoints directly:
 
 #### Test User Profile Endpoints
 ```bash
-# Get user profile (mock auth)
-curl -X GET http://localhost:[API_PORT]/api/users/profile
+# Get user profile
+curl -X GET http://localhost:8099/api/users/profile
 
 # Create user profile  
-curl -X POST http://localhost:[API_PORT]/api/users/profile \
+curl -X POST http://localhost:8099/api/users/profile \
   -H "Content-Type: application/json" \
   -d '{
     "name": "Test User",
-    "email": "test@example.com", 
-    "edu_level": "High School",
-    "birthdate": "1995-01-01"
+    "email": "test@example.com"
   }'
 
 # Update experience points
-curl -X PATCH http://localhost:[API_PORT]/api/users/experience \
+curl -X PATCH http://localhost:8099/api/users/experience \
   -H "Content-Type: application/json" \
   -d '{
     "math_exp": 150,
@@ -308,23 +353,26 @@ curl -X PATCH http://localhost:[API_PORT]/api/users/experience \
 #### Test Friends System
 ```bash
 # Get friends list
-curl -X GET http://localhost:[API_PORT]/api/friends
+curl -X GET http://localhost:8099/api/friends
 
 # Send friend request
-curl -X POST http://localhost:[API_PORT]/api/friends/request \
+curl -X POST http://localhost:8099/api/friends/request \
   -H "Content-Type: application/json" \
   -d '{
     "friend_email": "friend@example.com"
   }'
+
+# Accept friend request
+curl -X PATCH http://localhost:8099/api/friends/123/accept
 ```
 
 #### Test Gardens System  
 ```bash
 # Get user gardens
-curl -X GET http://localhost:[API_PORT]/api/gardens
+curl -X GET http://localhost:8099/api/gardens
 
 # Create new garden
-curl -X POST http://localhost:[API_PORT]/api/gardens \
+curl -X POST http://localhost:8099/api/gardens \
   -H "Content-Type: application/json" \
   -d '{
     "name": "Math Mastery Garden",
@@ -332,33 +380,29 @@ curl -X POST http://localhost:[API_PORT]/api/gardens \
   }'
 ```
 
-### Real Auth0 Token Testing
-
-Once Auth0 is configured, obtain a JWT token for testing:
-
-#### Option A: Use Auth0 Management API
+#### Test Questions
 ```bash
-# Get machine-to-machine token for testing
-curl -X POST https://YOUR_DOMAIN.auth0.com/oauth/token \
-  -H "Content-Type: application/json" \
-  -d '{
-    "client_id": "YOUR_CLIENT_ID",
-    "client_secret": "YOUR_CLIENT_SECRET", 
-    "audience": "https://flearn-api.com",
-    "grant_type": "client_credentials"
-  }'
+# Get random questions
+curl -X GET http://localhost:8099/api/questions/random?subject=math&count=5
+
+# Get questions by topic
+curl -X GET http://localhost:8099/api/questions/topic/123
 ```
 
-#### Option B: Use Frontend Login Flow
-1. Start the frontend application
-2. Complete login flow 
-3. Extract JWT token from browser developer tools
-4. Use token in API requests:
+### Real Google OAuth Token Testing
 
-```bash
-curl -X GET http://localhost:[API_PORT]/api/users/profile \
-  -H "Authorization: Bearer YOUR_JWT_TOKEN_HERE"
-```
+Once Google OAuth is fully configured with the frontend:
+
+#### Option A: Use Frontend Login Flow
+1. Start the frontend application (`npm run dev` in FLEARN-front)
+2. Complete Google login flow 
+3. Extract token from browser developer tools (Application → Cookies → next-auth.session-token)
+4. Backend automatically validates Google ID tokens from NextAuth
+
+#### Option B: Test with Postman/Insomnia
+1. Complete login via frontend
+2. Get the session cookie
+3. Make API requests with the cookie included
 
 ## 📚 Available API Endpoints
 
@@ -366,19 +410,22 @@ curl -X GET http://localhost:[API_PORT]/api/users/profile \
 
 | Method | Endpoint | Auth Required | Description |
 |--------|----------|---------------|-------------|
-| `GET` | `/profile` | ✅ | Get user profile information |
+| `GET` | `/profile` | ✅ | Get user profile (auto-updates streak, rank, daily exp) |
+| `GET` | `/profilebyid` | ✅ | Get user by ID with auto-updates |
 | `POST` | `/profile` | ✅ | Create or update user profile |
-| `GET` | `/preferences` | ✅ | Get user learning preferences |
-| `POST` | `/preferences` | ✅ | Add learning preference |  
 | `PATCH` | `/experience` | ✅ | Update experience points |
+| `PATCH` | `/streak` | ✅ | Update user streak manually |
+| `GET` | `/search` | ✅ | Search users by name or email |
+| `GET` | `/leaderboard` | ✅ | Get user rankings |
 
 ### Friends System (`/api/friends`)
 
 | Method | Endpoint | Auth Required | Description |
 |--------|----------|---------------|-------------|
-| `GET` | `/` | ✅ | Get friends list and requests |
+| `GET` | `/` | ✅ | Get friends list and pending requests |
 | `POST` | `/request` | ✅ | Send friend request |
-| `PATCH` | `/:id/status` | ✅ | Accept/reject friend request |
+| `PATCH` | `/:id/accept` | ✅ | Accept friend request |
+| `PATCH` | `/:id/reject` | ✅ | Reject friend request |
 | `DELETE` | `/:id` | ✅ | Remove friend or cancel request |
 
 ### Gardens System (`/api/gardens`)
@@ -386,10 +433,41 @@ curl -X GET http://localhost:[API_PORT]/api/users/profile \
 | Method | Endpoint | Auth Required | Description |
 |--------|----------|---------------|-------------|
 | `GET` | `/` | ✅ | Get user's learning gardens |
+| `GET` | `/user/:userId` | ✅ | Get gardens for specific user |
 | `POST` | `/` | ✅ | Create new learning garden |
 | `PATCH` | `/:id/streak` | ✅ | Update garden streak |
 | `PATCH` | `/:id/status` | ✅ | Update garden status |
 | `DELETE` | `/:id` | ✅ | Delete garden |
+
+### Questions (`/api/questions`)
+
+| Method | Endpoint | Auth Required | Description |
+|--------|----------|---------------|-------------|
+| `GET` | `/` | ✅ | Get all questions |
+| `GET` | `/:id` | ✅ | Get specific question |
+| `GET` | `/random` | ✅ | Get random questions (with filters) |
+| `GET` | `/topic/:topicId` | ✅ | Get questions by topic |
+| `POST` | `/` | ✅ | Create new question (admin) |
+| `PUT` | `/:id` | ✅ | Update question (admin) |
+| `DELETE` | `/:id` | ✅ | Delete question (admin) |
+
+### Topics (`/api/topics`)
+
+| Method | Endpoint | Auth Required | Description |
+|--------|----------|---------------|-------------|
+| `GET` | `/` | ✅ | Get all topics |
+| `GET` | `/:id` | ✅ | Get specific topic |
+| `POST` | `/` | ✅ | Create new topic (admin) |
+| `PUT` | `/:id` | ✅ | Update topic (admin) |
+| `DELETE` | `/:id` | ✅ | Delete topic (admin) |
+
+### Backlog (`/api/backlog`)
+
+| Method | Endpoint | Auth Required | Description |
+|--------|----------|---------------|-------------|
+| `GET` | `/` | ✅ | Get user's backlog |
+| `POST` | `/` | ✅ | Add question to backlog |
+| `DELETE` | `/:id` | ✅ | Remove from backlog |
 
 ### Health & Utility (`/`)
 
@@ -414,17 +492,18 @@ curl -X GET http://localhost:[API_PORT]/api/users/profile \
 - Test manual connection: `psql -h localhost -U flearn_user -d flearn_db`
 - Ensure user has correct permissions
 
-#### 2. Auth0 JWT Verification Error  
+#### 2. Google OAuth Verification Error  
 ```
-❌ UnauthorizedError: Invalid token
-   JWT verification failed
+❌ Error: Invalid token
+   Google OAuth verification failed
 ```
 
 **Solutions**:
-- Verify `AUTH0_DOMAIN` and `AUTH0_AUDIENCE` in `.env`
-- Check token format: must be `Bearer <token>` 
-- Ensure Auth0 API is configured with RS256 algorithm
-- Verify token hasn't expired
+- Verify `GOOGLE_CLIENT_ID` and `GOOGLE_CLIENT_SECRET` in `.env`
+- Check authorized redirect URIs in Google Cloud Console
+- Ensure redirect URI matches exactly: `http://localhost:3000/api/auth/callback/google`
+- Verify OAuth consent screen is configured
+- Check that token hasn't expired
 
 #### 3. Database Schema Missing
 ```
@@ -439,14 +518,15 @@ curl -X GET http://localhost:[API_PORT]/api/users/profile \
 
 #### 4. CORS Issues
 ```
-❌ Access to fetch at 'http://localhost:[API_PORT]/api/users/profile' 
-   from origin 'http://localhost:[FRONTEND_PORT]' has been blocked by CORS policy
+❌ Access to fetch at 'http://localhost:8099/api/users/profile' 
+   from origin 'http://localhost:3000' has been blocked by CORS policy
 ```
 
 **Solutions**:
 - Add frontend URL to `ALLOWED_ORIGINS` in `.env`
 - Restart backend server after `.env` changes
 - Check browser developer console for detailed CORS errors
+- Verify CORS middleware configuration
 
 ### Debugging Tips
 
@@ -474,13 +554,13 @@ psql -h localhost -U flearn_user -d flearn_db -c "SELECT version();"
 psql -h localhost -U flearn_user -d flearn_db -c "\dt"
 ```
 
-#### Validate Auth0 Configuration
+#### Validate Google OAuth Configuration
 ```bash
-# Check Auth0 well-known configuration
-curl https://YOUR_DOMAIN.auth0.com/.well-known/openid_configuration
+# Test Google OAuth endpoint
+curl https://accounts.google.com/.well-known/openid-configuration
 
-# Verify JWKS endpoint
-curl https://YOUR_DOMAIN.auth0.com/.well-known/jwks.json
+# Verify your OAuth client (requires authenticated request)
+# Use Google Cloud Console to verify client configuration
 ```
 
 ## 🔒 Security Best Practices
@@ -488,11 +568,12 @@ curl https://YOUR_DOMAIN.auth0.com/.well-known/jwks.json
 ### Environment Variables & Secrets Management
 - 🔒 **NEVER commit** `.env` files to version control
 - 🔒 **Use strong, unique passwords** (minimum 16 characters) for all services
-- 🔒 **Rotate Auth0 secrets** regularly (at least every 90 days)
+- 🔒 **Rotate Google OAuth secrets** regularly (at least every 90 days)
 - 🔒 **Use different secrets** for development, staging, and production
 - 🔒 **Add `.env*` to `.gitignore`** immediately
 - 🔒 **Use environment variables** in production, never hardcode secrets
-- 🔒 **Enable 2FA** on your Auth0 account for additional security
+- 🔒 **Enable 2FA** on your Google account for additional security
+- 🔒 **Restrict OAuth consent screen** to specific test users during development
 
 ### Database Security  
 - ✅ Use parameterized queries (already implemented)
@@ -504,7 +585,9 @@ curl https://YOUR_DOMAIN.auth0.com/.well-known/jwks.json
 - ✅ Always validate input data
 - ✅ Use HTTPS in production
 - ✅ Implement rate limiting (planned)
-- ✅ Monitor Auth0 logs for suspicious activity
+- ✅ Monitor Google OAuth logs for suspicious activity
+- ✅ Verify tokens server-side always
+- ✅ Use secure session cookies (httpOnly, secure, sameSite)
 
 ## 🎯 Next Steps
 
@@ -553,5 +636,5 @@ app.use((req, res, next) => {
 
 🎉 **Congratulations!** Your FLEARN API should now be running successfully. 
 
-For frontend integration, proceed to the [Authentication & Auth0](Authentication-Auth0) guide.
+For frontend integration, proceed to the [Authentication Guide](Authentication-Auth0) guide for detailed Google OAuth setup with NextAuth.
 

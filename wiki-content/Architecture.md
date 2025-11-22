@@ -58,14 +58,17 @@ graph TB
 ## 🏛️ System Components
 
 ### Frontend Service (`flearn-frontend`)
-**Technology**: Next.js 15.5.2 with TypeScript
+**Technology**: Next.js 15.5.2 with React 19 and TypeScript 5
 - **Purpose**: User interface and experience
 - **Features**: 
   - Server-side rendering (SSR)
   - Static site generation (SSG)
-  - Responsive design with Tailwind CSS
-  - TypeScript for type safety
+  - App Router architecture (Next.js 13+)
+  - Responsive design with Tailwind CSS 4.0
+  - TypeScript 5 for type safety
   - Turbopack for fast development builds
+  - GSAP for smooth animations
+  - KaTeX for mathematical rendering
 
 **Key Features**:
 ```typescript
@@ -89,8 +92,9 @@ interface ExperiencePoints {
 ### Backend API Service (`flearn-backend`)
 **Technology**: Express.js with Node.js
 - **Purpose**: Business logic and data management
-- **Authentication**: Auth0 JWT integration
-- **Database**: Dual database strategy (PostgreSQL + MongoDB)
+- **Authentication**: Google OAuth via NextAuth with JWT tokens
+- **Database**: Dual database strategy (PostgreSQL 15 + MongoDB 7.0)
+- **Automatic Features**: Streak reset, rank calculation, daily exp reset
 
 **API Structure**:
 ```javascript
@@ -98,16 +102,32 @@ interface ExperiencePoints {
 /api/
   ├── users/          # User management
   │   ├── profile     # GET, POST user profiles
-  │   ├── preferences # GET, POST learning preferences  
-  │   └── experience  # PATCH experience points
+  │   ├── profilebyid # GET user by ID
+  │   ├── experience  # PATCH experience points
+  │   ├── streak      # PATCH update streak
+  │   ├── search      # GET search users
+  │   └── leaderboard # GET leaderboard
   ├── friends/        # Social features
   │   ├── /           # GET friends list
   │   ├── request     # POST friend requests
-  │   └── /:id/status # PATCH accept/reject
-  └── gardens/        # Learning progress
-      ├── /           # GET, POST gardens
-      ├── /:id/streak # PATCH update streaks
-      └── /:id/status # PATCH garden status
+  │   ├── /:id/accept # PATCH accept request
+  │   └── /:id/reject # PATCH reject request
+  ├── gardens/        # Learning progress
+  │   ├── /           # GET, POST gardens
+  │   ├── user/:id    # GET user's gardens
+  │   ├── /:id/streak # PATCH update streaks
+  │   └── /:id/status # PATCH garden status
+  ├── questions/      # Question bank
+  │   ├── /           # GET, POST questions
+  │   ├── /:id        # GET, PUT, DELETE question
+  │   ├── random      # GET random questions
+  │   └── topic/:id   # GET by topic
+  ├── topics/         # Topic organization
+  │   ├── /           # GET, POST topics
+  │   └── /:id        # GET, PUT, DELETE topic
+  └── backlog/        # Saved questions
+      ├── /           # GET, POST backlog
+      └── /:id        # DELETE from backlog
 ```
 
 ### Webhook Service (`flearn-webhook`)
@@ -192,40 +212,53 @@ CREATE TABLE "friend" (
 ```json
 {
   "framework": "Next.js 15.5.2",
-  "language": "TypeScript",
+  "react_version": "19.1.0",
+  "language": "TypeScript 5.9",
   "styling": "Tailwind CSS 4.0",
   "bundler": "Turbopack",
   "linting": "ESLint",
-  "package_manager": "npm"
+  "package_manager": "npm",
+  "animations": "GSAP 3.13",
+  "math_rendering": "KaTeX 0.16"
 }
 ```
 
 **Key Libraries**:
-- `@auth0/nextjs-auth0`: Authentication integration
-- `axios`: HTTP client for API calls
-- `framer-motion`: Animation library
-- `react-hook-form`: Form management
-- `@headlessui/react`: Accessible UI components
+- `next`: 15.5.2 - React framework
+- `react`: 19.1.0 - UI library
+- `react-dom`: 19.1.0 - React DOM renderer
+- `lucide-react`: Icon library
+- `@gsap/react`: Animation library
+- `gsap`: 3.13.0 - Professional animations
+- `react-markdown`: Markdown rendering
+- `rehype-katex` & `remark-math`: Math expression support
+- `katex`: 0.16.25 - Mathematical notation
+- `recharts`: Data visualization
+- `html2canvas` & `jspdf`: PDF generation
 
 ### Backend Technologies
 ```json
 {
   "runtime": "Node.js",
-  "framework": "Express.js",
+  "framework": "Express.js 4.18",
   "language": "JavaScript (ES6+)",
-  "authentication": "Auth0 JWT",
-  "validation": "express-validator",
-  "testing": "Jest + Supertest"
+  "authentication": "Google OAuth + NextAuth",
+  "google_auth": "google-auth-library 9.0",
+  "testing": "Jest 29.7 + Supertest 6.3"
 }
 ```
 
 **Key Dependencies**:
-- `express-jwt`: JWT middleware
-- `jwks-rsa`: Auth0 key verification
-- `pg`: PostgreSQL client
-- `mongoose`: MongoDB ODM
-- `cors`: Cross-origin resource sharing
-- `helmet`: Security headers
+- `express`: 4.18.2 - Web framework
+- `google-auth-library`: 9.0.0 - Google OAuth verification
+- `pg`: 8.11.3 - PostgreSQL client
+- `pg-pool`: 3.6.1 - Connection pooling
+- `mongoose`: 7.0.3 - MongoDB ODM
+- `cors`: 2.8.5 - Cross-origin resource sharing
+- `dotenv`: 17.2.1 - Environment variables
+- `uuid`: 9.0.1 - UUID generation
+- `katex`: 0.16.25 - Server-side math rendering
+- `nodemon`: 3.1.10 - Development auto-reload
 
 ### DevOps & Infrastructure
 ```yaml
@@ -254,18 +287,21 @@ databases:
 sequenceDiagram
     participant U as User
     participant F as Frontend
-    participant A as Auth0
+    participant G as Google OAuth
+    participant N as NextAuth
     participant B as Backend
     participant DB as PostgreSQL
     
     U->>F: Login Request
-    F->>A: Redirect to Auth0
-    A->>U: Authentication Form
-    U->>A: Credentials
-    A->>F: JWT Token
-    F->>B: API Request + JWT
-    B->>A: Verify JWT
-    A->>B: Token Valid
+    F->>N: Trigger Google Sign-In
+    N->>G: Redirect to Google
+    G->>U: Google Login Form
+    U->>G: Enter Credentials
+    G->>N: Return ID Token
+    N->>F: Set Session Cookie
+    F->>B: API Request + Token
+    B->>G: Verify Token
+    G->>B: Token Valid
     B->>DB: Query User Data
     DB->>B: User Information
     B->>F: Response Data
@@ -373,10 +409,11 @@ export const useAuth = () => {
 ## 🔒 Security Architecture
 
 ### Authentication & Authorization
-- **Auth0 Integration**: Industry-standard OAuth 2.0 / OpenID Connect
-- **JWT Tokens**: Stateless authentication with RS256 signing
-- **RBAC**: Role-based access control (future implementation)
-- **CORS**: Configured for specific origins only
+- **Google OAuth Integration**: Industry-standard OAuth 2.0 / OpenID Connect
+- **NextAuth**: Session management and authentication provider
+- **JWT Tokens**: Stateless authentication with Google ID tokens
+- **Token Verification**: google-auth-library for server-side validation
+- **CORS**: Configured for specific origins only (localhost:3000, 8099, etc.)
 
 ### Data Security
 - **Input Validation**: Server-side validation for all inputs
