@@ -86,31 +86,47 @@ docker compose up -d
 
 > **📖 For detailed setup instructions**, including environment configuration, webhook deployment, and manual development setup, see our **[Getting Started Guide](../../wiki/Getting-Started)**.
 
-## 📱 Planned Features
+## 📱 Sample .env
+```
+# FLEARN Environment Configuration
+NODE_ENV=development
+PORT=8099
 
-### Sprint 3 Development Goals
+# Database Configuration
+POSTGRES_HOST=localhost
+POSTGRES_PORT=your_port
+POSTGRES_DB=your_database_name
+POSTGRES_USER=your_database_user_name
+POSTGRES_PASSWORD=your_password_here
 
-#### Frontend Development
-- [ ] Integrate Google Auth0,
-- [ ] Integrate SignUp with Back-end
-- [ ] User Profile (Owner Side)
-- [ ] User Profile (Cilent Side)
-- [ ] Search Friend Page
-- [ ] Handle Request or Accept
-- [ ] Graden Page
-- [ ] Create Invited and find compponents
-- [ ] Tree stage preview
+# MongoDB Configuration
+MONGO_URL=mongodb://localhost:27017/flearn-db
+MONGO_INITDB_ROOT_USERNAME=root
+MONGO_INITDB_ROOT_PASSWORD=your_mongo_password_here
+MONGO_INITDB_DATABASE=your_database_name
 
-#### Backend Development
-- [ ] User change username and profile picture
-- [ ] Most today earn EXP Scoreboard
-- [ ] API Search Profile (Both finding and Request)
-- [ ] Update Friend database after accept request
-- [ ] Steak Update daily
-- [ ] Get Graden Data
-- [ ] Handle user pair request
-- [ ] Duo Steak reset daily
+# CORS Configuration - Optional (if not set, flexible CORS is enabled)
+# For production, specify exact origins separated by commas:
+# ALLOWED_ORIGINS=https://yourdomain.com,https://www.yourdomain.com,https://app.yourdomain.com
 
+# For development across different IPs, you can specify IP ranges:
+# ALLOWED_ORIGINS=http://localhost:3000
+
+# Auth0 Configuration
+AUTH0_DOMAIN=your-auth0-domain.auth0.com
+AUTH0_CLIENT_ID=your_auth0_client_id
+AUTH0_CLIENT_SECRET=your_auth0_client_secret
+
+# Webhook Configuration
+WEBHOOK_SECRET=your_webhook_secret_here
+WEBHOOK_PORT=your_port
+
+# API Configuration
+NEXT_PUBLIC_API_BASE_URL=http://localhost:8099
+
+# Build cache busting for Docker
+CACHEBUST=1
+```
 ## �️ Development
 
 ### Quick Commands
