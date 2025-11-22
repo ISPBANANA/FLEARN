@@ -445,17 +445,17 @@ This project is part of an educational initiative developed by students at Kaset
 
 | Student ID | Name | Role |
 |------------|------|------|
-| 6710545610 | Techaphatr Indhavivadhana | Full-stack Developer |
-| 6710545504 | Chachalit Khanarat | Full-stack Developer |
-| 6710545938 | Sethtatad Kijkanjanarat | Full-stack Developer |
-| 6710545733 | Phruek Chantarasittiphon | Full-stack Developer |
+| 6710545610 | Techaphatr Indhavivadhana | Full-stack Developer, Project Manager |
+| 6710545504 | Chachalit Khanarat | Full-stack Developer, Infrastructure |
+| 6710545938 | Sethtatad Kijkanjanarat | Front-end Developer |
+| 6710545733 | Phruek Chantarasittiphon | Full-stack Developer, UX-UI, Dev-Op |
 
 ### 🎓 Academic Project
 This project is developed as part of the **Individual Software Process (ISP)** course at Kasetsart University. It demonstrates modern web development practices, agile methodologies, and collaborative software engineering.
 
 ## 🙏 Acknowledgments
 
-- **Next.js** and **Vercel** for the excellent React framework
+- **Next.js** for the excellent React framework
 - **Express.js** community for the robust backend framework
 - **PostgreSQL** and **MongoDB** teams for reliable database systems
 - **Docker** for simplifying deployment and development
