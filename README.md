@@ -441,7 +441,7 @@ This project is part of an educational initiative developed by students at Kaset
 
 ## 👥 Team
 
-**ISPBANANA Development Team** - Software Engineering Students, Kasetsart University
+**ISPBANANA Development Team** - Software and Knowledge Engineering Students, Kasetsart University
 
 | Student ID | Name | Role |
 |------------|------|------|
