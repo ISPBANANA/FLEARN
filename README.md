@@ -437,11 +437,11 @@ docker compose restart flearn_backend
 
 ## 📄 License
 
-This project is part of an educational initiative developed by students at King Mongkut's Institute of Technology Ladkrabang (KMITL). Please refer to the [LICENSE.md](LICENSE.md) file for detailed terms.
+This project is part of an educational initiative developed by students at Kasetsart University. Please refer to the [LICENSE.md](LICENSE.md) file for detailed terms.
 
 ## 👥 Team
 
-**ISPBANANA Development Team** - Computer Engineering Students, KMITL
+**ISPBANANA Development Team** - Software Engineering Students, Kasetsart University
 
 | Student ID | Name | Role |
 |------------|------|------|
@@ -451,7 +451,7 @@ This project is part of an educational initiative developed by students at King 
 | 6710545733 | Phruek Chantarasittiphon | Full-stack Developer |
 
 ### 🎓 Academic Project
-This project is developed as part of the **Individual Software Process (ISP)** course at KMITL. It demonstrates modern web development practices, agile methodologies, and collaborative software engineering.
+This project is developed as part of the **Individual Software Process (ISP)** course at Kasetsart University. It demonstrates modern web development practices, agile methodologies, and collaborative software engineering.
 
 ## 🙏 Acknowledgments
 
@@ -460,7 +460,7 @@ This project is developed as part of the **Individual Software Process (ISP)** c
 - **PostgreSQL** and **MongoDB** teams for reliable database systems
 - **Docker** for simplifying deployment and development
 - **Google Cloud** for OAuth services
-- **KMITL** for educational support and resources
+- **Kasetsart University** for educational support and resources
 
 ---
 
